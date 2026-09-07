@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>平台账号 - 平台超管</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .tab-panel { display:none; } .tab-panel.active { display:block; }
+  .user-cell { display:flex; gap:10px; align-items:center; }
+  .user-avatar { width:32px;height:32px;border-radius:50%; background:var(--primary); color:#fff; font-size:12px; display:flex;align-items:center;justify-content:center; flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo">火</div><div class="name">多开云商城</div><div class="badge">超管</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>数据看板</a>
+      <a class="nav-item" href="shop-list.html"><span class="ico">▤</span>商城管理</a>
+      <a class="nav-item" href="package-list.html"><span class="ico">◇</span>套餐管理</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">￥</span>订购管理</a>
+      <a class="nav-item" href="domain-list.html"><span class="ico">⌘</span>域名管理</a>
+      <a class="nav-item" href="mp-client.html"><span class="ico">▣</span>客户端管理</a>
+      <div class="nav-group-title">系统</div>
+      <a class="nav-item active" href="platform-account.html"><span class="ico">◎</span>平台账号</a>
+      <a class="nav-item" href="platform-setting.html"><span class="ico">⚙</span>平台设置</a>
+      <a class="nav-item" href="ops-center.html"><span class="ico">⏱</span>运维中心</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>平台账号</b></div>
+      <div class="topbar-right"><div class="topbar-user"><div class="avatar">平</div>平台管理员</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">平台账号</div><div class="page-desc">管理员账号、角色权限与操作审计</div></div>
+        <button class="btn btn-primary">＋ 新建管理员</button>
+      </div>
+
+      <div class="card card-pad">
+        <div class="tabs" style="margin-bottom:18px;">
+          <div class="tab active" onclick="showTab(1,this)">管理员账号</div>
+          <div class="tab" onclick="showTab(2,this)">角色权限</div>
+          <div class="tab" onclick="showTab(3,this)">操作日志</div>
+          <div class="tab" onclick="showTab(4,this)">登录日志</div>
+        </div>
+
+        <div class="tab-panel active" data-p="1">
+          <table class="table">
+            <thead><tr><th>账号</th><th>角色</th><th>最近登录</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td><div class="user-cell"><div class="user-avatar">超</div>admin（超级管理员）</div></td><td><span class="tag tag-primary">超级管理员</span></td><td>2026-08-10 09:00</td><td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm" disabled>不可编辑</button></td></tr>
+              <tr><td><div class="user-cell"><div class="user-avatar" style="background:#1baf7a;">运</div>ops_zhang（运营）</div></td><td><span class="tag tag-muted">运营专员</span></td><td>2026-08-10 08:45</td><td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm">编辑</button> <button class="btn btn-sm">重置密码</button></td></tr>
+              <tr><td><div class="user-cell"><div class="user-avatar" style="background:#e87ba4;">客</div>cs_li（客服）</div></td><td><span class="tag tag-muted">客服专员</span></td><td>2026-08-09 17:30</td><td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm">编辑</button> <button class="btn btn-sm">重置密码</button></td></tr>
+              <tr><td><div class="user-cell"><div class="user-avatar" style="background:var(--text-muted);">财</div>finance_wang（财务）</div></td><td><span class="tag tag-muted">财务专员</span></td><td>2026-07-28 10:12</td><td><span class="tag tag-critical">已停用</span></td><td><button class="btn btn-sm">启用</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="2">
+          <table class="table">
+            <thead><tr><th>角色名称</th><th>说明</th><th class="num">关联账号数</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>超级管理员</td><td>拥有全部权限，含平台设置与账号管理</td><td class="num">1</td><td><button class="btn btn-sm" disabled>系统内置</button></td></tr>
+              <tr><td>运营专员</td><td>商城管理、套餐管理、订购管理</td><td class="num">3</td><td><button class="btn btn-sm">编辑权限</button></td></tr>
+              <tr><td>客服专员</td><td>商城查看、免密登录代客服务（受审计）</td><td class="num">5</td><td><button class="btn btn-sm">编辑权限</button></td></tr>
+              <tr><td>财务专员</td><td>订购管理、退款审核、发票管理</td><td class="num">2</td><td><button class="btn btn-sm">编辑权限</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="3">
+          <div style="display:flex; gap:12px; margin-bottom:14px;">
+            <select class="form-select" style="width:160px;"><option>全部操作类型</option><option>免密登录</option><option>商城管理</option><option>套餐配置</option></select>
+            <input class="form-input" style="width:200px;" placeholder="操作人 / 商城名称">
+            <button class="btn">查询</button>
+          </div>
+          <table class="table">
+            <thead><tr><th>时间</th><th>操作人</th><th>操作类型</th><th>关联商城</th><th>说明</th><th>IP</th></tr></thead>
+            <tbody>
+              <tr><td class="num">2026-08-10 09:12</td><td>cs_li</td><td><span class="tag tag-warning">免密登录</span></td><td>花间集女装旗舰店</td><td>协助排查发货异常问题</td><td>121.**.**.88</td></tr>
+              <tr><td class="num">2026-08-10 08:30</td><td>ops_zhang</td><td>套餐续费</td><td>三禾有机生鲜</td><td>确认线下转账到账，标记续费成功</td><td>121.**.**.12</td></tr>
+              <tr><td class="num">2026-08-09 16:20</td><td>ops_zhang</td><td>域名审核</td><td>花间集女装旗舰店</td><td>通过自定义域名审核</td><td>121.**.**.12</td></tr>
+              <tr><td class="num">2026-08-08 11:05</td><td>admin</td><td>停用商城</td><td>初见母婴优选</td><td>欠费超过宽限期，停用</td><td>121.**.**.01</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="4">
+          <table class="table">
+            <thead><tr><th>时间</th><th>账号</th><th>登录方式</th><th>IP</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td class="num">2026-08-10 09:00</td><td>admin</td><td>账号密码</td><td>121.**.**.01</td><td><span class="tag tag-good">成功</span></td></tr>
+              <tr><td class="num">2026-08-10 08:45</td><td>ops_zhang</td><td>账号密码</td><td>121.**.**.12</td><td><span class="tag tag-good">成功</span></td></tr>
+              <tr><td class="num">2026-08-09 22:14</td><td>unknown</td><td>账号密码</td><td>203.**.**.45</td><td><span class="tag tag-critical">失败·密码错误</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(i, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelector('.tab-panel[data-p="'+i+'"]').classList.add('active');
+  }
+</script>
+</body>
+</html>

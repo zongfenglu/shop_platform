@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>域名管理 - 平台超管</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .tab-panel { display:none; } .tab-panel.active { display:block; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo">火</div><div class="name">多开云商城</div><div class="badge">超管</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>数据看板</a>
+      <a class="nav-item" href="shop-list.html"><span class="ico">▤</span>商城管理</a>
+      <a class="nav-item" href="package-list.html"><span class="ico">◇</span>套餐管理</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">￥</span>订购管理</a>
+      <a class="nav-item active" href="domain-list.html"><span class="ico">⌘</span>域名管理</a>
+      <a class="nav-item" href="mp-client.html"><span class="ico">▣</span>客户端管理</a>
+      <div class="nav-group-title">系统</div>
+      <a class="nav-item" href="platform-account.html"><span class="ico">◎</span>平台账号</a>
+      <a class="nav-item" href="platform-setting.html"><span class="ico">⚙</span>平台设置</a>
+      <a class="nav-item" href="ops-center.html"><span class="ico">⏱</span>运维中心</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>域名管理</b></div>
+      <div class="topbar-right"><div class="topbar-user"><div class="avatar">平</div>平台管理员</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">域名管理</div><div class="page-desc">泛域名 128 个 · 自定义域名 34 个 · 待审核 2 个</div></div>
+        <button class="btn">泛域名保留词配置</button>
+      </div>
+
+      <div class="card card-pad">
+        <div class="tabs" style="margin-bottom:18px;">
+          <div class="tab active" onclick="showTab(1,this)">自定义域名审核</div>
+          <div class="tab" onclick="showTab(2,this)">全部域名</div>
+          <div class="tab" onclick="showTab(3,this)">泛域名池</div>
+        </div>
+
+        <div class="tab-panel active" data-p="1">
+          <table class="table">
+            <thead><tr><th>商城</th><th>申请域名</th><th>CNAME目标</th><th>解析校验</th><th>提交时间</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>花间集女装旗舰店</td><td>www.huajianji-mall.com</td><td>huajianji.cname.shop.com</td>
+                <td><span class="tag tag-good">已解析</span></td><td>2026-08-09 16:20</td>
+                <td><span class="tag tag-good">已通过</span></td><td><button class="btn btn-sm" disabled>已生效</button></td>
+              </tr>
+              <tr>
+                <td>悦动运动户外</td><td>mall.yuedong-sports.com</td><td>yuedong.cname.shop.com</td>
+                <td><span class="tag tag-warning">待解析</span></td><td>2026-08-10 09:12</td>
+                <td><span class="tag tag-warning">待审核</span></td><td><button class="btn btn-sm btn-primary">通过</button> <button class="btn btn-sm">驳回</button></td>
+              </tr>
+              <tr>
+                <td>三禾有机生鲜</td><td>shop.sanheorganic.com</td><td>sanhe.cname.shop.com</td>
+                <td><span class="tag tag-critical">解析失败</span></td><td>2026-08-08 11:05</td>
+                <td><span class="tag tag-warning">待审核</span></td><td><button class="btn btn-sm btn-primary" disabled>需先解析</button> <button class="btn btn-sm">驳回</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="2">
+          <div style="display:flex; gap:12px; margin-bottom:14px;">
+            <input class="form-input" style="width:220px;" placeholder="域名 / 商城名称">
+            <select class="form-select" style="width:140px;"><option>全部类型</option><option>平台泛域名</option><option>自定义域名</option></select>
+            <button class="btn">查询</button>
+          </div>
+          <table class="table">
+            <thead><tr><th>域名</th><th>商城</th><th>类型</th><th>证书状态</th><th>生效状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>huajianji.shop.com</td><td>花间集女装旗舰店</td><td>平台泛域名</td><td><span class="tag tag-good">有效</span></td><td><span class="tag tag-good">已生效</span></td><td><button class="btn btn-sm" disabled>默认</button></td></tr>
+              <tr><td>www.huajianji-mall.com</td><td>花间集女装旗舰店</td><td>自定义域名</td><td><span class="tag tag-good">有效·89天后到期</span></td><td><span class="tag tag-good">已生效</span></td><td><button class="btn btn-sm">解绑</button></td></tr>
+              <tr><td>sanhe.shop.com</td><td>三禾有机生鲜</td><td>平台泛域名</td><td><span class="tag tag-good">有效</span></td><td><span class="tag tag-good">已生效</span></td><td><button class="btn btn-sm" disabled>默认</button></td></tr>
+              <tr><td>nova.shop.com</td><td>Nova 数码配件</td><td>平台泛域名</td><td><span class="tag tag-good">有效</span></td><td><span class="tag tag-good">已生效</span></td><td><button class="btn btn-sm" disabled>默认</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="3">
+          <div class="form-item" style="max-width:500px;">
+            <label class="form-label">泛域名根域</label>
+            <input class="form-input" value="*.shop.com">
+            <div class="form-hint">新建商城时自动分配 &#123;code&#125;.shop.com 子域名</div>
+          </div>
+          <div class="form-item" style="max-width:500px;">
+            <label class="form-label">保留词黑名单（不可作为商城二级域名前缀）</label>
+            <textarea class="form-textarea" rows="3">admin, api, www, store, mp, cdn, static, mail, ftp</textarea>
+          </div>
+          <div class="form-item" style="max-width:500px;">
+            <label class="form-label">泛域名证书</label>
+            <div class="form-hint">*.shop.com · 有效期至 2027-03-15 · 自动续签已开启</div>
+          </div>
+          <button class="btn btn-primary">保存配置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(i, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelector('.tab-panel[data-p="'+i+'"]').classList.add('active');
+  }
+</script>
+</body>
+</html>

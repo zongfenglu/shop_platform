@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>商品评价</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .cr-summary { background:#fff; padding:16px; display:flex; align-items:center; gap:20px; }
+  .cr-score { text-align:center; }
+  .cr-score .n { font-size:26px; font-weight:800; color:var(--price); }
+  .cr-score .l { font-size:11px; color:var(--text-muted); }
+  .cr-filters { display:flex; gap:8px; overflow-x:auto; padding:10px 14px; background:#fff; border-top:1px solid var(--gridline); border-bottom:1px solid var(--gridline); }
+  .cr-filter { flex-shrink:0; padding:5px 14px; border-radius:999px; background:var(--surface-2); font-size:12px; color:var(--text-secondary); }
+  .cr-filter.active { background:var(--price); color:#fff; font-weight:600; }
+  .cr-item { background:#fff; padding:14px; border-bottom:1px solid var(--gridline); }
+  .cr-user { display:flex; align-items:center; gap:8px; }
+  .cr-avatar { width:30px;height:30px;border-radius:50%; background:linear-gradient(135deg,#ffb199,#e34948); color:#fff; font-size:12px; display:flex;align-items:center;justify-content:center; }
+  .cr-imgs { display:flex; gap:6px; margin-top:8px; }
+  .cr-imgs .ph { width:64px;height:64px;border-radius:6px; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex;align-items:center;justify-content:center; font-size:18px; color:#c9b6a8; }
+  .cr-reply { background:var(--surface-2); border-radius:6px; padding:8px 10px; font-size:11.5px; color:var(--text-secondary); margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar"><span class="back" onclick="history.back()">‹</span>商品评价 (428)</div>
+
+  <div class="phone-body">
+    <div class="cr-summary">
+      <div class="cr-score"><div class="n">4.9</div><div class="l">综合评分</div></div>
+      <div style="flex:1;">
+        <div class="rating">★★★★★</div>
+        <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">好评率 98% · 428条评价</div>
+      </div>
+    </div>
+
+    <div class="cr-filters">
+      <div class="cr-filter active">全部(428)</div>
+      <div class="cr-filter">好评(419)</div>
+      <div class="cr-filter">中评(6)</div>
+      <div class="cr-filter">差评(3)</div>
+      <div class="cr-filter">有图(186)</div>
+    </div>
+
+    <div class="cr-item">
+      <div class="cr-user"><div class="cr-avatar">张</div><div><div style="font-size:12.5px;font-weight:500;">张** </div><div class="rating" style="font-size:11px;">★★★★★</div></div><div style="margin-left:auto; font-size:11px; color:var(--text-muted);">2026-08-05</div></div>
+      <div style="font-size:12.5px; color:var(--text-secondary); margin-top:8px;">面料很好，版型也很显瘦，杏色很百搭，好评！客服态度也很好，物流也很快。</div>
+      <div class="cr-imgs"><div class="ph">🖼</div><div class="ph">🖼</div><div class="ph">🖼</div></div>
+      <div class="cr-reply">商家回复：感谢您的支持与认可，欢迎再次光临～</div>
+    </div>
+
+    <div class="cr-item">
+      <div class="cr-user"><div class="cr-avatar" style="background:linear-gradient(135deg,#1baf7a,#2a78d6);">李</div><div><div style="font-size:12.5px;font-weight:500;">李**</div><div class="rating" style="font-size:11px;">★★★★★</div></div><div style="margin-left:auto; font-size:11px; color:var(--text-muted);">2026-08-03</div></div>
+      <div style="font-size:12.5px; color:var(--text-secondary); margin-top:8px;">发货很快，穿着很舒服，下次还会回购～</div>
+    </div>
+
+    <div class="cr-item">
+      <div class="cr-user"><div class="cr-avatar" style="background:linear-gradient(135deg,#eda100,#e87ba4);">周</div><div><div style="font-size:12.5px;font-weight:500;">周**</div><div class="rating" style="font-size:11px; color:var(--status-warning);">★★★☆☆</div></div><div style="margin-left:auto; font-size:11px; color:var(--text-muted);">2026-07-28</div></div>
+      <div style="font-size:12.5px; color:var(--text-secondary); margin-top:8px;">颜色比图片略深，其他还行，尺码偏大建议拍小一码。</div>
+    </div>
+  </div>
+
+  <div class="m-bottom-bar">
+    <button class="m-btn m-btn-outline" style="flex:1;">查看商品详情</button>
+  </div>
+</div></div>
+</body>
+</html>

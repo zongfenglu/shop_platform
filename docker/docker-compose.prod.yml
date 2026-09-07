@@ -1,0 +1,435 @@
+# 生产/预发全栈容器部署：5 个后端应用 + 3 个前端 + MySQL/Redis/RocketMQ/XXL-Job
+#
+# 与 docker-compose.yml（本地只起依赖、前后端在宿主机跑）的区别：这里前后端也进容器。
+#
+# 用法：
+#   cd docker
+#   cp .env.prod.example .env      # 必须先改掉里面所有 CHANGE_ME
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# 前端目前是空目录（shop-ui/admin、shop-ui/store、shop-uniapp 都还没有源码），
+# 所以三个 web 服务归到 frontend profile，默认不参与构建；等前端落地后：
+#   docker compose -f docker-compose.prod.yml --profile frontend up -d --build
+
+# 显式项目名，避免与本机其它项目撞车（同 docker-compose.yml 的说明）
+name: shop-platform-prod
+
+# 四个后端应用的公共配置。YAML 锚点在 compose 原生支持，不需要额外工具。
+x-backend-common: &backend-common
+  restart: unless-stopped
+  networks:
+    - shop-net
+  environment: &backend-env
+    SPRING_PROFILES_ACTIVE: docker
+    DB_HOST: mysql
+    DB_PORT: 3306
+    DB_NAME: ${MYSQL_DATABASE:-shop_platform}
+    DB_USER: ${MYSQL_USER:-root}
+    DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中显式设置}
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    # 客户端侧也必须拿到密码：Redis 开了 requirepass 而应用不带密码时，
+    # 健康检查会报 NOAUTH，应用起来但 readiness 永远 DOWN。
+    REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中显式设置}
+    ROCKETMQ_NAME_SERVER: rocketmq-namesrv:9876
+    # 这两个密钥泄露等于账号体系和商户支付凭证全部失守，不给默认值，缺失就启动失败。
+    JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须在 .env 中显式设置}
+    AES_KEY: ${AES_KEY:?AES_KEY 必须在 .env 中显式设置}
+    ACME_ENABLED: ${ACME_ENABLED:-false}
+    ACME_DIRECTORY_URL: ${ACME_DIRECTORY_URL:-https://acme-staging-v02.api.letsencrypt.org/directory}
+    ACME_EMAIL: ${ACME_EMAIL:-}
+    ACME_CERT_DIR: /data/certs
+    ACME_RELOAD_COMMAND: ${ACME_RELOAD_COMMAND:-}
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    TZ: Asia/Shanghai
+  logging: &default-logging
+    driver: json-file
+    options:
+      # 不限制的话单个容器日志能把磁盘写满，线上最常见的"莫名宕机"原因之一
+      max-size: "50m"
+      max-file: "5"
+
+services:
+  # ==================== 基础设施 ====================
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    container_name: shop-prod-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-shop_platform}
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+    # schema 由 shop-admin-api 的 Flyway 负责（其余应用已显式禁用），不挂 initdb 脚本。
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max-connections=${MYSQL_MAX_CONNECTIONS:-500}
+    # 只在需要外部直连排查时才映射端口；默认注释掉，数据库不对公网开放。
+    # ports:
+    #   - "${MYSQL_PORT:-3308}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7.4}
+    container_name: shop-prod-redis
+    restart: unless-stopped
+    # requirepass + appendonly：缓存里有登录态和验证码，不设密码等于裸奔
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中显式设置}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  rocketmq-namesrv:
+    image: ${ROCKETMQ_IMAGE:-apache/rocketmq:5.3.1}
+    container_name: shop-prod-rocketmq-namesrv
+    restart: unless-stopped
+    command: sh mqnamesrv
+    environment:
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+      TZ: Asia/Shanghai
+    volumes:
+      - rocketmq-namesrv-logs:/home/rocketmq/logs
+    healthcheck:
+      # 镜像里没有 netstat/ss，也没有 HTTP 端点可探；直接读 /proc/net/tcp{,6} 判断 9876
+      # 是否在监听（2694 是 9876 的十六进制）。namesrv 实际绑在 IPv6 通配地址上，
+      # 所以 tcp6 也必须查——只查 tcp 会永远探测失败。
+      test: ["CMD-SHELL", "grep -q ':2694' /proc/net/tcp /proc/net/tcp6 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  # 一次性初始化：新建的具名卷属 root，而 rocketmq 镜像以 uid 3000(rocketmq) 运行，
+  # 写不了 store 目录时 broker 会在启动中途抛 NullPointerException（错误信息完全看不出
+  # 是权限问题）。用一个 root 的 init 容器改好权限即可，broker 本体保持非 root 运行。
+  # 不要改成在 broker 的 command 里 su —— su 会重置 PATH，镜像里的 java 随之找不到。
+  rocketmq-init:
+    image: ${ROCKETMQ_IMAGE:-apache/rocketmq:5.3.1}
+    container_name: shop-prod-rocketmq-init
+    user: root
+    restart: "no"
+    entrypoint: ["sh", "-c", "mkdir -p /home/rocketmq/store /home/rocketmq/logs && chown -R 3000:3000 /home/rocketmq/store /home/rocketmq/logs && echo 'rocketmq volumes chowned to uid 3000'"]
+    volumes:
+      - rocketmq-broker-store:/home/rocketmq/store
+      - rocketmq-broker-logs:/home/rocketmq/logs
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  rocketmq-broker:
+    image: ${ROCKETMQ_IMAGE:-apache/rocketmq:5.3.1}
+    container_name: shop-prod-rocketmq-broker
+    restart: unless-stopped
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_healthy
+      rocketmq-init:
+        condition: service_completed_successfully
+    environment:
+      JAVA_OPT_EXT: "-Xms1g -Xmx1g -Xmn512m"
+      TZ: Asia/Shanghai
+    volumes:
+      - rocketmq-broker-store:/home/rocketmq/store
+      - rocketmq-broker-logs:/home/rocketmq/logs
+    # brokerIP1：broker 向 NameServer 注册的地址会被客户端直连，不显式设置会注册容器内网 IP，
+    # 容器网络外的客户端连不上且静默超时。conf 拷到 /tmp 再追加，避免容器重启重复追加同一行。
+    command: >
+      sh -c "cp /home/rocketmq/rocketmq-5.3.1/conf/broker.conf /tmp/broker.conf &&
+      echo 'brokerIP1 = ${ROCKETMQ_BROKER_IP:-rocketmq-broker}' >> /tmp/broker.conf &&
+      echo 'autoCreateTopicEnable = true' >> /tmp/broker.conf &&
+      /home/rocketmq/rocketmq-5.3.1/bin/mqbroker -n rocketmq-namesrv:9876 -c /tmp/broker.conf"
+    healthcheck:
+      # 10911 的十六进制是 2A9F（broker 对外服务端口）；同 namesrv，镜像里没有 netstat。
+      # 换端口时记得同步换十六进制值：printf '%X\n' <port>
+      test: ["CMD-SHELL", "grep -q ':2A9F' /proc/net/tcp /proc/net/tcp6 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  xxl-job-admin:
+    image: ${XXL_JOB_IMAGE:-xuxueli/xxl-job-admin:2.4.2}
+    container_name: shop-prod-xxl-job-admin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "${XXL_JOB_PORT:-8180}:8080"
+    environment:
+      TZ: Asia/Shanghai
+      # xxl_job 库的建表 SQL 需先导入一次，见 README「XXL-Job 首次初始化」
+      PARAMS: >-
+        --spring.datasource.url=jdbc:mysql://mysql:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+        --spring.datasource.username=root
+        --spring.datasource.password=${MYSQL_ROOT_PASSWORD}
+        --xxl.job.accessToken=${XXL_JOB_ACCESS_TOKEN:?XXL_JOB_ACCESS_TOKEN 必须在 .env 中显式设置}
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  # ==================== 后端应用 ====================
+  # admin-api 独占 Flyway 迁移权，其余三个应用必须等它迁移完再起，
+  # 否则会在表还不存在时启动、MyBatis 查询直接报表不存在。
+  admin-api:
+    <<: *backend-common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      args:
+        MODULE: shop-admin-api
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-17}
+        JRE_IMAGE: ${JRE_IMAGE:-eclipse-temurin:17-jre}
+    image: shop-platform/admin-api:${IMAGE_TAG:-latest}
+    container_name: shop-prod-admin-api
+    environment:
+      <<: *backend-env
+      PLATFORM_BASE_DOMAIN: ${PLATFORM_BASE_DOMAIN:?PLATFORM_BASE_DOMAIN 必须在 .env 中显式设置}
+      DOMAIN_SKIP_CNAME: ${DOMAIN_SKIP_CNAME:-false}
+      JAVA_OPTS: ${ADMIN_JAVA_OPTS:--Xms512m -Xmx1g}
+    volumes:
+      - certs-data:/data/certs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_started
+    ports:
+      - "${ADMIN_API_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Flyway 要跑 10 个迁移脚本，首启动比其它应用慢，给足 start_period
+      start_period: 120s
+
+  store-api:
+    <<: *backend-common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      args:
+        MODULE: shop-store-api
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-17}
+        JRE_IMAGE: ${JRE_IMAGE:-eclipse-temurin:17-jre}
+    image: shop-platform/store-api:${IMAGE_TAG:-latest}
+    container_name: shop-prod-store-api
+    environment:
+      <<: *backend-env
+      DOMAIN_SKIP_CNAME: ${DOMAIN_SKIP_CNAME:-false}
+      H5_PUBLIC_URL: ${H5_PUBLIC_URL:-}
+      JAVA_OPTS: ${STORE_JAVA_OPTS:--Xms512m -Xmx1g}
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "${STORE_API_PORT:-8082}:8082"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  client-api:
+    <<: *backend-common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      args:
+        MODULE: shop-client-api
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-17}
+        JRE_IMAGE: ${JRE_IMAGE:-eclipse-temurin:17-jre}
+    image: shop-platform/client-api:${IMAGE_TAG:-latest}
+    container_name: shop-prod-client-api
+    environment:
+      <<: *backend-env
+      # 微信支付回调地址必须是公网可达的 https，填错则支付成功但订单永远不变已支付
+      PAY_NOTIFY_BASE_URL: ${PAY_NOTIFY_BASE_URL:?PAY_NOTIFY_BASE_URL 必须在 .env 中显式设置（微信支付回调用，需公网 https）}
+      PAY_TIMEOUT_MINUTES: ${PAY_TIMEOUT_MINUTES:-30}
+      # 消费者端是流量入口，连接池按压测结论给到 50（见 client-api application.yml 注释）
+      DB_POOL_SIZE: ${CLIENT_DB_POOL_SIZE:-50}
+      JAVA_OPTS: ${CLIENT_JAVA_OPTS:--Xms1g -Xmx2g}
+    volumes:
+      - certs-data:/data/certs
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "${CLIENT_API_PORT:-8083}:8083"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  job:
+    <<: *backend-common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      args:
+        MODULE: shop-job
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-17}
+        JRE_IMAGE: ${JRE_IMAGE:-eclipse-temurin:17-jre}
+    image: shop-platform/job:${IMAGE_TAG:-latest}
+    container_name: shop-prod-job
+    environment:
+      <<: *backend-env
+      JAVA_OPTS: ${JOB_JAVA_OPTS:--Xms512m -Xmx1g}
+    volumes:
+      - certs-data:/data/certs
+    depends_on:
+      admin-api:
+        condition: service_healthy
+      xxl-job-admin:
+        condition: service_started
+    # 定时任务不需要对外暴露端口，只在容器网络内被 XXL-Job 调度中心回调
+    expose:
+      - "8084"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  mp:
+    <<: *backend-common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      args:
+        MODULE: shop-mp
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-17}
+        JRE_IMAGE: ${JRE_IMAGE:-eclipse-temurin:17-jre}
+    image: shop-platform/mp:${IMAGE_TAG:-latest}
+    container_name: shop-prod-mp
+    environment:
+      <<: *backend-env
+      STORE_CONSOLE_URL: ${STORE_CONSOLE_URL:?STORE_CONSOLE_URL 必须在 .env 中显式设置（扫码授权完成后回跳商户后台）}
+      JAVA_OPTS: ${MP_JAVA_OPTS:--Xms256m -Xmx512m}
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "${MP_API_PORT:-8085}:8085"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  # ==================== 前端 ====================
+  # 以下三个服务需要 shop-ui/* 与 shop-uniapp 有真实源码才能构建，
+  # 归入 frontend profile，默认 up -d 不会碰它们。
+  admin-web:
+    profiles: ["frontend"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_DIR: shop-ui/admin
+        NGINX_CONF: nginx-admin.conf
+        NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
+        NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
+    image: shop-platform/admin-web:${IMAGE_TAG:-latest}
+    container_name: shop-prod-admin-web
+    restart: unless-stopped
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "${ADMIN_WEB_PORT:-8090}:80"
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  store-web:
+    profiles: ["frontend"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_DIR: shop-ui/store
+        NGINX_CONF: nginx-store.conf
+        NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
+        NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
+    image: shop-platform/store-web:${IMAGE_TAG:-latest}
+    container_name: shop-prod-store-web
+    restart: unless-stopped
+    depends_on:
+      store-api:
+        condition: service_healthy
+    ports:
+      - "${STORE_WEB_PORT:-8091}:80"
+    networks:
+      - shop-net
+    logging: *default-logging
+
+  h5:
+    profiles: ["frontend"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_DIR: shop-uniapp
+        NGINX_CONF: nginx-h5.conf
+        # uni-app 的 H5 构建脚本名与 Vue 项目不同
+        BUILD_CMD: build:h5
+        NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
+        NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
+    image: shop-platform/h5:${IMAGE_TAG:-latest}
+    container_name: shop-prod-h5
+    restart: unless-stopped
+    depends_on:
+      client-api:
+        condition: service_healthy
+    ports:
+      - "${H5_PORT:-8092}:80"
+    networks:
+      - shop-net
+    logging: *default-logging
+
+networks:
+  shop-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  certs-data:
+  redis-data:
+  rocketmq-namesrv-logs:
+  rocketmq-broker-store:
+  rocketmq-broker-logs:

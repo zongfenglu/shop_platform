@@ -1,0 +1,77 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: shop-store-api
+  flyway:
+    enabled: false  # schema 统一由 shop-admin-api 管理，避免多应用并发跑 Flyway 竞争 flyway_schema_history
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3308}/${DB_NAME:shop_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:wchabc123!!}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # 本地开发的 redis 容器没设密码，留空即可；生产 compose 强制要求 REDIS_PASSWORD
+      password: ${REDIS_PASSWORD:}
+  servlet:
+    multipart:
+      # 与 LocalStorageServiceImpl.MAX_SIZE 保持一致。这里是第一道闸（Tomcat 层直接拒绝，
+      # 不占用应用线程），服务里还会再兜一道，防止配置漏改。
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+shop:
+  jwt:
+    secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_secret_key}
+    expire-hours: 12
+  platform:
+    base-domain: ${PLATFORM_BASE_DOMAIN:shop.com}
+  h5-public-url: ${H5_PUBLIC_URL:http://localhost:5175}
+  domain:
+    skip-cname: ${DOMAIN_SKIP_CNAME:true}
+  crypto:
+    aes-key: ${AES_KEY:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_aes_key}
+  storage:
+    # 商户上传的图片落盘目录。docker 下由 compose 挂共享卷到 /data/uploads，
+    # store-api 写、client-api 读（消费者端要能加载装修图）。
+    local-dir: ${STORAGE_DIR:./data/uploads}
+    public-prefix: /uploads
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
+  producer:
+    group: shop-store-api-producer
+
+logging:
+  level:
+    com.shopplatform: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # 只暴露 health：默认放开的 env/configprops/beans 会泄露数据库密码、JWT secret、
+        # 微信支付商户凭证等，容器里这些都是环境变量注入的，等于把密钥挂在公网端点上。
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    # 容器编排只关心"进程是否活着 + 依赖是否可用"，readiness 探针交给 compose healthcheck。
+    defaults:
+      enabled: true

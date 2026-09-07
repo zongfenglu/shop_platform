@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>领券中心</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .cc-tabs { display:flex; background:#fff; border-bottom:1px solid var(--gridline); }
+  .cc-tabs .t { flex:1; text-align:center; padding:11px 0; font-size:12.5px; color:var(--text-secondary); }
+  .cc-tabs .t.active { color:var(--price); font-weight:600; border-bottom:2px solid var(--price); }
+  .cc-card { display:flex; background:#fff; margin:10px 14px; border-radius:10px; box-shadow:var(--shadow-sm); overflow:hidden; }
+  .cc-face { width:104px; flex-shrink:0; background:linear-gradient(135deg,#fff3ec,#ffe4d6); display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--price); position:relative; }
+  .cc-face::after { content:""; position:absolute; right:-1px; top:0; bottom:0; width:1px; background:repeating-linear-gradient(0deg, var(--gridline) 0 5px, transparent 5px 10px); }
+  .cc-face .amt { font-size:20px; font-weight:800; }
+  .cc-face .amt .u { font-size:12px; }
+  .cc-face .cond { font-size:10.5px; color:var(--text-secondary); margin-top:2px; }
+  .cc-body { flex:1; padding:12px 14px; display:flex; flex-direction:column; justify-content:center; }
+  .cc-title { font-size:13px; font-weight:600; }
+  .cc-sub { font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .cc-btn { align-self:flex-end; margin-top:8px; background:var(--price); color:#fff; font-size:11.5px; font-weight:600; padding:5px 16px; border-radius:999px; }
+  .cc-btn.got { background:var(--surface-2); color:var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar"><span class="back" onclick="history.back()">‹</span>领券中心</div>
+  <div class="cc-tabs"><div class="t active">全部</div><div class="t">新人专享</div><div class="t">品类券</div><div class="t">我已领取</div></div>
+
+  <div class="phone-body">
+    <div class="cc-card">
+      <div class="cc-face"><div class="amt"><span class="u">¥</span>30</div><div class="cond">满199可用</div></div>
+      <div class="cc-body">
+        <div class="cc-title">新人专享券</div>
+        <div class="cc-sub">领取后7天内有效 · 全场通用</div>
+      </div>
+      <div style="padding:12px 14px; display:flex; align-items:center;"><div class="cc-btn">领取</div></div>
+    </div>
+
+    <div class="cc-card">
+      <div class="cc-face"><div class="amt">9<span class="u">折</span></div><div class="cond">满99可用</div></div>
+      <div class="cc-body">
+        <div class="cc-title">连衣裙分类专享券</div>
+        <div class="cc-sub">2026-08-01 ~ 2026-08-31 · 限连衣裙分类</div>
+      </div>
+      <div style="padding:12px 14px; display:flex; align-items:center;"><div class="cc-btn">领取</div></div>
+    </div>
+
+    <div class="cc-card">
+      <div class="cc-face"><div class="amt"><span class="u">¥</span>15</div><div class="cond">满99可用</div></div>
+      <div class="cc-body">
+        <div class="cc-title">全场满99减15</div>
+        <div class="cc-sub">领取后即时生效 · 已领取</div>
+      </div>
+      <div style="padding:12px 14px; display:flex; align-items:center;"><div class="cc-btn got">已领取</div></div>
+    </div>
+
+    <div class="cc-card">
+      <div class="cc-face"><div class="amt"><span class="u">¥</span>50</div><div class="cond">满399可用</div></div>
+      <div class="cc-body">
+        <div class="cc-title">大额满减券</div>
+        <div class="cc-sub">2026-08-15 ~ 2026-08-20 · 全场通用</div>
+      </div>
+      <div style="padding:12px 14px; display:flex; align-items:center;"><div class="cc-btn">领取</div></div>
+    </div>
+  </div>
+
+  <div class="m-tabbar">
+    <a href="home.html"><span class="ico">⌂</span>首页</a>
+    <a><span class="ico">▦</span>分类</a>
+    <a href="cart.html"><span class="ico">🛒</span>购物车</a>
+    <a href="my.html"><span class="ico">☺</span>我的</a>
+  </div>
+</div></div>
+</body>
+</html>

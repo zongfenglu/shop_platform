@@ -1,0 +1,88 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: shop-app
+  flyway:
+    enabled: true
+    encoding: UTF-8
+    detect-encoding: true
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3308}/${DB_NAME:shop_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:wchabc123!!}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:15}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+shop:
+  rocketmq:
+    enabled: ${SHOP_ROCKETMQ_ENABLED:false}
+  storage:
+    local-dir: ${STORAGE_DIR:./data/uploads}
+    public-prefix: /uploads
+  backup:
+    dir: ${BACKUP_DIR:./data/backups}
+  jwt:
+    secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_secret_key}
+    expire-hours: 12
+  platform:
+    base-domain: ${PLATFORM_BASE_DOMAIN:shop.com}
+  store-console-url: ${STORE_CONSOLE_URL:http://localhost:5174}
+  h5-public-url: ${H5_PUBLIC_URL:http://localhost:5175}
+  domain:
+    skip-cname: ${DOMAIN_SKIP_CNAME:true}
+  crypto:
+    aes-key: ${AES_KEY:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_aes_key}
+  pay:
+    notify-base-url: ${PAY_NOTIFY_BASE_URL:http://localhost:8083}
+  order:
+    pay-timeout-minutes: ${PAY_TIMEOUT_MINUTES:30}
+  acme:
+    enabled: ${ACME_ENABLED:false}
+    directory-url: ${ACME_DIRECTORY_URL:https://acme-staging-v02.api.letsencrypt.org/directory}
+    email: ${ACME_EMAIL:}
+    cert-dir: ${ACME_CERT_DIR:./data/certs}
+    reload-command: ${ACME_RELOAD_COMMAND:}
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:}
+  producer:
+    group: shop-app-producer
+
+logging:
+  level:
+    com.shopplatform: ${LOG_LEVEL:INFO}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    defaults:
+      enabled: true

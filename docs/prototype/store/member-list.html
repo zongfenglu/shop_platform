@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>会员管理 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .user-cell { display:flex; gap:10px; align-items:center; }
+  .user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#ffb199,#e34948); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+  .kv-row { display:flex; padding:9px 0; font-size:13px; border-bottom:1px dashed var(--gridline); }
+  .kv-row .k { width:96px; color:var(--text-muted); flex-shrink:0; }
+  .drawer-mask { position:fixed; inset:0; background:rgba(11,11,11,.35); z-index:60; display:flex; justify-content:flex-end; }
+  .drawer { width:460px; max-width:92vw; background:#fff; height:100%; overflow-y:auto; box-shadow:var(--shadow-modal); }
+  .drawer-hd { padding:18px 22px; border-bottom:1px solid var(--gridline); display:flex; justify-content:space-between; align-items:center; }
+  .drawer-body { padding:20px 22px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item active" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>会员管理</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">会员管理</div><div class="page-desc">共 3,240 位会员 · 本月新增 186 位</div></div>
+        <button class="btn">导出会员</button>
+      </div>
+
+      <div class="grid grid-4" style="margin-bottom:16px;">
+        <div class="card kpi"><div class="kpi-label">会员总数</div><div class="kpi-value">3,240</div></div>
+        <div class="card kpi"><div class="kpi-label">付费会员占比</div><div class="kpi-value">42%</div></div>
+        <div class="card kpi"><div class="kpi-label">会员余额总额</div><div class="kpi-value">¥86,420</div></div>
+        <div class="card kpi"><div class="kpi-label">会员积分总量</div><div class="kpi-value">1.28M</div></div>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <div style="display:flex; gap:12px;">
+          <input class="form-input" style="width:220px;" placeholder="昵称 / 手机号">
+          <select class="form-select" style="width:140px;"><option>全部等级</option><option>普通会员</option><option>银卡会员</option><option>金卡会员</option></select>
+          <select class="form-select" style="width:140px;"><option>全部来源</option><option>小程序</option><option>H5</option><option>APP</option></select>
+          <button class="btn">查询</button>
+          <div style="flex:1;"></div>
+          <a href="#" class="btn" style="border-color:var(--primary);color:var(--primary);">会员等级设置</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <table class="table">
+          <thead><tr><th>会员</th><th>等级</th><th class="num">累计消费</th><th class="num">余额</th><th class="num">积分</th><th>标签</th><th>注册时间</th><th>操作</th></tr></thead>
+          <tbody id="memberTbody">
+            <tr data-name="张婷" data-mobile="138****2231" data-grade="银卡会员" data-pay="¥4,286.00" data-balance="¥128.50" data-points="1,280" data-tags="高复购,老客户">
+              <td><div class="user-cell"><div class="user-avatar">张</div>张婷 · 138****2231</div></td>
+              <td><span class="tag tag-primary">银卡会员</span></td>
+              <td class="num">¥4,286.00</td>
+              <td class="num">¥128.50</td>
+              <td class="num">1,280</td>
+              <td><span class="tag tag-muted">高复购</span></td>
+              <td>2025-11-02</td>
+              <td><button class="btn btn-sm" onclick="openDrawer(this)">详情</button></td>
+            </tr>
+            <tr data-name="陈昊" data-mobile="159****0042" data-grade="金卡会员" data-pay="¥9,845.00" data-balance="¥0.00" data-points="3,420" data-tags="分销商,高价值">
+              <td><div class="user-cell"><div class="user-avatar" style="background:linear-gradient(135deg,#eda100,#e87ba4);">陈</div>陈昊 · 159****0042</div></td>
+              <td><span class="tag" style="background:#fdf3d8;color:#8a5a00;">金卡会员</span></td>
+              <td class="num">¥9,845.00</td>
+              <td class="num">¥0.00</td>
+              <td class="num">3,420</td>
+              <td><span class="tag tag-good">分销商</span></td>
+              <td>2025-06-18</td>
+              <td><button class="btn btn-sm" onclick="openDrawer(this)">详情</button></td>
+            </tr>
+            <tr data-name="刘思琪" data-mobile="136****8871" data-grade="普通会员" data-pay="¥318.00" data-balance="¥20.00" data-points="86" data-tags="新客">
+              <td><div class="user-cell"><div class="user-avatar" style="background:linear-gradient(135deg,#1baf7a,#2a78d6);">刘</div>刘思琪 · 136****8871</div></td>
+              <td><span class="tag tag-muted">普通会员</span></td>
+              <td class="num">¥318.00</td>
+              <td class="num">¥20.00</td>
+              <td class="num">86</td>
+              <td><span class="tag tag-warning">新客</span></td>
+              <td>2026-08-01</td>
+              <td><button class="btn btn-sm" onclick="openDrawer(this)">详情</button></td>
+            </tr>
+            <tr data-name="周雨萱" data-mobile="187****5523" data-grade="普通会员" data-pay="¥99.00" data-balance="¥0.00" data-points="20" data-tags="售后中">
+              <td><div class="user-cell"><div class="user-avatar" style="background:linear-gradient(135deg,#4a3aa7,#e34948);">周</div>周雨萱 · 187****5523</div></td>
+              <td><span class="tag tag-muted">普通会员</span></td>
+              <td class="num">¥99.00</td>
+              <td class="num">¥0.00</td>
+              <td class="num">20</td>
+              <td><span class="tag tag-serious">售后中</span></td>
+              <td>2026-07-28</td>
+              <td><button class="btn btn-sm" onclick="openDrawer(this)">详情</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted);">
+          <span>共 3,240 条</span><span>‹ 1 2 3 ... 162 ›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="drawer-mask hidden" id="memberDrawer" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="drawer">
+    <div class="drawer-hd">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="user-avatar" id="dAvatar" style="width:40px;height:40px;">张</div>
+        <div><div style="font-weight:700;" id="dName">张婷</div><div style="font-size:12px;color:var(--text-muted);" id="dMobile">138****2231</div></div>
+      </div>
+      <span class="modal-close" onclick="document.getElementById('memberDrawer').classList.add('hidden')">✕</span>
+    </div>
+    <div class="drawer-body">
+      <div class="tabs" style="margin-bottom:16px;">
+        <div class="tab active">基本资料</div>
+        <div class="tab">订单记录</div>
+        <div class="tab">余额明细</div>
+        <div class="tab">积分明细</div>
+      </div>
+      <div class="kv-row"><div class="k">会员等级</div><div id="dGrade">银卡会员</div></div>
+      <div class="kv-row"><div class="k">累计消费</div><div id="dPay">¥4,286.00</div></div>
+      <div class="kv-row"><div class="k">当前余额</div><div id="dBalance">¥128.50</div></div>
+      <div class="kv-row"><div class="k">当前积分</div><div id="dPoints">1,280</div></div>
+      <div class="kv-row"><div class="k">分销身份</div><div>非分销商</div></div>
+      <div class="kv-row"><div class="k">用户标签</div><div id="dTags">高复购、老客户</div></div>
+      <div class="kv-row"><div class="k">注册来源</div><div>微信小程序</div></div>
+      <div class="kv-row"><div class="k">最近登录</div><div>2026-08-10 09:18</div></div>
+
+      <div style="margin-top:20px; display:flex; gap:10px;">
+        <button class="btn btn-sm">调整余额</button>
+        <button class="btn btn-sm">调整积分</button>
+        <button class="btn btn-sm">加标签</button>
+        <button class="btn btn-sm btn-danger">加入黑名单</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDrawer(btn) {
+    const tr = btn.closest('tr');
+    document.getElementById('dName').textContent = tr.dataset.name;
+    document.getElementById('dMobile').textContent = tr.dataset.mobile;
+    document.getElementById('dAvatar').textContent = tr.dataset.name[0];
+    document.getElementById('dGrade').textContent = tr.dataset.grade;
+    document.getElementById('dPay').textContent = tr.dataset.pay;
+    document.getElementById('dBalance').textContent = tr.dataset.balance;
+    document.getElementById('dPoints').textContent = tr.dataset.points;
+    document.getElementById('dTags').textContent = tr.dataset.tags.split(',').join('、');
+    document.getElementById('memberDrawer').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

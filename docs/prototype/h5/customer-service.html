@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>联系客服</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .cs-header {
+    background: #fff; border-bottom: 1px solid var(--gridline);
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .cs-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#ff9143,#e34948); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
+  .cs-header .name { font-size: 13.5px; font-weight: 600; }
+  .cs-header .status { font-size: 11px; color: var(--status-good-text); display:flex; align-items:center; gap:4px; }
+  .cs-header .status::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--status-good); }
+
+  .cs-body { padding: 14px; display:flex; flex-direction:column; gap:14px; }
+  .cs-daymark { text-align:center; font-size:11px; color:var(--text-muted); margin: 4px 0; }
+  .cs-row { display:flex; gap:8px; max-width: 84%; }
+  .cs-row.mine { align-self: flex-end; flex-direction: row-reverse; margin-left:auto; }
+  .cs-row .av { width:28px; height:28px; border-radius:50%; flex-shrink:0; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .cs-row.mine .av { background: var(--primary-bg-2); color: var(--primary-hover); }
+  .cs-bubble { background:#fff; border-radius:10px; padding:9px 12px; font-size:13px; line-height:1.5; box-shadow:var(--shadow-sm); }
+  .cs-row.mine .cs-bubble { background: var(--primary); color:#fff; }
+  .cs-bubble.card { padding:0; overflow:hidden; width:200px; }
+  .cs-bubble.card .card-img { height:110px; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex;align-items:center;justify-content:center;font-size:26px;color:#c9b6a8; }
+  .cs-bubble.card .card-body { padding:8px 10px; }
+  .cs-bubble.card .card-title { font-size:12px; color:var(--text-primary); margin-bottom:4px; }
+  .cs-bubble.card .card-price { color:var(--price); font-weight:700; font-size:13px; }
+  .cs-quick-row { display:flex; gap:8px; padding: 0 14px 10px; overflow-x:auto; }
+  .cs-quick { flex-shrink:0; background:#fff; border:1px solid var(--border-strong); border-radius:999px; padding:6px 14px; font-size:12px; color:var(--text-secondary); white-space:nowrap; }
+  .cs-input-bar { display:flex; align-items:center; gap:8px; padding:10px 14px env(safe-area-inset-bottom); background:#fff; border-top:1px solid var(--gridline); }
+  .cs-input { flex:1; height:36px; border-radius:999px; background:var(--surface-2); border:none; padding:0 14px; font-size:13px; }
+  .cs-send-btn { flex-shrink:0; width:36px; height:36px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; border:none; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+
+  <div class="cs-header">
+    <span class="m-navbar-back" onclick="history.back()" style="font-size:18px; cursor:pointer;">‹</span>
+    <div class="cs-avatar">花</div>
+    <div style="flex:1;">
+      <div class="name">花间集女装旗舰店 · 客服小美</div>
+      <div class="status">在线 · 平均5分钟回复</div>
+    </div>
+  </div>
+
+  <div class="phone-body" style="background:var(--page-bg);">
+    <div class="cs-body">
+      <div class="cs-daymark">今天 14:02</div>
+
+      <div class="cs-row">
+        <div class="av">🎧</div>
+        <div class="cs-bubble">您好呀～欢迎光临花间集女装旗舰店，我是客服小美，有什么可以帮您的吗？😊</div>
+      </div>
+
+      <div class="cs-row mine">
+        <div class="av">我</div>
+        <div class="cs-bubble">你好，我想问下这件连衣裙М码的话身高160穿合适吗</div>
+      </div>
+
+      <div class="cs-row">
+        <div class="av">🎧</div>
+        <div class="cs-bubble card">
+          <div class="card-img">👗</div>
+          <div class="card-body">
+            <div class="card-title">法式碎花连衣裙 2026夏季新款</div>
+            <div class="card-price">¥199.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cs-row">
+        <div class="av">🎧</div>
+        <div class="cs-bubble">您好，160cm的话建议选择M码哦，这款版型是收腰显瘦的，M码适合105-120斤左右的身材～</div>
+      </div>
+
+      <div class="cs-row mine">
+        <div class="av">我</div>
+        <div class="cs-bubble">好的谢谢，那我拍M码的杏色</div>
+      </div>
+
+      <div class="cs-row">
+        <div class="av">🎧</div>
+        <div class="cs-bubble">好的亲，拍下后我们会尽快为您安排发货，感谢您的支持～</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cs-quick-row">
+    <div class="cs-quick">物流什么时候到</div>
+    <div class="cs-quick">可以退换货吗</div>
+    <div class="cs-quick">有优惠券吗</div>
+    <div class="cs-quick">人工客服</div>
+  </div>
+  <div class="cs-input-bar">
+    <input class="cs-input" placeholder="请输入您的问题">
+    <button class="cs-send-btn">➤</button>
+  </div>
+</div></div>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>秒杀专场</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .sk-hero { background:linear-gradient(135deg,#2b2b2b,#3d1a1a); color:#fff; padding:16px 14px 20px; }
+  .sk-hero-top { display:flex; align-items:center; justify-content:space-between; }
+  .sk-hero-title { font-size:18px; font-weight:800; }
+  .sk-countdown { display:flex; align-items:center; gap:4px; font-size:11px; }
+  .sk-countdown .box { background:#e34948; border-radius:4px; padding:2px 6px; font-variant-numeric:tabular-nums; font-weight:700; }
+  .sk-slot-row { display:flex; gap:10px; margin-top:14px; overflow-x:auto; }
+  .sk-slot { flex-shrink:0; text-align:center; padding:8px 16px; border-radius:10px; background:rgba(255,255,255,.08); font-size:12px; }
+  .sk-slot.active { background:#e34948; font-weight:700; }
+  .sk-slot .l { font-size:10px; opacity:.7; margin-top:2px; }
+  .sk-goods-card { display:flex; gap:12px; background:#fff; margin:10px 14px; border-radius:10px; padding:12px; box-shadow:var(--shadow-sm); }
+  .sk-ph { width:76px; height:76px; border-radius:8px; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex; align-items:center; justify-content:center; font-size:26px; color:#c9b6a8; flex-shrink:0; }
+  .sk-progress-track { height:6px; border-radius:3px; background:var(--surface-2); overflow:hidden; margin-top:8px; }
+  .sk-progress-fill { height:100%; background:linear-gradient(90deg,#ffb199,#e34948); border-radius:3px; }
+  .sk-buy-btn { background:linear-gradient(135deg,#ff9143,#e34948); color:#fff; font-size:12px; font-weight:700; padding:6px 16px; border-radius:999px; border:none; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar" style="background:#2b2b2b; color:#fff;"><span class="back" onclick="history.back()" style="color:#fff;">‹</span>限时秒杀</div>
+
+  <div class="phone-body" style="background:#fff;">
+    <div class="sk-hero">
+      <div class="sk-hero-top">
+        <div class="sk-hero-title">⚡ 10:00 场 疯狂来袭</div>
+        <div class="sk-countdown">距结束<span class="box">01</span>:<span class="box">28</span>:<span class="box">36</span></div>
+      </div>
+      <div class="sk-slot-row">
+        <div class="sk-slot active">10:00<div class="l">抢购中</div></div>
+        <div class="sk-slot">14:00<div class="l">即将开始</div></div>
+        <div class="sk-slot">18:00<div class="l">即将开始</div></div>
+        <div class="sk-slot">21:00<div class="l">即将开始</div></div>
+      </div>
+    </div>
+
+    <div class="sk-goods-card">
+      <div class="sk-ph">👗</div>
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:500;">法式碎花连衣裙 · 杏色/M</div>
+        <div style="display:flex; align-items:baseline; gap:6px; margin-top:6px;">
+          <span class="price-tag" style="font-size:18px;"><span class="cny">¥</span>129</span>
+          <span class="price-old">¥199</span>
+          <button class="sk-buy-btn" style="margin-left:auto;">立即抢购</button>
+        </div>
+        <div class="sk-progress-track"><div class="sk-progress-fill" style="width:68%;"></div></div>
+        <div style="font-size:10.5px; color:var(--text-muted); margin-top:4px;">已抢 68% · 剩余 32 件</div>
+      </div>
+    </div>
+
+    <div class="sk-goods-card">
+      <div class="sk-ph">🧣</div>
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:500;">真丝方巾礼盒装</div>
+        <div style="display:flex; align-items:baseline; gap:6px; margin-top:6px;">
+          <span class="price-tag" style="font-size:18px; color:var(--text-muted);"><span class="cny">¥</span>59</span>
+          <span class="price-old">¥99</span>
+          <button class="sk-buy-btn" style="margin-left:auto; background:var(--surface-2); color:var(--text-muted);" disabled>已抢光</button>
+        </div>
+        <div class="sk-progress-track"><div class="sk-progress-fill" style="width:100%;"></div></div>
+        <div style="font-size:10.5px; color:var(--text-muted); margin-top:4px;">已抢 100% · 售罄</div>
+      </div>
+    </div>
+
+    <div class="sk-goods-card">
+      <div class="sk-ph">🧶</div>
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:500;">小香风针织衫 · 米白/S</div>
+        <div style="display:flex; align-items:baseline; gap:6px; margin-top:6px;">
+          <span class="price-tag" style="font-size:18px;"><span class="cny">¥</span>159</span>
+          <span class="price-old">¥219</span>
+          <button class="sk-buy-btn" style="margin-left:auto;">立即抢购</button>
+        </div>
+        <div class="sk-progress-track"><div class="sk-progress-fill" style="width:30%;"></div></div>
+        <div style="font-size:10.5px; color:var(--text-muted); margin-top:4px;">已抢 30% · 剩余 56 件</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-tabbar">
+    <a href="home.html"><span class="ico">⌂</span>首页</a>
+    <a><span class="ico">▦</span>分类</a>
+    <a href="cart.html"><span class="ico">🛒</span>购物车</a>
+    <a href="my.html"><span class="ico">☺</span>我的</a>
+  </div>
+</div></div>
+</body>
+</html>

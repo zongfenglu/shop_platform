@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>法式碎花连衣裙</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .g-gallery { width:100%; aspect-ratio:1/1; background:linear-gradient(135deg,#f6e9e2,#ecd7cb); display:flex; align-items:center; justify-content:center; font-size:64px; color:#d7bfae; position:relative; }
+  .g-dots { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); font-size:11px; background:rgba(0,0,0,.35); color:#fff; padding:2px 8px; border-radius:999px; }
+  .g-info { background:#fff; padding:14px 16px; }
+  .g-price-row { display:flex; align-items:baseline; gap:8px; margin-bottom:6px; }
+  .g-price { color:var(--price); font-size:24px; font-weight:700; }
+  .g-price .cny { font-size:14px; }
+  .g-title { font-size:15.5px; font-weight:600; line-height:1.5; margin-bottom:6px; }
+  .g-sub { font-size:12px; color:var(--text-muted); }
+  .g-service-row { display:flex; gap:14px; padding:12px 16px; background:#fff; margin-top:8px; font-size:12px; color:var(--text-secondary); }
+  .g-panel { background:#fff; margin-top:8px; padding:14px 16px; }
+  .g-panel .row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:13px; border-bottom:1px solid var(--gridline); }
+  .g-panel .row:last-child { border-bottom:none; }
+  .review-item { padding:12px 0; border-bottom:1px solid var(--gridline); }
+  .review-item:last-child { border-bottom:none; }
+  .sheet-mask { position:fixed; inset:0; background:rgba(11,11,11,.4); display:flex; align-items:flex-end; z-index:50; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; }
+  .sheet-panel { background:#fff; border-radius:16px 16px 0 0; padding:16px; max-height:70%; overflow-y:auto; }
+  .spec-opt { display:inline-flex; align-items:center; padding:7px 14px; border:1px solid var(--border-strong); border-radius:999px; font-size:12.5px; margin:0 8px 8px 0; }
+  .spec-opt.selected { border-color:var(--primary); background:var(--primary-bg); color:var(--primary-hover); font-weight:600; }
+  .spec-opt.disabled { color:var(--text-muted); background:var(--surface-2); text-decoration: line-through; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar"><span class="back" onclick="history.back()">‹</span>商品详情<span class="action">⋯ 分享</span></div>
+
+  <div class="phone-body">
+    <div class="g-gallery">👗<div class="g-dots">1/5</div></div>
+
+    <div class="g-info">
+      <div class="g-price-row">
+        <div class="g-price"><span class="cny">¥</span>199<span style="font-size:14px;">.00</span></div>
+        <div class="price-old" style="font-size:13px;">¥259.00</div>
+        <div class="tag" style="background:#fff0e8;color:var(--price);margin-left:auto;">已售 386</div>
+      </div>
+      <div class="g-title">法式碎花连衣裙 2026夏季新款 收腰显瘦 雪纺面料</div>
+      <div class="g-sub">配送至 浙江杭州 · 满199包邮</div>
+    </div>
+
+    <div class="g-service-row">
+      <span>✓ 七天无理由退换</span><span>✓ 假一赔十</span><span>✓ 急速发货</span>
+    </div>
+
+    <div class="g-panel" onclick="openSheet()">
+      <div class="row">
+        <span style="color:var(--text-muted);">选择</span>
+        <span style="flex:1;text-align:right;padding-right:8px;">杏色 / M · 共3色3码</span>
+        <span style="color:var(--text-muted);">›</span>
+      </div>
+    </div>
+
+    <div class="g-panel">
+      <div class="row"><span style="color:var(--text-muted);">物流</span><span>满199元包邮 · 顺丰速运</span></div>
+      <div class="row"><span style="color:var(--text-muted);">服务</span><span>七天无理由 · 假一赔十</span></div>
+    </div>
+
+    <div class="g-panel" onclick="location.href='goods-comment.html'">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-weight:600;font-size:13.5px;">商品评价 (428)</span>
+        <span style="font-size:12px;color:var(--text-muted);">好评率 98% ›</span>
+      </div>
+      <div class="review-item">
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:12.5px;font-weight:500;">张** </span><span class="rating">★★★★★</span></div>
+        <div style="font-size:12.5px;color:var(--text-secondary);margin-top:4px;">面料很好，版型也很显瘦，杏色很百搭，好评！</div>
+      </div>
+      <div class="review-item">
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:12.5px;font-weight:500;">李**</span><span class="rating">★★★★★</span></div>
+        <div style="font-size:12.5px;color:var(--text-secondary);margin-top:4px;">发货很快，穿着很舒服，下次还会回购～</div>
+      </div>
+    </div>
+
+    <div class="g-panel">
+      <div style="font-weight:600;font-size:13.5px;margin-bottom:8px;">图文详情</div>
+      <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.8;">
+        法式复古碎花设计，雪纺面料垂坠感强，收腰版型显瘦，适合通勤与约会场景穿着。<br>
+        面料成分：95%聚酯纤维 + 5%氨纶<br>
+        洗涤说明：建议手洗，避免暴晒
+      </div>
+    </div>
+  </div>
+
+  <div class="m-bottom-bar">
+    <a href="../h5/home.html" class="m-btn m-btn-outline" style="flex-direction:column;height:auto;padding:4px 14px;font-size:10px;">⌂<br>首页</a>
+    <a href="cart.html" class="m-btn m-btn-outline" style="flex-direction:column;height:auto;padding:4px 14px;font-size:10px;">🛒<br>购物车</a>
+    <button class="m-btn m-btn-outline" style="flex:1;" onclick="openSheet('cart')">加入购物车</button>
+    <button class="m-btn m-btn-warm" onclick="openSheet('buy')">立即购买</button>
+  </div>
+  <a href="customer-service.html" class="m-cs-float" style="bottom:70px;" title="联系客服">🎧</a>
+</div></div>
+
+<div class="sheet-mask hidden" id="specSheet">
+  <div class="sheet">
+    <div class="sheet-panel">
+      <div style="display:flex; gap:12px; margin-bottom:16px;">
+        <div style="width:72px;height:72px;border-radius:10px;background:linear-gradient(135deg,#f6e9e2,#ecd7cb);display:flex;align-items:center;justify-content:center;font-size:28px;color:#d7bfae;">👗</div>
+        <div>
+          <div class="g-price" style="font-size:20px;">¥199.00</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">库存 428 件 · 已选：杏色 M</div>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;">颜色</div>
+      <div style="margin-bottom:14px;">
+        <span class="spec-opt selected" onclick="pick(this)">杏色</span>
+        <span class="spec-opt" onclick="pick(this)">黑色</span>
+        <span class="spec-opt" onclick="pick(this)">豆沙绿</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;">尺码</div>
+      <div style="margin-bottom:14px;">
+        <span class="spec-opt" onclick="pick(this)">S</span>
+        <span class="spec-opt selected" onclick="pick(this)">M</span>
+        <span class="spec-opt" onclick="pick(this)">L</span>
+        <span class="spec-opt disabled">XL 售罄</span>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <span style="font-size:12.5px;color:var(--text-secondary);">购买数量</span>
+        <div class="stepper"><button onclick="stepQty(-1)">－</button><span class="qty" id="qty">1</span><button onclick="stepQty(1)">＋</button></div>
+      </div>
+      <button class="m-btn m-btn-warm" style="width:100%;" id="sheetConfirmBtn" onclick="confirmSheet()">加入购物车</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let sheetMode = 'cart';
+  function openSheet(mode) {
+    sheetMode = mode || 'cart';
+    document.getElementById('sheetConfirmBtn').textContent = sheetMode === 'buy' ? '立即购买' : '加入购物车';
+    document.getElementById('sheetConfirmBtn').className = 'm-btn ' + (sheetMode === 'buy' ? 'm-btn-warm' : 'm-btn-solid');
+    document.getElementById('specSheet').classList.remove('hidden');
+  }
+  document.getElementById('specSheet').addEventListener('click', e => { if (e.target.id === 'specSheet') e.currentTarget.classList.add('hidden'); });
+  function pick(el) {
+    el.parentElement.querySelectorAll('.spec-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function stepQty(d) {
+    const el = document.getElementById('qty');
+    el.textContent = Math.max(1, +el.textContent + d);
+  }
+  function confirmSheet() {
+    location.href = sheetMode === 'buy' ? 'checkout.html' : 'cart.html';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>页面装修 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  body { overflow:hidden; }
+  .editor-shell { display:flex; height:100vh; }
+  .editor-topbar {
+    position:fixed; top:0; left:0; right:0; height:52px; background:var(--surface); border-bottom:1px solid var(--gridline);
+    display:flex; align-items:center; padding:0 16px; gap:12px; z-index:20;
+  }
+  .editor-body { display:flex; flex:1; margin-top:52px; height:calc(100vh - 52px); }
+
+  .comp-panel { width:220px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--gridline); overflow-y:auto; padding:14px; }
+  .comp-group-title { font-size:11.5px; color:var(--text-muted); font-weight:600; margin:14px 0 8px; }
+  .comp-group-title:first-child { margin-top:0; }
+  .comp-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .comp-item {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 6px; text-align:center;
+    font-size:11.5px; color:var(--text-secondary); cursor:grab;
+  }
+  .comp-item .ico { font-size:18px; display:block; margin-bottom:4px; }
+  .comp-item:hover { border-color:var(--primary); color:var(--primary); }
+  .comp-item.locked { opacity:.4; cursor:not-allowed; }
+  .comp-item.locked:hover { border-color:var(--border); color:var(--text-secondary); }
+  .lock-badge { font-size:9px; background:var(--surface-2); color:var(--text-muted); border-radius:4px; padding:0 4px; margin-left:2px; }
+
+  .canvas-wrap { flex:1; background:var(--page-bg); display:flex; align-items:flex-start; justify-content:center; padding:24px; overflow-y:auto; }
+  .canvas-phone { width:360px; background:#fff; border-radius:28px; border:8px solid #222; box-shadow:var(--shadow-modal); overflow:hidden; position:relative; }
+  .canvas-statusbar { height:26px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 16px; font-size:10px; font-weight:600; }
+  .canvas-scroll { height:680px; overflow-y:auto; background:var(--page-bg); }
+  .canvas-scroll::-webkit-scrollbar { display:none; }
+
+  .block { position:relative; cursor:pointer; }
+  .block:hover { outline:1px dashed var(--primary); }
+  .block.selected { outline:2px solid var(--primary); }
+  .block-toolbar {
+    position:absolute; top:-24px; right:0; display:none; gap:4px; z-index:5;
+  }
+  .block.selected .block-toolbar { display:flex; }
+  .block-toolbar button {
+    width:22px; height:22px; border-radius:4px; border:none; background:var(--primary); color:#fff; font-size:11px; cursor:pointer;
+  }
+
+  .props-panel { width:280px; flex-shrink:0; background:var(--surface); border-left:1px solid var(--gridline); overflow-y:auto; padding:18px; }
+  .props-empty { color:var(--text-muted); font-size:12.5px; text-align:center; padding-top:60px; }
+  .prop-group-title { font-size:13px; font-weight:700; margin-bottom:14px; }
+  .color-swatch { width:22px; height:22px; border-radius:5px; border:1px solid var(--border-strong); display:inline-block; cursor:pointer; }
+
+  .cs-float-btn {
+    position:absolute; right:14px; bottom:86px; width:48px; height:48px; border-radius:50%;
+    background:var(--surface); box-shadow:var(--shadow-md); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:20px; z-index:6; cursor:pointer;
+  }
+  .cs-float-btn.selected-outline { outline:2px solid var(--primary); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<div class="editor-topbar">
+  <a href="diy-page-list.html" class="btn btn-sm">‹ 返回页面列表</a>
+  <div id="pageTitle" style="font-size:13px; font-weight:600;">首页装修</div>
+  <div class="tag tag-muted">草稿未发布</div>
+  <div style="flex:1;"></div>
+  <select class="form-select" style="width:160px; height:30px;"><option>行业模板：极简风</option><option>行业模板：清新风</option><option>行业模板：国潮风</option></select>
+  <button class="btn btn-sm">预览（扫码）</button>
+  <button class="btn btn-sm">存为模板</button>
+  <button class="btn btn-sm btn-primary">发布</button>
+  <div data-theme-switcher></div>
+</div>
+
+<div class="editor-body">
+  <!-- 左侧组件库 -->
+  <div class="comp-panel">
+    <div class="comp-group-title">基础组件</div>
+    <div class="comp-grid">
+      <div class="comp-item" draggable="true"><span class="ico">🖼</span>轮播图</div>
+      <div class="comp-item" draggable="true"><span class="ico">▦</span>导航宫格</div>
+      <div class="comp-item" draggable="true"><span class="ico">📢</span>公告</div>
+      <div class="comp-item" draggable="true"><span class="ico">🔍</span>搜索栏</div>
+      <div class="comp-item" draggable="true"><span class="ico">➖</span>辅助线</div>
+      <div class="comp-item" draggable="true"><span class="ico">📝</span>富文本</div>
+    </div>
+    <div class="comp-group-title">商品组件</div>
+    <div class="comp-grid">
+      <div class="comp-item" draggable="true"><span class="ico">🛍</span>商品组</div>
+      <div class="comp-item" draggable="true"><span class="ico">🏷</span>优惠券组</div>
+    </div>
+    <div class="comp-group-title">营销组件 <span class="lock-badge">套餐限制</span></div>
+    <div class="comp-grid">
+      <div class="comp-item" draggable="true"><span class="ico">⚡</span>秒杀</div>
+      <div class="comp-item" draggable="true"><span class="ico">👥</span>拼团</div>
+      <div class="comp-item" draggable="true"><span class="ico">🔪</span>砍价</div>
+      <div class="comp-item locked" title="需升级到旗舰版"><span class="ico">📺</span>直播</div>
+      <div class="comp-item locked" title="需升级到旗舰版"><span class="ico">🎬</span>视频</div>
+    </div>
+    <div class="comp-group-title">页面模板</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div class="comp-item" style="text-align:left; padding:8px 10px;">📋 极简风首页模板</div>
+      <div class="comp-item" style="text-align:left; padding:8px 10px;">📋 大促活动模板</div>
+    </div>
+    <div class="comp-group-title">全局悬浮组件</div>
+    <div class="comp-grid">
+      <div class="comp-item" draggable="true" onclick="toggleCsButton()"><span class="ico">🎧</span>客服</div>
+    </div>
+  </div>
+
+  <!-- 中间画布 -->
+  <div class="canvas-wrap">
+    <div class="canvas-phone">
+      <div class="canvas-statusbar"><span>9:41</span><span>●●● 🔋</span></div>
+      <div class="canvas-scroll">
+
+        <div class="block" onclick="selectBlock(this,'search')">
+          <div class="block-toolbar"><button>↑</button><button>↓</button><button>✕</button></div>
+          <div class="m-search" style="margin:10px 14px;">🔍 搜索心动好物</div>
+        </div>
+
+        <div class="block selected" onclick="selectBlock(this,'banner')">
+          <div class="block-toolbar"><button>↑</button><button>↓</button><button>✕</button></div>
+          <div class="m-banner" style="margin:0 14px 14px;">
+            <div style="height:140px;background:linear-gradient(135deg,#ffb199,#ff8a65 60%, #e34948);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;">2026 秋季新品上市</div>
+          </div>
+        </div>
+
+        <div class="block" onclick="selectBlock(this,'nav')">
+          <div class="block-toolbar"><button>↑</button><button>↓</button><button>✕</button></div>
+          <div class="m-nav-grid" style="grid-template-columns:repeat(5,1fr);">
+            <div class="item"><div class="ico-box" style="width:40px;height:40px;font-size:18px;">👗</div>新款</div>
+            <div class="item"><div class="ico-box" style="width:40px;height:40px;font-size:18px;">🧥</div>外套</div>
+            <div class="item"><div class="ico-box" style="width:40px;height:40px;font-size:18px;">👖</div>裤装</div>
+            <div class="item"><div class="ico-box" style="width:40px;height:40px;font-size:18px;">🧣</div>配饰</div>
+            <div class="item"><div class="ico-box" style="width:40px;height:40px;font-size:18px;">🔥</div>秒杀</div>
+          </div>
+        </div>
+
+        <div class="block" onclick="selectBlock(this,'goods')">
+          <div class="block-toolbar"><button>↑</button><button>↓</button><button>✕</button></div>
+          <div class="section-hd" style="padding:6px 14px 8px;"><div style="font-size:14px;font-weight:700;">为你精选</div></div>
+          <div class="m-goods-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="m-goods-card"><div class="ph" style="font-size:20px;">👗</div><div class="info"><div class="title" style="font-size:11.5px;">法式碎花连衣裙</div><div class="price-row"><span class="price-tag" style="font-size:13px;">¥199</span></div></div></div>
+            <div class="m-goods-card"><div class="ph" style="font-size:20px;">🧥</div><div class="info"><div class="title" style="font-size:11.5px;">羊毛混纺加厚大衣</div><div class="price-row"><span class="price-tag" style="font-size:13px;">¥459</span></div></div></div>
+          </div>
+        </div>
+
+        <div class="block" onclick="selectBlock(this,'bargain')">
+          <div class="block-toolbar"><button>↑</button><button>↓</button><button>✕</button></div>
+          <div style="margin:0 14px 14px; border-radius:10px; overflow:hidden; background:linear-gradient(135deg,#2b2b2b,#3d1a1a); padding:12px 14px; color:#fff;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:13px; font-weight:700;">🔪 砍价免费拿</div>
+              <div style="font-size:10.5px; opacity:.8;">查看更多 ›</div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <div style="flex:1; background:rgba(255,255,255,.08); border-radius:8px; padding:8px; text-align:center;">
+                <div style="width:100%; aspect-ratio:1/1; border-radius:6px; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex; align-items:center; justify-content:center; font-size:18px; color:#c9b6a8;">🧥</div>
+                <div style="font-size:9.5px; margin-top:4px; opacity:.85;">最低¥399</div>
+              </div>
+              <div style="flex:1; background:rgba(255,255,255,.08); border-radius:8px; padding:8px; text-align:center;">
+                <div style="width:100%; aspect-ratio:1/1; border-radius:6px; background:linear-gradient(135deg,#f6e9e2,#ecd7cb); display:flex; align-items:center; justify-content:center; font-size:18px; color:#d7bfae;">👗</div>
+                <div style="font-size:9.5px; margin-top:4px; opacity:.85;">最低¥129</div>
+              </div>
+              <div style="flex:1; background:rgba(255,255,255,.08); border-radius:8px; padding:8px; text-align:center;">
+                <div style="width:100%; aspect-ratio:1/1; border-radius:6px; background:linear-gradient(135deg,#eef1f5,#e3e8ee); display:flex; align-items:center; justify-content:center; font-size:18px; color:#b7bec7;">🧣</div>
+                <div style="font-size:9.5px; margin-top:4px; opacity:.85;">最低¥59</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="cs-float-btn" id="csFloatBtn" onclick="event.stopPropagation(); selectBlock(this,'cs')">🎧</div>
+    </div>
+  </div>
+
+  <!-- 右侧属性面板 -->
+  <div class="props-panel" id="propsPanel">
+    <div class="prop-group-title">轮播图</div>
+    <div class="form-item">
+      <label class="form-label">图片列表</label>
+      <div style="display:flex; gap:8px;">
+        <div style="width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,#ffb199,#e34948);"></div>
+        <div style="width:56px;height:56px;border-radius:8px;border:1px dashed var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:20px;">＋</div>
+      </div>
+    </div>
+    <div class="form-item">
+      <label class="form-label">跳转链接</label>
+      <select class="form-select"><option>商品详情页</option><option>自定义页面</option><option>分类页</option><option>不跳转</option></select>
+    </div>
+    <div class="form-item">
+      <label class="form-label">高度</label>
+      <select class="form-select"><option>自适应</option><option>150px</option><option>180px</option><option>220px</option></select>
+    </div>
+    <div class="form-item">
+      <label class="form-label">指示点样式</label>
+      <div style="display:flex; gap:8px;">
+        <span class="color-swatch" style="background:#fff;"></span>
+        <span class="color-swatch" style="background:#e34948; box-shadow:0 0 0 2px var(--primary-bg-2);"></span>
+        <span class="color-swatch" style="background:#2a78d6;"></span>
+      </div>
+    </div>
+    <div class="form-item">
+      <label class="form-label">上下边距</label>
+      <div class="form-row"><input class="form-input" value="0"><input class="form-input" value="14"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function selectBlock(el, type) {
+    document.querySelectorAll('.block').forEach(b => b.classList.remove('selected'));
+    document.getElementById('csFloatBtn').classList.remove('selected-outline');
+    if (type === 'cs') {
+      el.classList.add('selected-outline');
+    } else {
+      el.classList.add('selected');
+    }
+    const panel = document.getElementById('propsPanel');
+    const configs = {
+      search: '<div class="prop-group-title">搜索栏</div><div class="form-item"><label class="form-label">占位文字</label><input class="form-input" value="搜索心动好物"></div><div class="form-item"><label class="form-label">吸顶</label><select class="form-select"><option>开启</option><option>关闭</option></select></div>',
+      banner: document.getElementById('propsPanel').innerHTML,
+      nav: '<div class="prop-group-title">导航宫格</div><div class="form-item"><label class="form-label">每行数量</label><select class="form-select"><option>5个</option><option>4个</option><option>3个</option></select></div><div class="form-item"><label class="form-label">导航项</label><div class="form-hint">点击画布中的图标可编辑单项文字与链接</div></div>',
+      goods: '<div class="prop-group-title">商品组</div><div class="form-item"><label class="form-label">展示样式</label><select class="form-select"><option>双列瀑布流</option><option>横向滑动</option><option>单列大图</option></select></div><div class="form-item"><label class="form-label">数据来源</label><select class="form-select"><option>指定分类：全部</option><option>指定商品</option><option>销量排序</option></select></div><div class="form-item"><label class="form-label">展示数量</label><input class="form-input" value="6"></div>',
+      bargain: '<div class="prop-group-title">砍价 <span class="lock-badge">套餐限制</span></div><div class="form-item"><label class="form-label">关联砍价活动</label><select class="form-select"><option>羊毛混纺加厚大衣（底价¥399）</option><option>法式碎花连衣裙（底价¥129）</option><option>真丝方巾礼盒装（底价¥59）</option><option>＋ 新建砍价活动</option></select></div><div class="form-item"><label class="form-label">展示样式</label><select class="form-select"><option>横向3列</option><option>横向滑动</option><option>单品大图</option></select></div><div class="form-item"><label class="form-label">背景样式</label><div style="display:flex; gap:8px;"><span class="color-swatch" style="background:#2b2b2b; box-shadow:0 0 0 2px var(--primary-bg-2);"></span><span class="color-swatch" style="background:#e34948;"></span><span class="color-swatch" style="background:#fff; border:1px solid var(--border-strong);"></span></div></div><div class="form-item"><label class="form-label">标题文案</label><input class="form-input" value="🔪 砍价免费拿"></div><div class="form-hint">砍价活动需先在「营销中心 → 砍价」创建，此处仅做关联展示</div>',
+      cs: '<div class="prop-group-title">客服</div>' +
+        '<div class="form-item"><label class="form-label">绑定客服</label><select class="form-select"><option>跟随「设置 → 客服」配置</option><option>微信客服（独立配置）</option><option>企业微信（独立配置）</option></select><div class="form-hint">默认跟随全局客服设置；选择独立配置可为本页单独指定接待客服</div></div>' +
+        '<div class="form-item"><label class="form-label">悬浮位置</label><div class="form-radio-group"><div class="form-radio-card selected" onclick="selRadio(this)"><div class="title">右下角</div><div class="desc">默认位置</div></div><div class="form-radio-card" onclick="selRadio(this)"><div class="title">左下角</div><div class="desc">避开右侧内容</div></div></div></div>' +
+        '<div class="form-item"><label class="form-label">图标样式</label><div style="display:flex; gap:8px;"><span class="color-swatch" style="background:var(--surface); display:flex;align-items:center;justify-content:center; box-shadow:0 0 0 2px var(--primary-bg-2);">🎧</span><span class="color-swatch" style="background:#2b2b2b; display:flex;align-items:center;justify-content:center;">🎧</span><span class="color-swatch" style="background:var(--primary); display:flex;align-items:center;justify-content:center;">🎧</span></div></div>' +
+        '<div class="form-item"><label class="form-label">按钮文案（选填）</label><input class="form-input" placeholder="例如：在线咨询"></div>' +
+        '<div class="form-item"><label class="form-label">展示范围</label><select class="form-select"><option>全部页面常驻</option><option>仅本页显示</option></select></div>' +
+        '<div class="form-hint">点击后跳转至客服会话页面，与当前小程序绑定的客服账号进行沟通</div>'
+    };
+    if (type !== 'banner') panel.innerHTML = configs[type];
+  }
+
+  function selRadio(el) {
+    el.parentElement.querySelectorAll('.form-radio-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function toggleCsButton() {
+    document.getElementById('csFloatBtn').click();
+  }
+
+  (function () {
+    const p = new URLSearchParams(location.search);
+    const name = p.get('name');
+    if (name) document.getElementById('pageTitle').textContent = name;
+  })();
+</script>
+</body>
+</html>

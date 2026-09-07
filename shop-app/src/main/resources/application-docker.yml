@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:shop_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:}
+
+logging:
+  level:
+    com.shopplatform: ${LOG_LEVEL:INFO}

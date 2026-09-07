@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>我的套餐 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .quota-row { margin-bottom:18px; }
+  .quota-row:last-child { margin-bottom:0; }
+  .quota-hd { display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+  .quota-hd .n { font-variant-numeric:tabular-nums; color:var(--text-secondary); }
+  .quota-track { height:8px; border-radius:4px; background:var(--surface-2); overflow:hidden; }
+  .quota-fill { height:100%; border-radius:4px; background:var(--series-1); }
+  .quota-fill.warn { background:var(--status-warning); }
+  .quota-fill.danger { background:var(--status-critical); }
+  .plan-card { border:1px solid var(--border); border-radius:var(--r-md); padding:20px; position:relative; }
+  .plan-card.current { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-bg-2); }
+  .plan-card .badge-current { position:absolute; top:-10px; left:16px; background:var(--primary); color:#fff; font-size:11px; padding:2px 10px; border-radius:999px; }
+  .plan-price { font-size:26px; font-weight:800; margin:10px 0; }
+  .plan-price .unit { font-size:12px; color:var(--text-muted); font-weight:500; }
+  .plan-feat { font-size:12.5px; color:var(--text-secondary); padding:5px 0; display:flex; gap:6px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item active" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>我的套餐</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="banner-expire">
+        <span>⏰ 当前套餐将于 <b>2027-08-15</b> 到期，剩余 371 天，建议提前续费避免影响店铺经营</span>
+        <button class="btn btn-sm btn-primary">立即续费</button>
+      </div>
+
+      <div class="grid grid-2" style="margin-bottom:20px;">
+        <div class="card card-pad">
+          <div class="card-title">当前套餐</div>
+          <div style="display:flex; align-items:baseline; gap:8px; margin:10px 0;">
+            <span style="font-size:22px; font-weight:800;">标准版</span>
+            <span class="tag tag-good tag-dot">正常使用</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:16px;">到期时间：2027-08-15 · 订购周期：12个月</div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary">续费</button>
+            <button class="btn">升级套餐</button>
+            <button class="btn">订购记录</button>
+          </div>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-title">配额用量</div>
+          <div class="quota-row">
+            <div class="quota-hd"><span>商品数</span><span class="n">862 / 5,000</span></div>
+            <div class="quota-track"><div class="quota-fill" style="width:17%;"></div></div>
+          </div>
+          <div class="quota-row">
+            <div class="quota-hd"><span>员工账号</span><span class="n">7 / 10</span></div>
+            <div class="quota-track"><div class="quota-fill warn" style="width:70%;"></div></div>
+          </div>
+          <div class="quota-row">
+            <div class="quota-hd"><span>存储空间</span><span class="n">6.2GB / 20GB</span></div>
+            <div class="quota-track"><div class="quota-fill" style="width:31%;"></div></div>
+          </div>
+          <div class="quota-row">
+            <div class="quota-hd"><span>本月短信</span><span class="n">960 / 1,000</span></div>
+            <div class="quota-track"><div class="quota-fill danger" style="width:96%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-title" style="font-size:16px; margin-bottom:14px;">升级套餐</div>
+      <div class="grid grid-3" style="margin-bottom:20px;">
+        <div class="plan-card">
+          <div style="font-weight:700; font-size:15px;">基础版</div>
+          <div class="plan-price">¥99<span class="unit">/月</span></div>
+          <div class="plan-feat">✓ 商品数 500</div>
+          <div class="plan-feat">✓ 员工账号 3</div>
+          <div class="plan-feat" style="color:var(--text-muted);">✕ 分销体系</div>
+          <div class="plan-feat" style="color:var(--text-muted);">✕ 门店自提</div>
+          <button class="btn btn-block" style="margin-top:14px;" disabled>低于当前套餐</button>
+        </div>
+        <div class="plan-card current">
+          <div class="badge-current">当前套餐</div>
+          <div style="font-weight:700; font-size:15px;">标准版</div>
+          <div class="plan-price">¥299<span class="unit">/月</span></div>
+          <div class="plan-feat">✓ 商品数 5,000</div>
+          <div class="plan-feat">✓ 员工账号 10</div>
+          <div class="plan-feat">✓ 营销中心全功能</div>
+          <div class="plan-feat">✓ 分销体系（二级）</div>
+          <button class="btn btn-block" style="margin-top:14px;" disabled>当前套餐</button>
+        </div>
+        <div class="plan-card">
+          <div style="font-weight:700; font-size:15px;">旗舰版</div>
+          <div class="plan-price">¥699<span class="unit">/月</span></div>
+          <div class="plan-feat">✓ 商品数不限</div>
+          <div class="plan-feat">✓ 员工账号 50</div>
+          <div class="plan-feat">✓ 微信第三方托管</div>
+          <div class="plan-feat">✓ 门店自提 · 直播组件</div>
+          <button class="btn btn-primary btn-block" style="margin-top:14px;">立即升级</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-pad" style="padding-bottom:0;"><div class="card-title" style="margin-bottom:0;">订购记录</div></div>
+        <table class="table" style="margin-top:8px;">
+          <thead><tr><th>订单号</th><th>类型</th><th>套餐</th><th class="num">金额</th><th>支付方式</th><th>时间</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>PO20260715003</td><td>续费</td><td>标准版 · 12个月</td><td class="num">¥2,680.00</td><td>微信支付</td><td>2026-07-15</td><td><span class="tag tag-good">已完成</span></td></tr>
+            <tr><td>PO20250912001</td><td>新开通</td><td>标准版 · 12个月</td><td class="num">¥2,680.00</td><td>线下转账</td><td>2025-09-12</td><td><span class="tag tag-good">已完成</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

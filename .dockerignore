@@ -1,0 +1,36 @@
+# 构建上下文过滤：不加这个文件，docker build 会把 target/ 和 node_modules/ 整个打包送给
+# daemon（几百 MB～GB 级），既慢又会让镜像层缓存失效。
+target/
+**/target/
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.output/
+.nuxt/
+unpackage/
+
+.git/
+.github/
+.idea/
+.vscode/
+*.iml
+.settings/
+.classpath
+.project
+
+# 本地环境变量含明文密码，绝不能进镜像
+.env
+.env.local
+application-local.yml
+application-local.yaml
+
+*.log
+logs/
+docker/mysql-data/
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>拼团活动 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .m-subnav { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .m-subnav a { padding:7px 16px; border-radius:999px; font-size:13px; color:var(--text-secondary); background:var(--surface); border:1px solid var(--border); }
+  .m-subnav a.active { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .avatar-stack { display:flex; }
+  .avatar-stack .a { width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#ffb199,#e34948);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;border:2px solid #fff; margin-left:-8px; }
+  .avatar-stack .a:first-child { margin-left:0; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item active" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>营销中心</b> ／ 拼团</div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="m-subnav">
+        <a href="marketing-coupon.html">优惠券</a>
+        <a href="marketing-seckill.html">秒杀</a>
+        <a class="active" href="marketing-group.html">拼团</a>
+        <a href="marketing-bargain.html">砍价</a>
+        <a href="#" style="opacity:.5;">满减包邮</a>
+        <a href="#" style="opacity:.5;">积分商城</a>
+        <a href="#" style="opacity:.5;">签到</a>
+      </div>
+
+      <div class="page-header">
+        <div><div class="page-title">拼团活动</div><div class="page-desc">进行中活动 2 个 · 累计成团 428 单</div></div>
+        <button class="btn btn-primary">＋ 发起拼团活动</button>
+      </div>
+
+      <div class="tabs" style="margin-bottom:16px;">
+        <div class="tab active">活动列表</div>
+        <div class="tab">拼团订单</div>
+      </div>
+
+      <div class="card">
+        <table class="table">
+          <thead><tr><th>商品</th><th>拼团价</th><th class="num">成团人数</th><th>有效期</th><th class="num">发起团数</th><th class="num">成团数</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>法式碎花连衣裙 · 杏色/M</td>
+              <td>¥169.00 <span style="color:var(--text-muted);">(原价¥199)</span></td>
+              <td class="num">3人团</td>
+              <td>24小时内成团</td>
+              <td class="num">86</td>
+              <td class="num">64</td>
+              <td><span class="tag tag-good tag-dot">进行中</span></td>
+              <td><button class="btn btn-sm">编辑</button> <button class="btn btn-sm">终止</button></td>
+            </tr>
+            <tr>
+              <td>羊毛混纺加厚大衣 · 黑色/L</td>
+              <td>¥499.00 <span style="color:var(--text-muted);">(原价¥599)</span></td>
+              <td class="num">2人团</td>
+              <td>48小时内成团</td>
+              <td class="num">42</td>
+              <td class="num">30</td>
+              <td><span class="tag tag-good tag-dot">进行中</span></td>
+              <td><button class="btn btn-sm">编辑</button> <button class="btn btn-sm">终止</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card card-pad" style="margin-top:16px;">
+        <div class="card-title">近期拼团订单</div>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--gridline);">
+            <div class="avatar-stack"><div class="a">张</div><div class="a">李</div><div class="a">周</div></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;">团长 张婷 · 法式碎花连衣裙 3人团</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">发起于 2小时前 · 还差 0 人</div>
+            </div>
+            <span class="tag tag-good">已成团</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--gridline);">
+            <div class="avatar-stack"><div class="a">陈</div><div class="a">刘</div></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;">团长 陈昊 · 法式碎花连衣裙 3人团</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">发起于 4小时前 · 还差 1 人 · 剩余 20 小时</div>
+            </div>
+            <span class="tag tag-warning">拼团中</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; padding:10px 0;">
+            <div class="avatar-stack"><div class="a">周</div></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;">团长 周雨萱 · 羊毛混纺加厚大衣 2人团</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">发起于 25小时前 · 超时未成团</div>
+            </div>
+            <span class="tag tag-critical">已失败 · 已退款</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

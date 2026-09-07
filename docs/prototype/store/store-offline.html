@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>门店管理 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .tab-panel { display:none; } .tab-panel.active { display:block; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item active" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>门店管理</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">门店管理</div><div class="page-desc">共 3 家门店 · 套餐上限 5 家</div></div>
+        <button class="btn btn-primary">＋ 新建门店</button>
+      </div>
+
+      <div class="card card-pad">
+        <div class="tabs" style="margin-bottom:18px;">
+          <div class="tab active" onclick="showTab(1,this)">门店列表</div>
+          <div class="tab" onclick="showTab(2,this)">店员管理</div>
+          <div class="tab" onclick="showTab(3,this)">核销记录</div>
+        </div>
+
+        <div class="tab-panel active" data-p="1">
+          <table class="table">
+            <thead><tr><th>门店</th><th>地址</th><th>联系电话</th><th>营业时间</th><th>今日核销</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;">花间集(西湖银泰店)</td>
+                <td>浙江省杭州市西湖区龙翔路 1 号银泰百货 3F</td>
+                <td>0571-8888 8888</td>
+                <td>10:00 - 22:00</td>
+                <td class="num">18</td>
+                <td><span class="tag tag-good">营业中</span></td>
+                <td><button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">花间集(万象城店)</td>
+                <td>浙江省杭州市江干区新塘路 1 号万象城 1F</td>
+                <td>0571-6666 6666</td>
+                <td>10:00 - 22:00</td>
+                <td class="num">12</td>
+                <td><span class="tag tag-good">营业中</span></td>
+                <td><button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">花间集(城西银泰店)</td>
+                <td>浙江省杭州市拱墅区莫干山路 1 号</td>
+                <td>0571-7777 7777</td>
+                <td>10:00 - 21:30</td>
+                <td class="num">0</td>
+                <td><span class="tag tag-muted">已关闭</span></td>
+                <td><button class="btn btn-sm">编辑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="2">
+          <table class="table">
+            <thead><tr><th>姓名</th><th>手机号</th><th>所属门店</th><th>角色</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>李芳</td><td>138****1122</td><td>花间集(西湖银泰店)</td><td>店员</td><td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm">编辑</button></td></tr>
+              <tr><td>王强</td><td>159****3344</td><td>花间集(万象城店)</td><td>店长</td><td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm">编辑</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="3">
+          <table class="table">
+            <thead><tr><th>核销码</th><th>关联订单</th><th>商品</th><th>核销门店</th><th>核销员工</th><th>核销时间</th></tr></thead>
+            <tbody>
+              <tr><td>V886234</td><td>20260810049150</td><td>高腰直筒牛仔裤 ×2</td><td>花间集(西湖银泰店)</td><td>李芳</td><td>2026-08-10 14:22</td></tr>
+              <tr><td>V886201</td><td>20260809048855</td><td>法式碎花连衣裙 ×1</td><td>花间集(万象城店)</td><td>王强</td><td>2026-08-09 19:05</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(i, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelector('.tab-panel[data-p="'+i+'"]').classList.add('active');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>砍价详情</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .bg-hero { background:linear-gradient(135deg,#2b2b2b,#3d1a1a); padding:20px 16px 60px; color:#fff; text-align:center; }
+  .bg-ph { width:100px; height:100px; border-radius:12px; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex; align-items:center; justify-content:center; font-size:36px; color:#c9b6a8; margin:0 auto 10px; }
+  .bg-card { margin:-46px 14px 0; background:#fff; border-radius:12px; padding:18px; box-shadow:var(--shadow-md); position:relative; z-index:2; text-align:center; }
+  .bg-price { font-size:28px; font-weight:800; color:var(--price); }
+  .bg-price .cny { font-size:15px; }
+  .bg-progress-track { height:10px; border-radius:5px; background:var(--surface-2); overflow:hidden; margin:14px 0 6px; position:relative; }
+  .bg-progress-fill { height:100%; background:linear-gradient(90deg,#ffb199,#e34948); border-radius:5px; }
+  .bg-progress-marker { position:absolute; top:-4px; width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid var(--price); }
+  .helper-row { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--gridline); }
+  .helper-avatar { width:32px;height:32px;border-radius:50%; background:linear-gradient(135deg,#ffb199,#e34948); color:#fff; font-size:12px; display:flex;align-items:center;justify-content:center; flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar" style="background:#2b2b2b;color:#fff;"><span class="back" onclick="history.back()" style="color:#fff;">‹</span>好友帮我砍一刀</div>
+
+  <div class="phone-body">
+    <div class="bg-hero">
+      <div class="bg-ph">🧥</div>
+      <div style="font-size:13px;">羊毛混纺加厚大衣 · 黑色/L</div>
+      <div style="font-size:11px; opacity:.75; margin-top:4px;">剩余 18小时22分钟</div>
+    </div>
+
+    <div class="bg-card">
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">当前砍价</div>
+      <div class="bg-price"><span class="cny">¥</span>459.00</div>
+      <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">原价 ¥599.00 · 底价 ¥399.00，已省 ¥140.00</div>
+
+      <div class="bg-progress-track">
+        <div class="bg-progress-fill" style="width:70%;"></div>
+        <div class="bg-progress-marker" style="left:70%;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-muted);"><span>原价 ¥599</span><span>底价 ¥399</span></div>
+
+      <button class="m-btn m-btn-warm" style="width:100%; margin-top:16px;">邀请好友帮砍一刀</button>
+    </div>
+
+    <div class="m-card-block" style="margin-top:14px;">
+      <div style="padding:12px 14px; font-weight:600; font-size:13px;">已有 3 位好友帮砍</div>
+      <div class="helper-row"><div class="helper-avatar">李</div><div style="flex:1; font-size:12.5px;">李明 帮砍了</div><div style="color:var(--price); font-weight:600; font-size:13px;">-¥65.00</div></div>
+      <div class="helper-row"><div class="helper-avatar" style="background:linear-gradient(135deg,#1baf7a,#2a78d6);">王</div><div style="flex:1; font-size:12.5px;">王芳 帮砍了</div><div style="color:var(--price); font-weight:600; font-size:13px;">-¥42.00</div></div>
+      <div class="helper-row" style="border-bottom:none;"><div class="helper-avatar" style="background:linear-gradient(135deg,#eda100,#e87ba4);">周</div><div style="flex:1; font-size:12.5px;">周雨萱 帮砍了</div><div style="color:var(--price); font-weight:600; font-size:13px;">-¥33.00</div></div>
+    </div>
+
+    <div class="m-card-block">
+      <div style="padding:14px; font-size:12.5px; color:var(--text-secondary); line-height:1.8;">
+        <b style="color:var(--text-primary);">砍价规则</b><br>
+        1. 每人可发起1次砍价，每次最多邀请5位好友帮砍<br>
+        2. 砍到底价后24小时内需完成下单，逾期活动作废<br>
+        3. 每位好友仅可帮砍1次
+      </div>
+    </div>
+  </div>
+
+  <div class="m-bottom-bar">
+    <button class="m-btn m-btn-outline" style="flex:1;">查看商品详情</button>
+    <button class="m-btn m-btn-warm" style="flex:1;" disabled>已砍¥140，继续邀请好友</button>
+  </div>
+</div></div>
+</body>
+</html>

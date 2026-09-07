@@ -1,0 +1,30 @@
+# 自定义域名 HTTPS 网关示例。签发成功后 PEM 写在 /data/certs/{domain}.crt|.key。
+# 把 shop.acme.reload-command 配成能执行 `nginx -s reload` 的命令后才会热加载。
+# 本文件不会被自动挂载，避免本地 compose 误开 443。
+
+# HTTP-01 必须走 80，不能跳到 443。
+server {
+    listen 80;
+    server_name _;
+
+    location ^~ /.well-known/acme-challenge/ {
+        proxy_pass http://client-api:8083;
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# 每个已签发域名复制一段，或用脚本按 /data/certs/*.crt 生成后 include。
+# server {
+#     listen 443 ssl;
+#     server_name www.example.com;
+#     ssl_certificate     /data/certs/www.example.com.crt;
+#     ssl_certificate_key /data/certs/www.example.com.key;
+#     location / {
+#         proxy_pass http://h5:80;
+#         proxy_set_header Host $host;
+#     }
+# }

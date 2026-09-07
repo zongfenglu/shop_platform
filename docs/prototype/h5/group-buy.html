@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>拼团详情</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .gb-ph { width:100%; aspect-ratio:1.4/1; background:linear-gradient(135deg,#f6e9e2,#ecd7cb); display:flex; align-items:center; justify-content:center; font-size:56px; color:#d7bfae; }
+  .gb-price-card { margin:-20px 14px 0; background:linear-gradient(135deg,#ff9143,#e34948); border-radius:12px; padding:16px; color:#fff; position:relative; z-index:2; }
+  .gb-price-row { display:flex; align-items:baseline; gap:8px; }
+  .gb-price { font-size:26px; font-weight:800; }
+  .gb-price .cny { font-size:14px; }
+  .gb-old { font-size:12px; opacity:.75; text-decoration:line-through; }
+  .gb-tag { font-size:11px; background:rgba(255,255,255,.2); padding:2px 8px; border-radius:999px; margin-left:auto; }
+  .team-row { display:flex; align-items:center; gap:10px; background:#fff; margin:10px 14px; border-radius:10px; padding:14px; box-shadow:var(--shadow-sm); }
+  .team-avatars { display:flex; }
+  .team-avatars .a { width:36px;height:36px;border-radius:50%; border:2px solid #fff; margin-left:-10px; background:linear-gradient(135deg,#ffb199,#e34948); color:#fff; font-size:13px; display:flex;align-items:center;justify-content:center; }
+  .team-avatars .a:first-child { margin-left:0; }
+  .team-avatars .empty { background:var(--surface-2); color:var(--text-muted); border-style:dashed; }
+  .countdown-mini { font-size:11px; color:var(--price); font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar"><span class="back" onclick="history.back()">‹</span>拼团详情</div>
+
+  <div class="phone-body">
+    <div class="gb-ph">👗</div>
+    <div class="gb-price-card">
+      <div class="gb-price-row">
+        <div class="gb-price"><span class="cny">¥</span>169</div>
+        <div class="gb-old">单独购买 ¥199</div>
+        <div class="gb-tag">3人团</div>
+      </div>
+      <div style="font-size:12px; margin-top:6px; opacity:.9;">法式碎花连衣裙 2026夏季新款 · 杏色/M</div>
+    </div>
+
+    <div class="team-row">
+      <div class="team-avatars">
+        <div class="a">张</div><div class="a">李</div><div class="a empty">?</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:600;">还差 1 人成团</div>
+        <div class="countdown-mini">剩余 18小时22分钟，超时未成团自动退款</div>
+      </div>
+    </div>
+
+    <div class="m-card-block">
+      <div style="padding:14px; font-size:12.5px; color:var(--text-secondary); line-height:1.8;">
+        <b style="color:var(--text-primary);">拼团玩法</b><br>
+        1. 发起或参加拼团，邀请好友一起拼单，即可以超低价购买商品<br>
+        2. 满3人成团，24小时内未成团将自动取消订单并原路退款<br>
+        3. 一人只能参加一个该商品的拼团
+      </div>
+    </div>
+
+    <div class="m-card-block">
+      <div style="padding:12px 14px; font-weight:600; font-size:13px;">正在拼团中 (2)</div>
+      <div class="m-cell">
+        <div class="l">👤 张婷发起的团 · 还差1人</div>
+        <div class="r"><span style="color:var(--price);">18:22:36</span> <button class="btn btn-sm" style="background:var(--price);color:#fff;border:none;">去拼团</button></div>
+      </div>
+      <div class="m-cell" style="border-bottom:none;">
+        <div class="l">👤 陈昊发起的团 · 还差2人</div>
+        <div class="r"><span style="color:var(--price);">22:10:05</span> <button class="btn btn-sm" style="background:var(--price);color:#fff;border:none;">去拼团</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-bottom-bar">
+    <a href="goods-detail.html" class="m-btn m-btn-outline" style="flex-direction:column;height:auto;padding:4px 14px;font-size:10px;">🏠<br>详情</a>
+    <button class="m-btn m-btn-outline" style="flex:1;">单独购买 ¥199</button>
+    <button class="m-btn m-btn-warm" style="flex:1;" onclick="location.href='checkout.html'">发起拼团 ¥169</button>
+  </div>
+</div></div>
+</body>
+</html>

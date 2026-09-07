@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>多开 SaaS 商城 — 原型导航</title>
+<link rel="stylesheet" href="shared/style.css">
+<style>
+  .hub { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+  .hub-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+  .hub-sub { color: var(--text-muted); font-size: 13.5px; margin-bottom: 30px; }
+  .hub-phase-title { display:flex; align-items:center; gap:10px; margin: 40px 0 8px; }
+  .hub-phase-title .badge { font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; }
+  .hub-phase-title .badge.mvp { background:var(--primary-bg); color:var(--primary-hover); }
+  .hub-phase-title .badge.p1 { background:#fdf3d8; color:#8a5a00; }
+  .hub-phase-title .t { font-size:18px; font-weight:800; }
+  .hub-phase-desc { font-size:12.5px; color:var(--text-muted); margin-bottom:18px; }
+  .hub-section { margin-bottom: 30px; }
+  .hub-section-hd { display:flex; align-items:baseline; gap:10px; margin-bottom:14px; }
+  .hub-section-hd .n { font-size:15px; font-weight:700; }
+  .hub-section-hd .d { font-size:12px; color:var(--text-muted); }
+  .hub-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap:14px; }
+  .hub-card {
+    display:block; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+    padding:16px; transition: all .15s;
+  }
+  .hub-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .hub-card .flow-no { display:inline-flex; width:20px;height:20px;border-radius:50%;background:var(--surface-2);color:var(--text-secondary);
+    font-size:11px; align-items:center; justify-content:center; font-weight:700; margin-bottom:10px; }
+  .hub-card .t { font-size:13.5px; font-weight:600; margin-bottom:4px; }
+  .hub-card .d { font-size:11.5px; color:var(--text-muted); line-height:1.5; }
+  .flow-note { background: var(--primary-bg); border:1px solid var(--primary-bg-2); border-radius:var(--r-sm); padding:12px 16px; font-size:12.5px; color:var(--primary-hover); margin-bottom:16px; }
+  .flow-note.p1 { background:#fdf3d8; border-color:#f4d896; color:#8a5a00; }
+  .divider { border:none; border-top:1px solid var(--gridline); margin: 44px 0; }
+</style>
+</head>
+<body>
+<div class="hub">
+  <div class="hub-title">多开 SaaS 商城 — 高保真原型</div>
+  <div class="hub-sub">对应产品设计文档 <code>docs/02-产品设计-功能清单与流程.md</code> 的功能优先级分组 · 点击任意卡片进入对应页面，页面间可相互跳转</div>
+
+  <!-- ========== MVP 核心链路 ========== -->
+  <div class="hub-phase-title"><span class="badge mvp">M0~M1</span><span class="t">MVP 核心链路</span></div>
+  <div class="hub-phase-desc">开店 → 上架 → 交易 → 售后 的最小闭环</div>
+
+  <div class="hub-section">
+    <div class="hub-section-hd"><div class="n">① 平台超管后台</div><div class="d">admin.shop.com · 平台运营视角：开店、套餐、监管、系统运维（已补充完整）</div></div>
+    <div class="flow-note">建议动线：登录 → 数据看板 → 商城列表 → 新建商城（走完5步向导）→ 商城详情 →「免密登录商户后台」跳转到②；系统管理类页面（套餐/订购/域名/客户端/账号/设置/运维）可独立查看</div>
+    <div class="hub-grid">
+      <a class="hub-card" href="admin/login.html"><div class="flow-no">1</div><div class="t">超管登录</div><div class="d">平台管理员登录入口</div></a>
+      <a class="hub-card" href="admin/dashboard.html"><div class="flow-no">2</div><div class="t">数据看板</div><div class="d">全平台GMV趋势、Top商城排行、到期预警、系统健康</div></a>
+      <a class="hub-card" href="admin/shop-list.html"><div class="flow-no">3</div><div class="t">商城管理列表</div><div class="d">全部租户概览、状态筛选、到期预警</div></a>
+      <a class="hub-card" href="admin/shop-new.html"><div class="flow-no">4</div><div class="t">新建商城向导</div><div class="d">基本信息→套餐→店主账号→域名→完成，5步向导</div></a>
+      <a class="hub-card" href="admin/shop-detail.html?name=花间集女装旗舰店&status=good"><div class="flow-no">5</div><div class="t">商城详情</div><div class="d">概览/套餐配额/域名/操作日志，含「免密登录」入口</div></a>
+      <a class="hub-card" href="admin/package-list.html"><div class="flow-no">6</div><div class="t">套餐管理</div><div class="d">套餐卡片、功能项树形勾选、配额配置、试用规则</div></a>
+      <a class="hub-card" href="admin/order-list.html"><div class="flow-no">7</div><div class="t">订购管理</div><div class="d">新开通/续费/升级/增值服务订单，退款审核</div></a>
+      <a class="hub-card" href="admin/domain-list.html"><div class="flow-no">8</div><div class="t">域名管理</div><div class="d">自定义域名审核、CNAME校验、泛域名池配置</div></a>
+      <a class="hub-card" href="admin/mp-client.html"><div class="flow-no">9</div><div class="t">客户端管理</div><div class="d">小程序授权列表、代码模板库、批量发布任务、APP打包</div></a>
+      <a class="hub-card" href="admin/platform-account.html"><div class="flow-no">10</div><div class="t">平台账号</div><div class="d">管理员/角色权限、操作日志、登录日志</div></a>
+      <a class="hub-card" href="admin/platform-setting.html"><div class="flow-no">11</div><div class="t">平台设置</div><div class="d">存储/短信/物流/微信开放平台/支付/地区数据</div></a>
+      <a class="hub-card" href="admin/ops-center.html"><div class="flow-no">12</div><div class="t">运维中心</div><div class="d">定时任务、消息队列、数据库备份、缓存、用量统计</div></a>
+    </div>
+  </div>
+
+  <div class="hub-section">
+    <div class="hub-section-hd"><div class="n">② 商户后台</div><div class="d">huajianji.shop.com/store · 租户「花间集女装旗舰店」运营视角</div></div>
+    <div class="flow-note">建议动线：登录 → 首页看板（KPI/趋势图）→ 商品列表 → 发布商品 → 订单列表 → 订单详情（发货）→ 售后管理</div>
+    <div class="hub-grid">
+      <a class="hub-card" href="store/login.html"><div class="flow-no">1</div><div class="t">商户登录</div><div class="d">租户店主 / 员工登录入口</div></a>
+      <a class="hub-card" href="store/dashboard.html"><div class="flow-no">2</div><div class="t">首页看板</div><div class="d">今日经营数据、待办事项、销售趋势图、商品排行</div></a>
+      <a class="hub-card" href="store/goods-list.html"><div class="flow-no">3</div><div class="t">商品管理</div><div class="d">商品列表、状态筛选、批量操作</div></a>
+      <a class="hub-card" href="store/goods-edit.html"><div class="flow-no">4</div><div class="t">发布商品</div><div class="d">基本信息、单/多规格切换、SKU矩阵、物流</div></a>
+      <a class="hub-card" href="store/order-list.html"><div class="flow-no">5</div><div class="t">订单管理</div><div class="d">订单列表、状态筛选、快递配送/门店自提</div></a>
+      <a class="hub-card" href="store/order-detail.html?status=toship"><div class="flow-no">6</div><div class="t">订单详情</div><div class="d">订单状态轴、收货信息、确认发货弹窗</div></a>
+      <a class="hub-card" href="store/after-sale-list.html"><div class="flow-no">7</div><div class="t">售后管理</div><div class="d">售后单列表、审核弹窗（同意/拒绝）</div></a>
+    </div>
+  </div>
+
+  <div class="hub-section">
+    <div class="hub-section-hd"><div class="n">③ 消费者端</div><div class="d">微信小程序 / H5 · 消费者「张婷」购物视角</div></div>
+    <div class="flow-note">建议动线：首页 → 商品详情（选规格）→ 购物车 → 确认订单 → 支付结果 → 我的订单 → 订单详情；也可从「我的」入口浏览</div>
+    <div class="hub-grid">
+      <a class="hub-card" href="h5/home.html"><div class="flow-no">1</div><div class="t">首页</div><div class="d">Banner、导航宫格、领券中心、商品瀑布流</div></a>
+      <a class="hub-card" href="h5/goods-detail.html"><div class="flow-no">2</div><div class="t">商品详情</div><div class="d">图文详情、评价、规格选择底部弹层</div></a>
+      <a class="hub-card" href="h5/cart.html"><div class="flow-no">3</div><div class="t">购物车</div><div class="d">数量步进器、失效商品、结算</div></a>
+      <a class="hub-card" href="h5/checkout.html"><div class="flow-no">4</div><div class="t">确认订单</div><div class="d">地址、优惠券/积分抵扣、价格明细</div></a>
+      <a class="hub-card" href="h5/pay-result.html"><div class="flow-no">5</div><div class="t">支付结果</div><div class="d">支付成功页</div></a>
+      <a class="hub-card" href="h5/order-list.html"><div class="flow-no">6</div><div class="t">我的订单</div><div class="d">状态分Tab、催发货/确认收货/评价</div></a>
+      <a class="hub-card" href="h5/order-detail.html?status=toreceive"><div class="flow-no">7</div><div class="t">订单详情</div><div class="d">物流状态、收货信息、按状态变化的操作按钮</div></a>
+      <a class="hub-card" href="h5/my.html"><div class="flow-no">8</div><div class="t">个人中心</div><div class="d">订单快捷入口、余额积分优惠券、签到分销</div></a>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ========== P1 阶段 ========== -->
+  <div class="hub-phase-title"><span class="badge p1">M2~M4</span><span class="t">P1 阶段 — 会员运营 / 营销玩法 / 装修与分销</span></div>
+  <div class="hub-phase-desc">在核心交易闭环之上，补齐留存、复购、裂变与"像自己的店"三件事</div>
+
+  <div class="hub-section">
+    <div class="hub-section-hd"><div class="n">④ 商户后台 · 会员与营销</div><div class="d">会员资产管理、优惠券/秒杀/拼团/砍价四大玩法</div></div>
+    <div class="flow-note p1">建议动线：会员列表（点会员看详情抽屉）→ 优惠券管理（新建优惠券弹窗）→ 秒杀活动（场次+商品配置）→ 拼团活动（活动/订单双Tab）→ 砍价活动（进度追踪）</div>
+    <div class="hub-grid">
+      <a class="hub-card" href="store/member-list.html"><div class="flow-no">1</div><div class="t">会员管理</div><div class="d">会员列表、标签等级、详情抽屉（资料/订单/余额/积分）</div></a>
+      <a class="hub-card" href="store/marketing-coupon.html"><div class="flow-no">2</div><div class="t">优惠券管理</div><div class="d">进行中/已结束、领取进度条、新建优惠券弹窗</div></a>
+      <a class="hub-card" href="store/marketing-seckill.html"><div class="flow-no">3</div><div class="t">秒杀活动</div><div class="d">每日场次配置、秒杀商品与限购、实时转化数据</div></a>
+      <a class="hub-card" href="store/marketing-group.html"><div class="flow-no">4</div><div class="t">拼团活动</div><div class="d">活动列表、拼团订单、成团进度与头像堆叠</div></a>
+      <a class="hub-card" href="store/marketing-bargain.html"><div class="flow-no">5</div><div class="t">砍价活动</div><div class="d">底价配置、进行中砍价记录与进度条</div></a>
+    </div>
+  </div>
+
+  <div class="hub-section">
+    <div class="hub-section-hd"><div class="n">⑤ 商户后台 · 分销 / 门店 / 装修 / 财务 / 套餐 / 设置 / 客户端 / 员工</div><div class="d">裂变分销、线下自提、可视化装修、资金与套餐管理、店铺全局设置</div></div>
+    <div class="flow-note p1">建议动线：分销中心（分销商/订单/提现/设置四Tab）→ 门店管理（门店/店员/核销记录）→ 页面装修（页面列表→进入编辑器拖拽体验→底部导航配置）→ 财务管理（流水/提现/对账）→ 店铺设置（11个分组）→ 客户端（小程序托管/公众号/H5/APP）→ 员工（账号/角色权限/日志）→ 我的套餐（配额用量+升级）</div>
+    <div class="hub-grid">
+      <a class="hub-card" href="store/distribution.html"><div class="flow-no">6</div><div class="t">分销中心</div><div class="d">分销商列表、分销订单、提现审核、分销设置</div></a>
+      <a class="hub-card" href="store/store-offline.html"><div class="flow-no">7</div><div class="t">门店管理</div><div class="d">自提门店、店员管理、核销记录</div></a>
+      <a class="hub-card" href="store/diy-page-list.html"><div class="flow-no">8</div><div class="t">页面装修管理</div><div class="d">首页/自定义页/分类页样式/个人中心样式/底部导航，含行业模板库</div></a>
+      <a class="hub-card" href="store/diy-editor.html?name=2026秋季主题首页&type=首页"><div class="flow-no">9</div><div class="t">页面装修编辑器</div><div class="d">左组件库/中手机预览/右属性面板，含全局悬浮客服组件</div></a>
+      <a class="hub-card" href="store/diy-tabbar.html"><div class="flow-no">10</div><div class="t">底部导航配置</div><div class="d">2~5个菜单项拖拽排序、图标选择、实时预览</div></a>
+      <a class="hub-card" href="store/finance.html"><div class="flow-no">11</div><div class="t">财务管理</div><div class="d">资金流水、提现管理、交易对账</div></a>
+      <a class="hub-card" href="store/settings.html"><div class="flow-no">12</div><div class="t">店铺设置</div><div class="d">商城信息/交易规则/运费/支付/物流/短信/客服/协议等11个分组</div></a>
+      <a class="hub-card" href="store/client.html"><div class="flow-no">13</div><div class="t">客户端</div><div class="d">小程序（自填/授权托管切换）、公众号、H5域名、APP打包</div></a>
+      <a class="hub-card" href="store/staff.html"><div class="flow-no">14</div><div class="t">员工管理</div><div class="d">员工账号、角色权限（菜单树勾选）、操作日志</div></a>
+      <a class="hub-card" href="store/my-package.html"><div class="flow-no">15</div><div class="t">我的套餐</div><div class="d">当前套餐、配额用量进度条、升级套餐对比卡</div></a>
+    </div>
+  </div>
+
+  <div class="hub-section">
+    <div class="hub-section-hd"><div class="n">⑥ 消费者端 · 活动与权益页</div><div class="d">承接商户后台配置的营销玩法与会员权益</div></div>
+    <div class="flow-note p1">建议动线：首页导航宫格可直接进入秒杀/拼团/砍价 → 我的页可进入优惠券/积分商城/签到/分销/门店 → 商品详情的评价入口进入评价页</div>
+    <div class="hub-grid">
+      <a class="hub-card" href="h5/coupon-center.html"><div class="flow-no">1</div><div class="t">领券中心</div><div class="d">分Tab浏览、一键领取、已领取状态</div></a>
+      <a class="hub-card" href="h5/seckill.html"><div class="flow-no">2</div><div class="t">秒杀专场</div><div class="d">倒计时、多场次切换、抢购进度条</div></a>
+      <a class="hub-card" href="h5/group-buy.html"><div class="flow-no">3</div><div class="t">拼团详情</div><div class="d">成团进度、头像堆叠、发起拼团/单独购买</div></a>
+      <a class="hub-card" href="h5/bargain.html"><div class="flow-no">4</div><div class="t">砍价页</div><div class="d">砍价进度条、好友助力列表、邀请砍价</div></a>
+      <a class="hub-card" href="h5/points-mall.html"><div class="flow-no">5</div><div class="t">积分商城</div><div class="d">积分兑换商品/优惠券，积分不足态</div></a>
+      <a class="hub-card" href="h5/sign-in.html"><div class="flow-no">6</div><div class="t">每日签到</div><div class="d">周历签到、连续签到阶梯奖励</div></a>
+      <a class="hub-card" href="h5/distribution-center.html"><div class="flow-no">7</div><div class="t">我的分销</div><div class="d">佣金资产、团队列表、佣金明细、提现</div></a>
+      <a class="hub-card" href="h5/store-locator.html"><div class="flow-no">8</div><div class="t">门店/自提选择</div><div class="d">距离排序、营业状态、选择自提门店</div></a>
+      <a class="hub-card" href="h5/goods-comment.html"><div class="flow-no">9</div><div class="t">商品评价</div><div class="d">评分统计、标签筛选、带图评价、商家回复</div></a>
+      <a class="hub-card" href="h5/customer-service.html"><div class="flow-no">10</div><div class="t">联系客服</div><div class="d">模拟客服会话，从首页/商品详情悬浮按钮或「我的」页进入</div></a>
+    </div>
+  </div>
+
+  <div style="font-size:12px; color:var(--text-muted); border-top:1px solid var(--gridline); padding-top:16px; margin-top:20px;">
+    设计依据：<code>docs/01-产品设计-总体方案.md</code> · <code>docs/02-产品设计-功能清单与流程.md</code> · <code>docs/03-产品设计-数据模型与关键机制.md</code><br>
+    配色与图表规范遵循 dataviz 校验色板（CVD 安全）；桌面端为超管/商户共用后台外壳，移动端使用 390×844 手机框模拟小程序/H5。P1 页面的营销玩法（优惠券/秒杀/拼团/砍价）在商户后台与消费者端一一对应，可对照体验配置与呈现效果的联动。
+  </div>
+</div>
+</body>
+</html>

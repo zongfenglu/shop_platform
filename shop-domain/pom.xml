@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.shopplatform</groupId>
+    <artifactId>shop-platform</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>shop-domain</artifactId>
+  <packaging>jar</packaging>
+  <name>shop-domain</name>
+  <description>领域层：按业务聚合分包（shop/goods/order/pay/after-sale/member/marketing/distribution/offline-store/diy/stat），domain 包之间禁止反向依赖</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.shopplatform</groupId>
+      <artifactId>shop-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.shopplatform</groupId>
+      <artifactId>shop-framework</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.baomidou</groupId>
+      <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.wechatpay-apiv3</groupId>
+      <artifactId>wechatpay-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.rocketmq</groupId>
+      <artifactId>rocketmq-spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.rocketmq</groupId>
+      <artifactId>rocketmq-tools</artifactId>
+      <version>5.3.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.rocketmq</groupId>
+          <artifactId>rocketmq-rocksdb</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.shredzone.acme4j</groupId>
+      <artifactId>acme4j-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

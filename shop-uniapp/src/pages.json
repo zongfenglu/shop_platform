@@ -1,0 +1,205 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/goods/list",
+      "style": {
+        "navigationBarTitleText": "全部商品",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/goods/detail",
+      "style": {
+        "navigationBarTitleText": "商品详情"
+      }
+    },
+    {
+      "path": "pages/cart/index",
+      "style": {
+        "navigationBarTitleText": "购物车"
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/order/checkout",
+      "style": {
+        "navigationBarTitleText": "确认订单"
+      }
+    },
+    {
+      "path": "pages/address/list",
+      "style": {
+        "navigationBarTitleText": "收货地址"
+      }
+    },
+    {
+      "path": "pages/address/edit",
+      "style": {
+        "navigationBarTitleText": "新增收货地址"
+      }
+    },
+    {
+      "path": "pages/order/detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/afterSale/apply",
+      "style": {
+        "navigationBarTitleText": "申请售后"
+      }
+    },
+    {
+      "path": "pages/afterSale/detail",
+      "style": {
+        "navigationBarTitleText": "售后详情"
+      }
+    },
+    {
+      "path": "pages/goods/comment",
+      "style": {
+        "navigationBarTitleText": "发布评价"
+      }
+    },
+    {
+      "path": "pages/my/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/my/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/my/recharge",
+      "style": {
+        "navigationBarTitleText": "余额充值"
+      }
+    },
+    {
+      "path": "pages/my/balance-log",
+      "style": {
+        "navigationBarTitleText": "余额明细"
+      }
+    },
+    {
+      "path": "pages/my/points-log",
+      "style": {
+        "navigationBarTitleText": "积分明细"
+      }
+    },
+    {
+      "path": "pages/my/grade",
+      "style": {
+        "navigationBarTitleText": "会员等级"
+      }
+    },
+    {
+      "path": "pages/coupon/center",
+      "style": {
+        "navigationBarTitleText": "领券中心"
+      }
+    },
+    {
+      "path": "pages/coupon/mine",
+      "style": {
+        "navigationBarTitleText": "我的优惠券"
+      }
+    },
+    {
+      "path": "pages/seckill/index",
+      "style": {
+        "navigationBarTitleText": "秒杀专场"
+      }
+    },
+    {
+      "path": "pages/group/index",
+      "style": {
+        "navigationBarTitleText": "拼团专场"
+      }
+    },
+    {
+      "path": "pages/group/detail",
+      "style": {
+        "navigationBarTitleText": "拼团详情"
+      }
+    },
+    {
+      "path": "pages/bargain/index",
+      "style": {
+        "navigationBarTitleText": "砍价专场"
+      }
+    },
+    {
+      "path": "pages/bargain/detail",
+      "style": {
+        "navigationBarTitleText": "砍价详情"
+      }
+    },
+    {
+      "path": "pages/my/sign-in",
+      "style": {
+        "navigationBarTitleText": "每日签到"
+      }
+    },
+    {
+      "path": "pages/points-mall/index",
+      "style": {
+        "navigationBarTitleText": "积分商城"
+      }
+    },
+    {
+      "path": "pages/my/dealer",
+      "style": {
+        "navigationBarTitleText": "分销中心"
+      }
+    },
+    {
+      "path": "pages/diy/custom",
+      "style": {
+        "navigationBarTitleText": "自定义页面",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/store/locator",
+      "style": {
+        "navigationBarTitleText": "附近门店"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "多开云商城",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F9F9F7"
+  },
+  "tabBar": {
+    "color": "#898781",
+    "selectedColor": "#2a78d6",
+    "backgroundColor": "#FCFCFB",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/goods/list", "text": "分类" },
+      { "pagePath": "pages/cart/index", "text": "购物车" },
+      { "pagePath": "pages/my/index", "text": "我的" }
+    ]
+  }
+}

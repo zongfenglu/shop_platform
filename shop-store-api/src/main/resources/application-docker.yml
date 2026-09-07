@@ -1,0 +1,18 @@
+# 容器内运行时的覆盖值（SPRING_PROFILES_ACTIVE=docker，由 docker-compose.prod.yml 注入）。
+# 容器之间用 compose 服务名互相寻址，端口是容器内端口（不是宿主机映射端口）。
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:shop_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:rocketmq-namesrv:9876}
+
+logging:
+  level:
+    # 生产不要 DEBUG：下单/支付链路每请求打几十行 SQL，磁盘和排查噪音都受不了。
+    com.shopplatform: ${LOG_LEVEL:INFO}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>财务管理 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .tab-panel { display:none; } .tab-panel.active { display:block; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item active" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>财务管理</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">财务管理</div><div class="page-desc">资金流水、提现审核与经营报表</div></div>
+        <button class="btn">导出报表</button>
+      </div>
+
+      <div class="grid grid-4" style="margin-bottom:16px;">
+        <div class="card kpi"><div class="kpi-label">账户余额</div><div class="kpi-value">¥42,860.00</div></div>
+        <div class="card kpi"><div class="kpi-label">本月交易收入</div><div class="kpi-value">¥286,420.00</div></div>
+        <div class="card kpi"><div class="kpi-label">本月退款支出</div><div class="kpi-value" style="color:var(--status-critical);">¥8,940.00</div></div>
+        <div class="card kpi"><div class="kpi-label">待处理提现</div><div class="kpi-value">3 笔</div></div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="tabs" style="margin-bottom:18px;">
+          <div class="tab active" onclick="showTab(1,this)">资金流水</div>
+          <div class="tab" onclick="showTab(2,this)">提现管理</div>
+          <div class="tab" onclick="showTab(3,this)">交易对账</div>
+        </div>
+
+        <div class="tab-panel active" data-p="1">
+          <div style="display:flex; gap:12px; margin-bottom:14px;">
+            <select class="form-select" style="width:160px;"><option>全部类型</option><option>交易收入</option><option>退款支出</option><option>佣金支出</option><option>提现</option></select>
+            <input class="form-input" style="width:200px;" placeholder="时间范围">
+            <button class="btn">查询</button>
+          </div>
+          <table class="table">
+            <thead><tr><th>时间</th><th>类型</th><th>说明</th><th class="num">金额</th><th class="num">余额</th></tr></thead>
+            <tbody>
+              <tr><td>2026-08-10 09:24</td><td><span class="tag tag-good">交易收入</span></td><td>订单 20260810049231</td><td class="num" style="color:var(--status-good-text);">+¥189.00</td><td class="num">¥42,860.00</td></tr>
+              <tr><td>2026-08-09 21:03</td><td><span class="tag tag-critical">退款支出</span></td><td>售后单 AS20260809998</td><td class="num" style="color:var(--status-critical);">-¥599.00</td><td class="num">¥42,671.00</td></tr>
+              <tr><td>2026-08-09 16:45</td><td><span class="tag tag-serious">佣金支出</span></td><td>分销佣金结算 · 陈昊</td><td class="num" style="color:var(--status-critical);">-¥19.90</td><td class="num">¥43,270.00</td></tr>
+              <tr><td>2026-08-08 09:12</td><td><span class="tag tag-muted">提现</span></td><td>分销商提现 · 孙悦</td><td class="num" style="color:var(--status-critical);">-¥86.00</td><td class="num">¥43,289.90</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="2">
+          <table class="table">
+            <thead><tr><th>申请人</th><th class="num">金额</th><th>类型</th><th>申请时间</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>陈昊（分销佣金）</td><td class="num">¥1,860.00</td><td>微信零钱</td><td>2026-08-10 10:20</td><td><span class="tag tag-warning">待审核</span></td><td><button class="btn btn-sm btn-primary">通过</button> <button class="btn btn-sm">拒绝</button></td></tr>
+              <tr><td>刘思琪（分销佣金）</td><td class="num">¥420.00</td><td>银行卡</td><td>2026-08-09 16:45</td><td><span class="tag tag-warning">待审核</span></td><td><button class="btn btn-sm btn-primary">通过</button> <button class="btn btn-sm">拒绝</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="3">
+          <div class="form-hint" style="margin-bottom:14px;">与微信支付账单自动核对，标记差异订单</div>
+          <table class="table">
+            <thead><tr><th>日期</th><th class="num">系统订单总额</th><th class="num">微信账单总额</th><th class="num">差异</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr><td>2026-08-09</td><td class="num">¥28,940.00</td><td class="num">¥28,940.00</td><td class="num">¥0.00</td><td><span class="tag tag-good">一致</span></td></tr>
+              <tr><td>2026-08-08</td><td class="num">¥31,200.00</td><td class="num">¥31,180.00</td><td class="num" style="color:var(--status-critical);">-¥20.00</td><td><span class="tag tag-serious">存在差异</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(i, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelector('.tab-panel[data-p="'+i+'"]').classList.add('active');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+# 测试环境 —— 全栈一键部署
+# 用法: cd docker && docker compose up -d --build
+name: shop-platform
+
+x-backend-common: &backend-common
+  restart: unless-stopped
+  networks:
+    - shop-net
+  # 不设 mem_limit 时 JVM 把 Docker Desktop 整台虚拟机（常见 8~16G）当成自己的上限，
+  # entrypoint 里 MaxRAMPercentage=75，五个 Spring Boot 各按 10G 去要堆，32G 主机必爆。
+  mem_limit: ${BACKEND_MEM_LIMIT:-768m}
+  environment: &backend-env
+    SPRING_PROFILES_ACTIVE: docker
+    DB_HOST: mysql
+    DB_PORT: 3306
+    DB_NAME: shop_platform
+    DB_USER: root
+    DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-wchabc123!!}
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    REDIS_PASSWORD: ""
+    ROCKETMQ_NAME_SERVER: rocketmq-namesrv:9876
+    JWT_SECRET: ${JWT_SECRET:-shop_platform_jwt_secret_test_2026}
+    AES_KEY: ${AES_KEY:-shop_platform_aes_key_test_2026_32ch}
+    ACME_ENABLED: ${ACME_ENABLED:-false}
+    ACME_DIRECTORY_URL: ${ACME_DIRECTORY_URL:-https://acme-staging-v02.api.letsencrypt.org/directory}
+    ACME_EMAIL: ${ACME_EMAIL:-}
+    ACME_CERT_DIR: /data/certs
+    ACME_RELOAD_COMMAND: ${ACME_RELOAD_COMMAND:-}
+    # 商户上传的图片落盘目录，对应命名卷 uploads-data。
+    # store-api 写入、client-api 读取（消费者端要能加载装修图），必须是同一个卷。
+    STORAGE_DIR: /data/uploads
+    BACKUP_DIR: /data/backups
+    LOG_LEVEL: INFO
+    TZ: Asia/Shanghai
+    JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx512m}
+
+services:
+  # ==================== 基础设施 ====================
+  mysql:
+    image: mysql:8.4
+    container_name: shop-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-wchabc123!!}
+      MYSQL_DATABASE: shop_platform
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3308}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=256M --max-connections=200
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-wchabc123!!}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    networks:
+      - shop-net
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: shop-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - shop-net
+
+  # RocketMQ 默认不启动。超时关单走 shop-app 里的 5 分钟扫单。
+  # 需要延时消息时：docker compose --profile mq up -d
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: shop-rocketmq-namesrv
+    profiles: ["mq"]
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    environment:
+      JAVA_OPT_EXT: "-Xms128m -Xmx256m"
+      TZ: Asia/Shanghai
+    mem_limit: 384m
+    networks:
+      - shop-net
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.1
+    container_name: shop-rocketmq-broker
+    profiles: ["mq"]
+    restart: unless-stopped
+    depends_on:
+      - rocketmq-namesrv
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    environment:
+      NAMESRV_ADDR: "rocketmq-namesrv:9876"
+      JAVA_OPT_EXT: "-Xms256m -Xmx512m"
+      TZ: Asia/Shanghai
+    mem_limit: 768m
+    command: >
+      sh -c "cp /home/rocketmq/rocketmq-5.3.1/conf/broker.conf /tmp/broker.conf &&
+      echo 'brokerIP1 = 127.0.0.1' >> /tmp/broker.conf &&
+      echo 'autoCreateTopicEnable = true' >> /tmp/broker.conf &&
+      /home/rocketmq/rocketmq-5.3.1/bin/mqbroker -n rocketmq-namesrv:9876 -c /tmp/broker.conf"
+    networks:
+      - shop-net
+
+  # 一个 JVM：/admin /store /api + 定时任务 + 微信回调。生产拆分见 docker-compose.prod.yml。
+  app:
+    <<: *backend-common
+    mem_limit: ${APP_MEM_LIMIT:-1536m}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      args:
+        MODULE: shop-app
+    image: shop-platform/app:latest
+    container_name: shop-app
+    environment:
+      <<: *backend-env
+      JAVA_OPTS: ${APP_JAVA_OPTS:--Xms256m -Xmx1024m}
+      SHOP_ROCKETMQ_ENABLED: "${SHOP_ROCKETMQ_ENABLED:-false}"
+      SPRING_FLYWAY_ENABLED: "true"
+      SERVER_PORT: "8080"
+      PAY_NOTIFY_BASE_URL: http://localhost:8083
+      PAY_TIMEOUT_MINUTES: 30
+      STORE_CONSOLE_URL: http://localhost:8091
+    volumes:
+      - uploads-data:/data/uploads
+      - backups-data:/data/backups
+      - certs-data:/data/certs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${ADMIN_API_PORT:-8081}:8080"
+      - "${STORE_API_PORT:-8082}:8080"
+      - "${CLIENT_API_PORT:-8083}:8080"
+      - "${JOB_API_PORT:-8084}:8080"
+      - "${MP_API_PORT:-8085}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+
+  # ==================== 前端（Nginx 静态服务） ====================
+  admin-web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_DIR: shop-ui/admin
+        NGINX_CONF: nginx-admin-lite.conf
+    image: shop-platform/admin-web:latest
+    container_name: shop-admin-web
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${ADMIN_WEB_PORT:-8090}:80"
+    mem_limit: 64m
+    networks:
+      - shop-net
+
+  store-web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_DIR: shop-ui/store
+        NGINX_CONF: nginx-store-lite.conf
+    image: shop-platform/store-web:latest
+    container_name: shop-store-web
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${STORE_WEB_PORT:-8091}:80"
+    mem_limit: 64m
+    networks:
+      - shop-net
+
+  h5:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_DIR: shop-uniapp
+        NGINX_CONF: nginx-h5-lite.conf
+        BUILD_CMD: build:h5
+    image: shop-platform/h5:latest
+    container_name: shop-h5
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${H5_PORT:-8092}:80"
+    mem_limit: 64m
+    networks:
+      - shop-net
+
+networks:
+  shop-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  # 商户上传的图片。store-api 与 client-api 共享挂载，容器重建不丢图。
+  uploads-data:
+  backups-data:
+  certs-data:

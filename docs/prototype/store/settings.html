@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>店铺设置 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .settings-shell { display:flex; gap:20px; align-items:flex-start; }
+  .settings-nav { width:180px; flex-shrink:0; }
+  .settings-nav .group-title { font-size:11px; color:var(--text-muted); font-weight:600; margin:14px 0 6px 14px; }
+  .settings-nav .group-title:first-child { margin-top:0; }
+  .settings-nav .item { padding:9px 14px; border-radius:8px; font-size:13px; color:var(--text-secondary); cursor:pointer; }
+  .settings-nav .item.active { background:var(--primary-bg); color:var(--primary-hover); font-weight:600; }
+  .settings-panel { display:none; flex:1; }
+  .settings-panel.active { display:block; }
+  .freight-rule-row { display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--gridline); font-size:13px; }
+  .freight-rule-row:last-child { border-bottom:none; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item active" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>店铺设置</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">店铺设置</div><div class="page-desc">商城信息、交易规则、支付物流与协议配置</div></div>
+      </div>
+
+      <div class="settings-shell">
+        <div class="settings-nav">
+          <div class="group-title">基础</div>
+          <div class="item active" onclick="showPanel(1,this)">商城信息</div>
+          <div class="item" onclick="showPanel(2,this)">交易设置</div>
+          <div class="item" onclick="showPanel(3,this)">运费模板</div>
+          <div class="group-title">收款与配送</div>
+          <div class="item" onclick="showPanel(4,this)">支付设置</div>
+          <div class="item" onclick="showPanel(5,this)">物流公司</div>
+          <div class="group-title">通知与服务</div>
+          <div class="item" onclick="showPanel(6,this)">短信通知</div>
+          <div class="item" onclick="showPanel(7,this)">消息通知</div>
+          <div class="item" onclick="showPanel(8,this)">打印机</div>
+          <div class="item" onclick="showPanel(9,this)">客服</div>
+          <div class="group-title">合规</div>
+          <div class="item" onclick="showPanel(10,this)">协议管理</div>
+          <div class="item" onclick="showPanel(11,this)">上传设置</div>
+        </div>
+
+        <!-- 1 商城信息 -->
+        <div class="settings-panel active" data-p="1">
+          <div class="card card-pad">
+            <div class="card-title">商城信息</div>
+            <div class="form-item"><label class="form-label">商城名称</label><input class="form-input" value="花间集女装旗舰店"></div>
+            <div class="form-item"><label class="form-label">商城Logo</label><input class="form-input" placeholder="上传图片（原型省略）"></div>
+            <div class="form-item"><label class="form-label">商城简介</label><textarea class="form-textarea" rows="2">专注法式复古女装，用心做好每一件衣服。</textarea></div>
+            <div class="form-row form-item">
+              <div><label class="form-label">客服电话</label><input class="form-input" value="0571-88888888"></div>
+              <div><label class="form-label">所属行业</label><select class="form-select"><option>服饰鞋包</option><option>生鲜食品</option></select></div>
+            </div>
+            <div class="form-item"><label class="form-label">经营地址</label><input class="form-input" value="浙江省杭州市西湖区文三路90号"></div>
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+
+        <!-- 2 交易设置 -->
+        <div class="settings-panel" data-p="2">
+          <div class="card card-pad">
+            <div class="card-title">交易设置</div>
+            <div class="form-row form-item">
+              <div><label class="form-label">未付款自动取消</label><div style="display:flex;align-items:center;gap:6px;"><input class="form-input" value="30"><span style="color:var(--text-muted);white-space:nowrap;">分钟</span></div></div>
+              <div><label class="form-label">发货后自动确认收货</label><div style="display:flex;align-items:center;gap:6px;"><input class="form-input" value="10"><span style="color:var(--text-muted);white-space:nowrap;">天</span></div></div>
+            </div>
+            <div class="form-row form-item">
+              <div><label class="form-label">确认收货后可申请售后</label><div style="display:flex;align-items:center;gap:6px;"><input class="form-input" value="7"><span style="color:var(--text-muted);white-space:nowrap;">天</span></div></div>
+              <div><label class="form-label">售后申请超时自动同意</label><div style="display:flex;align-items:center;gap:6px;"><input class="form-input" value="3"><span style="color:var(--text-muted);white-space:nowrap;">天</span></div></div>
+            </div>
+            <div class="form-item"><label class="form-label">订单号规则</label><input class="form-input" value="{yyyyMMdd}{shopId后4位}{流水号}" disabled></div>
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+
+        <!-- 3 运费模板 -->
+        <div class="settings-panel" data-p="3">
+          <div class="page-header" style="margin-bottom:14px;">
+            <div class="card-title" style="margin:0;">运费模板</div>
+            <button class="btn btn-sm btn-primary">＋ 新建模板</button>
+          </div>
+          <div class="card">
+            <table class="table">
+              <thead><tr><th>模板名称</th><th>计费方式</th><th>说明</th><th>使用商品数</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td>包邮（全国，偏远除外）</td><td>件数</td><td>全场满199包邮，新疆西藏除外</td><td class="num">628</td><td><button class="btn btn-sm">编辑</button></td></tr>
+                <tr><td>按件计费</td><td>件数</td><td>首件8元，续件5元</td><td class="num">142</td><td><button class="btn btn-sm">编辑</button></td></tr>
+                <tr><td>按重量计费</td><td>重量</td><td>首1kg10元，续1kg3元</td><td class="num">92</td><td><button class="btn btn-sm">编辑</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4 支付设置 -->
+        <div class="settings-panel" data-p="4">
+          <div class="card card-pad">
+            <div class="card-title">支付设置</div>
+            <div class="card-sub">收款直达商户自有账户，平台不经手交易资金</div>
+            <div class="form-item">
+              <label class="form-label">微信支付</label>
+              <div class="form-row">
+                <div><label class="form-label" style="font-size:12px;">商户号 mchid</label><input class="form-input" value="1620****5678"></div>
+                <div><label class="form-label" style="font-size:12px;">APIv3 Key</label><input class="form-input" type="password" value="••••••••••••••••"></div>
+              </div>
+              <div class="form-hint">支付回调地址：https://huajianji.shop.com/notify/wxpay/100231（只读，配置于微信商户平台）</div>
+            </div>
+            <div class="form-item">
+              <label class="form-label">支付宝</label>
+              <div class="form-row">
+                <div><label class="form-label" style="font-size:12px;">PID</label><input class="form-input" value="2088****9012"></div>
+                <div><label class="form-label" style="font-size:12px;">应用私钥</label><input class="form-input" type="password" value="••••••••••••••••"></div>
+              </div>
+            </div>
+            <div class="form-item">
+              <label class="form-label">其他支付方式</label>
+              <div style="display:flex; gap:16px; font-size:13px; color:var(--text-secondary);">
+                <label><input type="checkbox" checked> 余额支付</label>
+                <label><input type="checkbox"> 货到付款</label>
+              </div>
+            </div>
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+
+        <!-- 5 物流公司 -->
+        <div class="settings-panel" data-p="5">
+          <div class="card card-pad">
+            <div class="card-title">物流公司</div>
+            <div class="form-item">
+              <label class="form-label">启用的物流公司</label>
+              <div style="display:flex; flex-wrap:wrap; gap:16px; font-size:13px; color:var(--text-secondary);">
+                <label><input type="checkbox" checked> 顺丰速运</label>
+                <label><input type="checkbox" checked> 中通快递</label>
+                <label><input type="checkbox" checked> 圆通速递</label>
+                <label><input type="checkbox" checked> 韵达快递</label>
+                <label><input type="checkbox"> 申通快递</label>
+                <label><input type="checkbox"> 邮政EMS</label>
+              </div>
+            </div>
+            <div class="form-item">
+              <label class="form-label">物流查询</label>
+              <div style="display:flex; gap:16px; font-size:13px; color:var(--text-secondary);">
+                <label><input type="checkbox" checked> 开启物流轨迹查询（使用平台通道）</label>
+              </div>
+            </div>
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+
+        <!-- 6 短信通知 -->
+        <div class="settings-panel" data-p="6">
+          <div class="card card-pad">
+            <div class="card-title">短信通知</div>
+            <div class="card-sub">本月已用 960 / 1000 条（套餐配额，超出后计入增值购买）</div>
+            <table class="table">
+              <thead><tr><th>通知场景</th><th>说明</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr><td>新订单支付成功</td><td>通知商家有新订单</td><td><label><input type="checkbox" checked></label></td></tr>
+                <tr><td>订单发货</td><td>通知买家已发货及运单号</td><td><label><input type="checkbox" checked></label></td></tr>
+                <tr><td>退款成功</td><td>通知买家退款到账</td><td><label><input type="checkbox" checked></label></td></tr>
+                <tr><td>套餐到期提醒</td><td>到期前7/3/1天通知店主</td><td><label><input type="checkbox" checked></label></td></tr>
+                <tr><td>自提核销码</td><td>通知买家核销码</td><td><label><input type="checkbox"></label></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 7 消息通知 -->
+        <div class="settings-panel" data-p="7">
+          <div class="card card-pad">
+            <div class="card-title">消息通知</div>
+            <div class="form-item">
+              <label class="form-label">微信小程序订阅消息</label>
+              <div class="form-hint" style="margin-bottom:10px;">需在微信公众平台配置对应模板ID后生效</div>
+              <table class="table">
+                <thead><tr><th>场景</th><th>模板ID</th><th>状态</th></tr></thead>
+                <tbody>
+                  <tr><td>发货提醒</td><td>OPEN_TMPL_001</td><td><span class="tag tag-good">已配置</span></td></tr>
+                  <tr><td>拼团结果通知</td><td>OPEN_TMPL_002</td><td><span class="tag tag-good">已配置</span></td></tr>
+                  <tr><td>砍价好友助力</td><td>-</td><td><span class="tag tag-muted">未配置</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+
+        <!-- 8 打印机 -->
+        <div class="settings-panel" data-p="8">
+          <div class="card card-pad">
+            <div class="card-title">云打印机</div>
+            <div class="card-sub">对接飞鹅云打印机，订单支付成功后自动打印小票</div>
+            <div class="form-item">
+              <label class="form-label">已绑定打印机</label>
+              <table class="table">
+                <thead><tr><th>设备名称</th><th>设备编号</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr><td>前台收银打印机</td><td>FE20260012</td><td><span class="tag tag-good">在线</span></td><td><button class="btn btn-sm">解绑</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="btn btn-sm">＋ 绑定打印机</button>
+            <div class="form-item" style="margin-top:16px;">
+              <label class="form-label">自动打印规则</label>
+              <div style="display:flex; gap:16px; font-size:13px; color:var(--text-secondary);">
+                <label><input type="checkbox" checked> 支付成功后自动打印小票</label>
+                <label><input type="checkbox"> 打印后自动标记已处理</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9 客服 -->
+        <div class="settings-panel" data-p="9">
+          <div class="card card-pad">
+            <div class="card-title">客服设置</div>
+            <div class="form-item">
+              <label class="form-label">客服方式</label>
+              <div class="form-radio-group">
+                <div class="form-radio-card selected" onclick="selCard(this)"><div class="title">微信客服</div><div class="desc">小程序内客服会话</div></div>
+                <div class="form-radio-card" onclick="selCard(this)"><div class="title">企业微信</div><div class="desc">对接企微客服</div></div>
+                <div class="form-radio-card" onclick="selCard(this)"><div class="title">仅电话</div><div class="desc">展示客服电话</div></div>
+              </div>
+            </div>
+            <div class="form-item"><label class="form-label">客服电话</label><input class="form-input" value="0571-88888888"></div>
+            <div class="form-item"><label class="form-label">客服在线时间</label><input class="form-input" value="周一至周日 9:00-21:00"></div>
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+
+        <!-- 10 协议管理 -->
+        <div class="settings-panel" data-p="10">
+          <div class="card card-pad">
+            <div class="card-title">协议管理</div>
+            <div class="tabs" style="margin-bottom:14px;">
+              <div class="tab active">用户协议</div>
+              <div class="tab">隐私政策</div>
+              <div class="tab">售后说明</div>
+              <div class="tab">关于我们</div>
+            </div>
+            <textarea class="form-textarea" rows="8">欢迎使用花间集女装旗舰店服务。在使用本商城服务前，请您仔细阅读以下条款……</textarea>
+            <button class="btn btn-primary" style="margin-top:14px;">保存</button>
+          </div>
+        </div>
+
+        <!-- 11 上传设置 -->
+        <div class="settings-panel" data-p="11">
+          <div class="card card-pad">
+            <div class="card-title">上传设置</div>
+            <div class="form-item">
+              <label class="form-label">存储方式</label>
+              <div class="form-radio-group">
+                <div class="form-radio-card selected" onclick="selCard(this)"><div class="title">使用平台存储</div><div class="desc">开箱即用，计入套餐存储配额</div></div>
+                <div class="form-radio-card" onclick="selCard(this)"><div class="title">使用自有OSS</div><div class="desc">不占用套餐存储配额</div></div>
+              </div>
+            </div>
+            <div class="form-item">
+              <label class="form-label">图片处理</label>
+              <div style="display:flex; gap:16px; font-size:13px; color:var(--text-secondary);">
+                <label><input type="checkbox" checked> 自动压缩</label>
+                <label><input type="checkbox"> 添加水印</label>
+              </div>
+            </div>
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showPanel(i, el) {
+    document.querySelectorAll('.settings-nav .item').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.settings-panel').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelector('.settings-panel[data-p="'+i+'"]').classList.add('active');
+  }
+  function selCard(el) {
+    el.parentElement.querySelectorAll('.form-radio-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>新建商城 - 平台超管</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .wizard-wrap { max-width: 760px; margin: 0 auto; }
+  .wizard-step { display: none; }
+  .wizard-step.active { display: block; }
+  .result-box { text-align:center; padding: 30px 20px 10px; }
+  .result-icon { width:64px;height:64px;border-radius:50%;background:var(--status-good-bg);color:var(--status-good);
+    display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px; }
+  .kv-row { display:flex; padding:10px 0; border-bottom:1px dashed var(--gridline); font-size:13px; }
+  .kv-row .k { width:130px; color:var(--text-muted); flex-shrink:0; }
+  .kv-row .v { font-weight:500; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">火</div><div class="name">多开云商城</div><div class="badge">超管</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>数据看板</a>
+      <a class="nav-item active" href="shop-list.html"><span class="ico">▤</span>商城管理</a>
+      <a class="nav-item" href="package-list.html"><span class="ico">◇</span>套餐管理</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">￥</span>订购管理</a>
+      <a class="nav-item" href="domain-list.html"><span class="ico">⌘</span>域名管理</a>
+      <a class="nav-item" href="mp-client.html"><span class="ico">▣</span>客户端管理</a>
+      <div class="nav-group-title">系统</div>
+      <a class="nav-item" href="platform-account.html"><span class="ico">◎</span>平台账号</a>
+      <a class="nav-item" href="platform-setting.html"><span class="ico">⚙</span>平台设置</a>
+      <a class="nav-item" href="ops-center.html"><span class="ico">⏱</span>运维中心</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><a href="shop-list.html">商城管理</a> ／ <b>新建商城</b></div>
+      <div class="topbar-right"><div class="topbar-user"><div class="avatar">平</div>平台管理员</div></div>
+    </div>
+
+    <div class="content">
+      <div class="wizard-wrap">
+        <div class="card card-pad">
+
+          <div class="steps" id="steps">
+            <div class="step active" data-s="1"><div class="step-num">1</div><div class="step-label">基本信息</div></div>
+            <div class="step-line"></div>
+            <div class="step" data-s="2"><div class="step-num">2</div><div class="step-label">套餐与周期</div></div>
+            <div class="step-line"></div>
+            <div class="step" data-s="3"><div class="step-num">3</div><div class="step-label">店主账号</div></div>
+            <div class="step-line"></div>
+            <div class="step" data-s="4"><div class="step-num">4</div><div class="step-label">访问域名</div></div>
+            <div class="step-line"></div>
+            <div class="step" data-s="5"><div class="step-num">5</div><div class="step-label">完成</div></div>
+          </div>
+
+          <!-- Step 1 -->
+          <div class="wizard-step active" data-step="1">
+            <div class="form-item">
+              <label class="form-label"><span class="req">*</span>商城名称</label>
+              <input class="form-input" id="shopName" placeholder="例如：花间集女装旗舰店" value="花间集女装旗舰店">
+            </div>
+            <div class="form-row form-item">
+              <div>
+                <label class="form-label"><span class="req">*</span>所属行业</label>
+                <select class="form-select"><option>服饰鞋包</option><option>生鲜食品</option><option>美妆个护</option><option>3C数码</option><option>其他</option></select>
+              </div>
+              <div>
+                <label class="form-label">商城 Logo</label>
+                <input class="form-input" placeholder="上传图片（原型省略）">
+              </div>
+            </div>
+            <div class="form-row form-item">
+              <div>
+                <label class="form-label"><span class="req">*</span>联系人</label>
+                <input class="form-input" value="王丽">
+              </div>
+              <div>
+                <label class="form-label"><span class="req">*</span>联系手机</label>
+                <input class="form-input" value="138 0000 2201">
+              </div>
+            </div>
+            <div class="form-item">
+              <label class="form-label">备注</label>
+              <textarea class="form-textarea" rows="2" placeholder="内部备注，租户不可见"></textarea>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="wizard-step" data-step="2">
+            <div class="form-item">
+              <label class="form-label"><span class="req">*</span>选择套餐</label>
+              <div class="form-radio-group">
+                <div class="form-radio-card" onclick="selectPkg(this)"><div class="title">基础版</div><div class="desc">商品500 · 员工3 · ¥99/月</div></div>
+                <div class="form-radio-card selected" onclick="selectPkg(this)"><div class="title">标准版</div><div class="desc">商品5000 · 员工10 · ¥299/月</div></div>
+                <div class="form-radio-card" onclick="selectPkg(this)"><div class="title">旗舰版</div><div class="desc">商品不限 · 员工50 · ¥699/月</div></div>
+              </div>
+            </div>
+            <div class="form-row form-item">
+              <div>
+                <label class="form-label"><span class="req">*</span>订购周期</label>
+                <select class="form-select"><option>1 个月</option><option>3 个月</option><option selected>12 个月（首月赠送）</option></select>
+              </div>
+              <div>
+                <label class="form-label">生效方式</label>
+                <select class="form-select"><option>立即生效</option><option>试用 7 天后转正</option></select>
+              </div>
+            </div>
+            <div class="card" style="background:var(--surface-2); border:none; padding:12px 16px; font-size:12.5px; color:var(--text-secondary);">
+              本次开通：标准版 · 12 个月 · 应收 ¥2,680 · 到期时间 2027-08-15（系统自动计算，此处为线下开通，不产生支付订单）
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="wizard-step" data-step="3">
+            <div class="form-item">
+              <label class="form-label"><span class="req">*</span>店主登录账号</label>
+              <input class="form-input" value="huajianji_admin">
+            </div>
+            <div class="form-item">
+              <label class="form-label">初始密码</label>
+              <input class="form-input" value="系统随机生成，通过短信下发">
+            </div>
+            <div class="form-item">
+              <label class="form-label">通知方式</label>
+              <div style="display:flex; gap:16px; font-size:13px; color:var(--text-secondary);">
+                <label><input type="checkbox" checked> 短信通知店主</label>
+                <label><input type="checkbox"> 同时发送开店邮件</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="wizard-step" data-step="4">
+            <div class="form-item">
+              <label class="form-label"><span class="req">*</span>二级域名</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input class="form-input" value="huajianji" style="width:200px;">
+                <span style="color:var(--text-muted);">.shop.com</span>
+              </div>
+              <div class="form-hint">自定义域名可在商城开通后由租户在「客户端管理」自助绑定</div>
+            </div>
+            <div class="form-item">
+              <label class="form-label">小程序接入方式</label>
+              <div class="form-radio-group">
+                <div class="form-radio-card selected" onclick="selectPkg(this)"><div class="title">暂不配置</div><div class="desc">开店后由商户自行在后台配置</div></div>
+                <div class="form-radio-card" onclick="selectPkg(this)"><div class="title">自填 AppID</div><div class="desc">商户使用自己的小程序主体</div></div>
+                <div class="form-radio-card" onclick="selectPkg(this)"><div class="title">授权托管</div><div class="desc">微信第三方平台代运营</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5 结果 -->
+          <div class="wizard-step" data-step="5">
+            <div class="result-box">
+              <div class="result-icon">✓</div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:4px;">商城创建成功</div>
+              <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:22px;">初始化任务已完成：店主账号、默认数据、存储目录均已就绪</div>
+            </div>
+            <div class="card" style="background:var(--surface-2); border:none; padding:6px 20px; margin-bottom:20px;">
+              <div class="kv-row"><div class="k">商城编号</div><div class="v">SH100892</div></div>
+              <div class="kv-row"><div class="k">商城名称</div><div class="v">花间集女装旗舰店</div></div>
+              <div class="kv-row"><div class="k">访问地址</div><div class="v">https://huajianji.shop.com</div></div>
+              <div class="kv-row"><div class="k">商户后台</div><div class="v">https://huajianji.shop.com/store</div></div>
+              <div class="kv-row"><div class="k">店主账号</div><div class="v">huajianji_admin ／ 初始密码已短信发送至 138****2201</div></div>
+              <div class="kv-row"><div class="k">套餐到期</div><div class="v">2027-08-15（标准版）</div></div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+              <a href="shop-list.html" class="btn">返回列表</a>
+              <a href="shop-detail.html?name=花间集女装旗舰店&status=good" class="btn btn-primary">查看商城详情</a>
+            </div>
+          </div>
+
+          <!-- 底部按钮 -->
+          <div id="wizardFooter" style="display:flex; justify-content:flex-end; gap:10px; margin-top:26px; padding-top:20px; border-top:1px solid var(--gridline);">
+            <a href="shop-list.html" class="btn btn-ghost">取消</a>
+            <button class="btn" id="prevBtn" onclick="go(-1)" disabled>上一步</button>
+            <button class="btn btn-primary" id="nextBtn" onclick="go(1)">下一步</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let cur = 1;
+  const total = 5;
+  function render() {
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.toggle('active', +el.dataset.step === cur));
+    document.querySelectorAll('.step').forEach(el => {
+      const s = +el.dataset.s;
+      el.classList.toggle('active', s === cur);
+      el.classList.toggle('done', s < cur);
+    });
+    document.getElementById('prevBtn').disabled = cur === 1;
+    document.getElementById('nextBtn').textContent = cur === total ? '完成' : (cur === total - 1 ? '确认创建' : '下一步');
+    document.getElementById('wizardFooter').style.display = cur === total ? 'none' : 'flex';
+  }
+  function go(dir) {
+    cur = Math.min(total, Math.max(1, cur + dir));
+    render();
+  }
+  function selectPkg(el) {
+    el.parentElement.querySelectorAll('.form-radio-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  render();
+</script>
+</body>
+</html>

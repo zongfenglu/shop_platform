@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.shopplatform</groupId>
+    <artifactId>shop-platform</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>shop-app</artifactId>
+  <packaging>jar</packaging>
+  <name>shop-app</name>
+  <description>本地/试点 all-in-one：超管 + 商户 + C 端 + 定时任务 + 微信回调跑在一个 JVM</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.shopplatform</groupId>
+      <artifactId>shop-admin-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.shopplatform</groupId>
+      <artifactId>shop-store-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.shopplatform</groupId>
+      <artifactId>shop-client-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.shopplatform</groupId>
+      <artifactId>shop-job</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.shopplatform</groupId>
+      <artifactId>shop-mp</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>支付结果</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .result-wrap { text-align:center; padding:50px 24px 20px; }
+  .result-icon { width:64px;height:64px;border-radius:50%;background:var(--status-good-bg);color:var(--status-good);
+    display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px; }
+  .kv-row { display:flex; justify-content:space-between; padding:8px 0; font-size:12.5px; color:var(--text-secondary); border-bottom:1px dashed var(--gridline); }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar">支付结果</div>
+
+  <div class="phone-body">
+    <div class="result-wrap">
+      <div class="result-icon">✓</div>
+      <div style="font-size:17px; font-weight:700; margin-bottom:6px;">支付成功</div>
+      <div style="font-size:12.5px; color:var(--text-muted);">商家将尽快为您安排发货</div>
+    </div>
+
+    <div class="m-card-block">
+      <div style="padding:14px;">
+        <div class="kv-row"><span>订单编号</span><span>20260810049231</span></div>
+        <div class="kv-row"><span>支付方式</span><span>微信支付</span></div>
+        <div class="kv-row"><span>支付时间</span><span>2026-08-10 09:24:35</span></div>
+        <div class="kv-row" style="border-bottom:none;"><span>实付金额</span><span style="color:var(--price); font-weight:700;">¥644.80</span></div>
+      </div>
+    </div>
+
+    <div style="padding:16px 14px; display:flex; gap:10px;">
+      <a href="order-list.html" class="m-btn m-btn-outline" style="flex:1;">查看订单</a>
+      <a href="home.html" class="m-btn m-btn-warm" style="flex:1;">继续逛逛</a>
+    </div>
+  </div>
+
+  <div class="m-tabbar">
+    <a href="home.html"><span class="ico">⌂</span>首页</a>
+    <a><span class="ico">▦</span>分类</a>
+    <a href="cart.html"><span class="ico">🛒</span>购物车</a>
+    <a href="my.html"><span class="ico">☺</span>我的</a>
+  </div>
+</div></div>
+</body>
+</html>

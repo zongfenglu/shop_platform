@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>商品管理 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .goods-cell { display:flex; gap:10px; align-items:center; }
+  .goods-thumb { width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg,#f3e7e0,#eadad0); flex-shrink:0; display:flex;align-items:center;justify-content:center;color:#c9b6a8;font-size:16px; }
+  .goods-name { font-weight:500; }
+  .goods-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item active" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>商品管理</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">商品管理</div>
+          <div class="page-desc">共 862 个商品 · 配额 862 / 5000</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn">批量导入</button>
+          <a href="goods-edit.html" class="btn btn-primary">＋ 发布商品</a>
+        </div>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <div class="tabs" style="border-bottom:none; margin-bottom:14px;">
+          <div class="tab active">出售中 <span class="count">(786)</span></div>
+          <div class="tab">仓库中 <span class="count">(64)</span></div>
+          <div class="tab">已售罄 <span class="count">(12)</span></div>
+          <div class="tab">回收站 <span class="count">(5)</span></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <input class="form-input" style="width:220px;" placeholder="商品名称 / 编码">
+          <select class="form-select" style="width:140px;"><option>全部分类</option><option>连衣裙</option><option>外套</option><option>裤装</option><option>配饰</option></select>
+          <select class="form-select" style="width:140px;"><option>全部品牌</option></select>
+          <button class="btn">查询</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="padding:12px 18px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--gridline); font-size:12.5px; color:var(--text-secondary);">
+          <input type="checkbox"> 全选
+          <button class="btn btn-sm">批量上架</button>
+          <button class="btn btn-sm">批量下架</button>
+          <button class="btn btn-sm">批量改价</button>
+          <button class="btn btn-sm">移入回收站</button>
+        </div>
+        <table class="table">
+          <thead>
+            <tr><th style="width:32px;"></th><th>商品</th><th>分类</th><th class="num">价格</th><th class="num">库存</th><th class="num">销量</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td><div class="goods-cell"><div class="goods-thumb">👗</div><div><div class="goods-name">法式碎花连衣裙 2026夏季新款</div><div class="goods-sub">编码 G20260112 · 3 规格</div></div></div></td>
+              <td>连衣裙</td>
+              <td class="num">¥199 ~ ¥259</td>
+              <td class="num">428</td>
+              <td class="num">386</td>
+              <td><span class="tag tag-good">出售中</span></td>
+              <td><a href="goods-edit.html" class="btn btn-sm">编辑</a> <button class="btn btn-sm">下架</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td><div class="goods-cell"><div class="goods-thumb">🧥</div><div><div class="goods-name">羊毛混纺加厚大衣</div><div class="goods-sub">编码 G20251098 · 5 规格</div></div></div></td>
+              <td>外套</td>
+              <td class="num">¥459 ~ ¥599</td>
+              <td class="num" style="color:var(--status-critical);">18</td>
+              <td class="num">312</td>
+              <td><span class="tag tag-good">出售中</span></td>
+              <td><a href="goods-edit.html" class="btn btn-sm">编辑</a> <button class="btn btn-sm">下架</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td><div class="goods-cell"><div class="goods-thumb">👖</div><div><div class="goods-name">高腰直筒牛仔裤</div><div class="goods-sub">编码 G20260056 · 4 规格</div></div></div></td>
+              <td>裤装</td>
+              <td class="num">¥159</td>
+              <td class="num">256</td>
+              <td class="num">258</td>
+              <td><span class="tag tag-good">出售中</span></td>
+              <td><a href="goods-edit.html" class="btn btn-sm">编辑</a> <button class="btn btn-sm">下架</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td><div class="goods-cell"><div class="goods-thumb">🧣</div><div><div class="goods-name">真丝方巾礼盒装</div><div class="goods-sub">编码 G20250921 · 单规格</div></div></div></td>
+              <td>配饰</td>
+              <td class="num">¥99</td>
+              <td class="num">0</td>
+              <td class="num">186</td>
+              <td><span class="tag tag-critical">已售罄</span></td>
+              <td><a href="goods-edit.html" class="btn btn-sm">编辑</a> <button class="btn btn-sm">补货</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td><div class="goods-cell"><div class="goods-thumb">🧶</div><div><div class="goods-name">小香风针织衫</div><div class="goods-sub">编码 G20260203 · 3 规格</div></div></div></td>
+              <td>外套</td>
+              <td class="num">¥219 ~ ¥259</td>
+              <td class="num">142</td>
+              <td class="num">140</td>
+              <td><span class="tag tag-muted">仓库中</span></td>
+              <td><a href="goods-edit.html" class="btn btn-sm">编辑</a> <button class="btn btn-sm">上架</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted);">
+          <span>共 786 条</span><span>‹ 1 2 3 ... 40 ›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>员工管理 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .tab-panel { display:none; } .tab-panel.active { display:block; }
+  .user-cell { display:flex; gap:10px; align-items:center; }
+  .user-avatar { width:32px;height:32px;border-radius:50%; color:#fff; font-size:12px; display:flex;align-items:center;justify-content:center; flex-shrink:0; }
+  .perm-tree { font-size:13px; }
+  .perm-group { margin-bottom:14px; }
+  .perm-group-title { font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+  .perm-items { display:flex; flex-wrap:wrap; gap:8px 20px; padding-left:22px; }
+  .perm-item { display:flex; align-items:center; gap:6px; color:var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item active" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>员工管理</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">员工管理</div><div class="page-desc">员工账号 7 / 10（套餐上限）</div></div>
+        <button class="btn btn-primary" onclick="document.getElementById('newStaffModal').classList.remove('hidden')">＋ 新建员工</button>
+      </div>
+
+      <div class="card card-pad">
+        <div class="tabs" style="margin-bottom:18px;">
+          <div class="tab active" onclick="showTab(1,this)">员工账号</div>
+          <div class="tab" onclick="showTab(2,this)">角色权限</div>
+          <div class="tab" onclick="showTab(3,this)">操作日志</div>
+        </div>
+
+        <!-- 员工账号 -->
+        <div class="tab-panel active" data-p="1">
+          <table class="table">
+            <thead><tr><th>员工</th><th>角色</th><th>所属门店</th><th>最近登录</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="user-cell"><div class="user-avatar" style="background:var(--price);">王</div>王丽（超级店主）</div></td>
+                <td><span class="tag tag-primary">超级管理员</span></td><td>-</td><td>2026-08-10 09:00</td>
+                <td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm" disabled>不可编辑</button></td>
+              </tr>
+              <tr>
+                <td><div class="user-cell"><div class="user-avatar" style="background:#2a78d6;">陈</div>陈晓（运营）</div></td>
+                <td><span class="tag tag-muted">运营专员</span></td><td>-</td><td>2026-08-10 08:40</td>
+                <td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm" onclick="editStaff('陈晓','运营专员')">编辑</button> <button class="btn btn-sm">重置密码</button></td>
+              </tr>
+              <tr>
+                <td><div class="user-cell"><div class="user-avatar" style="background:#1baf7a;">李</div>李芳（客服）</div></td>
+                <td><span class="tag tag-muted">客服专员</span></td><td>-</td><td>2026-08-10 09:12</td>
+                <td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm" onclick="editStaff('李芳','客服专员')">编辑</button> <button class="btn btn-sm">重置密码</button></td>
+              </tr>
+              <tr>
+                <td><div class="user-cell"><div class="user-avatar" style="background:#eda100;">周</div>周敏（仓库）</div></td>
+                <td><span class="tag tag-muted">仓库专员</span></td><td>-</td><td>2026-08-09 18:20</td>
+                <td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm" onclick="editStaff('周敏','仓库专员')">编辑</button> <button class="btn btn-sm">重置密码</button></td>
+              </tr>
+              <tr>
+                <td><div class="user-cell"><div class="user-avatar" style="background:#e87ba4;">李</div>李芳（店员·西湖银泰店）</div></td>
+                <td><span class="tag tag-muted">门店店员</span></td><td>花间集(西湖银泰店)</td><td>2026-08-10 14:22</td>
+                <td><span class="tag tag-good">正常</span></td><td><button class="btn btn-sm" onclick="editStaff('李芳','门店店员')">编辑</button> <button class="btn btn-sm">重置密码</button></td>
+              </tr>
+              <tr>
+                <td><div class="user-cell"><div class="user-avatar" style="background:var(--text-muted);">赵</div>赵鹏（前员工）</div></td>
+                <td><span class="tag tag-muted">运营专员</span></td><td>-</td><td>2026-06-01 10:00</td>
+                <td><span class="tag tag-critical">已停用</span></td><td><button class="btn btn-sm">启用</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 角色权限 -->
+        <div class="tab-panel" data-p="2">
+          <div class="page-header" style="margin-bottom:14px;">
+            <div class="card-title" style="margin:0;">角色列表</div>
+            <button class="btn btn-sm btn-primary" onclick="document.getElementById('roleModal').classList.remove('hidden')">＋ 新建角色</button>
+          </div>
+          <table class="table">
+            <thead><tr><th>角色名称</th><th>说明</th><th class="num">关联员工数</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>超级管理员</td><td>拥有全部权限，不可编辑或删除</td><td class="num">1</td><td><button class="btn btn-sm" disabled>系统内置</button></td></tr>
+              <tr><td>运营专员</td><td>商品、营销、装修管理权限</td><td class="num">2</td><td><button class="btn btn-sm" onclick="document.getElementById('roleModal').classList.remove('hidden')">编辑权限</button></td></tr>
+              <tr><td>客服专员</td><td>订单查询、改价、售后审核（不可导出手机号）</td><td class="num">1</td><td><button class="btn btn-sm" onclick="document.getElementById('roleModal').classList.remove('hidden')">编辑权限</button></td></tr>
+              <tr><td>仓库专员</td><td>订单发货、库存管理</td><td class="num">1</td><td><button class="btn btn-sm" onclick="document.getElementById('roleModal').classList.remove('hidden')">编辑权限</button></td></tr>
+              <tr><td>门店店员</td><td>仅可核销所属门店的自提订单</td><td class="num">1</td><td><button class="btn btn-sm" onclick="document.getElementById('roleModal').classList.remove('hidden')">编辑权限</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 操作日志 -->
+        <div class="tab-panel" data-p="3">
+          <div style="display:flex; gap:12px; margin-bottom:14px;">
+            <select class="form-select" style="width:160px;"><option>全部员工</option><option>陈晓</option><option>李芳</option><option>周敏</option></select>
+            <input class="form-input" style="width:200px;" placeholder="操作关键词">
+            <button class="btn">查询</button>
+          </div>
+          <table class="table">
+            <thead><tr><th>时间</th><th>员工</th><th>操作</th><th>说明</th><th>IP</th></tr></thead>
+            <tbody>
+              <tr><td class="num">2026-08-10 14:22</td><td>李芳（店员）</td><td>核销订单</td><td>核销自提订单 20260810049150</td><td>223.**.**.10</td></tr>
+              <tr><td class="num">2026-08-10 09:20</td><td>李芳（客服）</td><td>处理售后</td><td>同意售后单 AS20260810003 退款</td><td>121.**.**.55</td></tr>
+              <tr><td class="num">2026-08-10 08:50</td><td>陈晓</td><td>发布优惠券</td><td>新建「连衣裙分类满99享9折」</td><td>121.**.**.22</td></tr>
+              <tr><td class="num">2026-08-09 18:30</td><td>周敏</td><td>批量发货</td><td>批量发货 12 个订单</td><td>121.**.**.67</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask hidden" id="newStaffModal">
+  <div class="modal">
+    <div class="modal-header">新建员工<span class="modal-close" onclick="document.getElementById('newStaffModal').classList.add('hidden')">✕</span></div>
+    <div class="modal-body">
+      <div class="form-row form-item">
+        <div><label class="form-label"><span class="req">*</span>姓名</label><input class="form-input" placeholder="请输入姓名"></div>
+        <div><label class="form-label"><span class="req">*</span>登录手机号</label><input class="form-input" placeholder="请输入手机号"></div>
+      </div>
+      <div class="form-item">
+        <label class="form-label"><span class="req">*</span>角色</label>
+        <select class="form-select"><option>运营专员</option><option>客服专员</option><option>仓库专员</option><option>门店店员</option></select>
+      </div>
+      <div class="form-item">
+        <label class="form-label">所属门店（仅门店店员需要）</label>
+        <select class="form-select"><option>不涉及</option><option>花间集(西湖银泰店)</option><option>花间集(万象城店)</option></select>
+      </div>
+      <div class="form-hint">初始密码将通过短信发送至员工手机</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('newStaffModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('newStaffModal').classList.add('hidden')">创建并发送邀请</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask hidden" id="editStaffModal">
+  <div class="modal">
+    <div class="modal-header"><span id="editStaffTitle">编辑员工</span><span class="modal-close" onclick="document.getElementById('editStaffModal').classList.add('hidden')">✕</span></div>
+    <div class="modal-body">
+      <div class="form-item"><label class="form-label">姓名</label><input class="form-input" id="editStaffName"></div>
+      <div class="form-item">
+        <label class="form-label">角色</label>
+        <select class="form-select" id="editStaffRole"><option>运营专员</option><option>客服专员</option><option>仓库专员</option><option>门店店员</option></select>
+      </div>
+      <div class="form-item">
+        <label class="form-label">账号状态</label>
+        <select class="form-select"><option>正常</option><option>停用</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger">停用账号</button>
+      <button class="btn" onclick="document.getElementById('editStaffModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('editStaffModal').classList.add('hidden')">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask hidden" id="roleModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">角色权限 · 运营专员<span class="modal-close" onclick="document.getElementById('roleModal').classList.add('hidden')">✕</span></div>
+    <div class="modal-body" style="max-height:60vh; overflow-y:auto;">
+      <div class="form-item"><label class="form-label">角色名称</label><input class="form-input" value="运营专员"></div>
+      <div class="form-item">
+        <label class="form-label">菜单权限</label>
+        <div class="perm-tree">
+          <div class="perm-group">
+            <div class="perm-group-title"><input type="checkbox" checked>商品</div>
+            <div class="perm-items">
+              <span class="perm-item"><input type="checkbox" checked>查看</span>
+              <span class="perm-item"><input type="checkbox" checked>发布/编辑</span>
+              <span class="perm-item"><input type="checkbox" checked>批量导入导出</span>
+              <span class="perm-item"><input type="checkbox">删除</span>
+            </div>
+          </div>
+          <div class="perm-group">
+            <div class="perm-group-title"><input type="checkbox" checked>订单</div>
+            <div class="perm-items">
+              <span class="perm-item"><input type="checkbox" checked>查看</span>
+              <span class="perm-item"><input type="checkbox">改价</span>
+              <span class="perm-item"><input type="checkbox">导出（含手机号）</span>
+            </div>
+          </div>
+          <div class="perm-group">
+            <div class="perm-group-title"><input type="checkbox" checked>营销</div>
+            <div class="perm-items">
+              <span class="perm-item"><input type="checkbox" checked>优惠券</span>
+              <span class="perm-item"><input type="checkbox" checked>秒杀/拼团/砍价</span>
+            </div>
+          </div>
+          <div class="perm-group">
+            <div class="perm-group-title"><input type="checkbox" checked>装修</div>
+          </div>
+          <div class="perm-group">
+            <div class="perm-group-title"><input type="checkbox">财务</div>
+            <div class="perm-items">
+              <span class="perm-item"><input type="checkbox">资金流水</span>
+              <span class="perm-item"><input type="checkbox">提现审核</span>
+            </div>
+          </div>
+          <div class="perm-group">
+            <div class="perm-group-title"><input type="checkbox">设置</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('roleModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('roleModal').classList.add('hidden')">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(i, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelector('.tab-panel[data-p="'+i+'"]').classList.add('active');
+  }
+  function editStaff(name, role) {
+    document.getElementById('editStaffTitle').textContent = '编辑员工 · ' + name;
+    document.getElementById('editStaffName').value = name;
+    document.getElementById('editStaffRole').value = role;
+    document.getElementById('editStaffModal').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

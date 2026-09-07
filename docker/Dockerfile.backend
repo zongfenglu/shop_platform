@@ -1,0 +1,82 @@
+# 后端应用统一 Dockerfile —— 4 个 Spring Boot 应用（admin/store/client/job）打包方式完全一致，
+# 靠 build arg MODULE 区分，不必写 4 份。
+#
+# 用法（context 必须是仓库根目录，因为多模块构建需要父 pom 和兄弟模块）：
+#   docker build -f docker/Dockerfile.backend --build-arg MODULE=shop-store-api -t shop/store-api .
+# 正常情况下由 docker/docker-compose.prod.yml 调用，不用手敲。
+
+ARG MAVEN_IMAGE=maven:3.9-eclipse-temurin-17
+ARG JRE_IMAGE=eclipse-temurin:17-jre
+
+# ---------- 构建阶段 ----------
+FROM ${MAVEN_IMAGE} AS builder
+ARG MODULE
+WORKDIR /build
+
+# 先只拷 pom，让依赖下载单独成层：改 Java 代码时这一层命中缓存，不必重新下载全部依赖。
+COPY pom.xml ./
+COPY shop-common/pom.xml        shop-common/
+COPY shop-framework/pom.xml     shop-framework/
+COPY shop-domain/pom.xml        shop-domain/
+COPY shop-admin-api/pom.xml     shop-admin-api/
+COPY shop-store-api/pom.xml     shop-store-api/
+COPY shop-client-api/pom.xml    shop-client-api/
+COPY shop-job/pom.xml           shop-job/
+COPY shop-mp/pom.xml            shop-mp/
+COPY shop-app/pom.xml           shop-app/
+RUN --mount=type=cache,target=/root/.m2/repository \
+    MAVEN_OPTS="-Xmx512m" mvn -B -q -pl "${MODULE}" -am dependency:go-offline -DskipTests
+
+# 再拷源码构建。跳过测试：测试需要真实 MySQL/Redis，属于 CI 的职责（.github/workflows/ci.yml
+# 里 ./mvnw verify 已经把 ArchUnit + 跨租户越权集成测试设成一票否决），镜像构建不重复跑。
+COPY shop-common/src        shop-common/src
+COPY shop-framework/src     shop-framework/src
+COPY shop-domain/src        shop-domain/src
+COPY shop-admin-api/src     shop-admin-api/src
+COPY shop-store-api/src     shop-store-api/src
+COPY shop-client-api/src    shop-client-api/src
+COPY shop-job/src           shop-job/src
+COPY shop-mp/src            shop-mp/src
+COPY shop-app/src           shop-app/src
+RUN --mount=type=cache,target=/root/.m2/repository \
+    MAVEN_OPTS="-Xmx512m" mvn -B -q -pl "${MODULE}" -am package -DskipTests \
+    && if ls "${MODULE}/target/${MODULE}-"*-exec.jar >/dev/null 2>&1; then \
+         cp "${MODULE}/target/${MODULE}-"*-exec.jar /build/app.jar; \
+       else \
+         cp "${MODULE}/target/${MODULE}-"*.jar /build/app.jar; \
+       fi
+
+# ---------- 运行阶段 ----------
+FROM ${JRE_IMAGE}
+ARG MODULE
+WORKDIR /app
+
+# curl 供 healthcheck 用；顺手装 tzdata 保证 Asia/Shanghai 可用（JVM 与 MySQL 时区必须一致，
+# 否则订单创建时间/支付超时判断会差 8 小时）。
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl tzdata \
+    && rm -rf /var/lib/apt/lists/*
+ENV TZ=Asia/Shanghai
+
+# 非 root 运行：容器逃逸时降低影响面。
+# -m 建 home 目录：RocketMQ 客户端会往 ${user.home}/logs/rocketmqlogs 写日志，
+# useradd -r 默认不建 home，缺了它启动时会刷一串 FileNotFoundException。
+RUN groupadd -r shop && useradd -r -m -d /home/shop -g shop shop \
+    && mkdir -p /home/shop/logs \
+    && chown -R shop:shop /home/shop
+COPY --from=builder --chown=shop:shop /build/app.jar /app/app.jar
+COPY docker/backend-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+# 以 root 启动，entrypoint 里 chown 数据卷后再 drop 到 shop。
+# 命名卷会盖掉镜像里预建的目录属主，不这样 shop 写不了 /data/uploads、/data/backups。
+
+# 端口不在这里设：每个应用的 server.port 由自己的 application.yml 决定
+# （admin 8081 / store 8082 / client 8083 / job 8084 / mp 8085）。
+# 注意别设 ENV SERVER_PORT —— Spring Boot 会把它当 server.port 用，
+# 从而覆盖掉各应用的端口，导致 compose 里按预期端口写的 healthcheck 全部探测失败。
+EXPOSE 8081 8082 8083 8084 8085
+
+# -XX:+UseContainerSupport 让 JVM 读容器 cgroup 内存限制而不是宿主机总内存，
+# 否则容器限了 512m、JVM 仍按宿主机内存算堆，直接被 OOMKill。
+# MaxRAMPercentage=75 给堆外内存（元空间/线程栈/Netty 直接内存）留出余量。
+ENTRYPOINT ["/entrypoint.sh"]

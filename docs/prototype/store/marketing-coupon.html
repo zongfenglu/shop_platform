@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>优惠券管理 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .m-subnav { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .m-subnav a { padding:7px 16px; border-radius:999px; font-size:13px; color:var(--text-secondary); background:var(--surface); border:1px solid var(--border); }
+  .m-subnav a.active { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .coupon-card { border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; display:flex; }
+  .coupon-face { width:120px; flex-shrink:0; background:linear-gradient(135deg,#fff3ec,#ffe4d6); display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--price); position:relative; }
+  .coupon-face::after { content:""; position:absolute; right:-1px; top:0; bottom:0; width:1px; background:repeating-linear-gradient(0deg, var(--border-strong) 0 6px, transparent 6px 12px); }
+  .coupon-face .amt { font-size:22px; font-weight:800; }
+  .coupon-face .cond { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+  .coupon-body { flex:1; padding:14px 18px; }
+  .coupon-row { display:flex; justify-content:space-between; align-items:flex-start; }
+  .coupon-meta { font-size:12px; color:var(--text-muted); margin-top:6px; display:flex; gap:16px; }
+  .progress-track { height:6px; border-radius:3px; background:var(--surface-2); margin-top:8px; width:220px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--series-1); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item active" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>营销中心</b> ／ 优惠券</div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="m-subnav">
+        <a class="active" href="marketing-coupon.html">优惠券</a>
+        <a href="marketing-seckill.html">秒杀</a>
+        <a href="marketing-group.html">拼团</a>
+        <a href="marketing-bargain.html">砍价</a>
+        <a href="#" style="opacity:.5;">满减包邮</a>
+        <a href="#" style="opacity:.5;">积分商城</a>
+        <a href="#" style="opacity:.5;">签到</a>
+      </div>
+
+      <div class="page-header">
+        <div><div class="page-title">优惠券管理</div><div class="page-desc">已发放 12,480 张 · 已核销 6,214 张 · 核销率 49.8%</div></div>
+        <button class="btn btn-primary" onclick="document.getElementById('newCouponModal').classList.remove('hidden')">＋ 新建优惠券</button>
+      </div>
+
+      <div class="tabs" style="margin-bottom:16px;">
+        <div class="tab active">进行中 <span class="count">(6)</span></div>
+        <div class="tab">未开始 <span class="count">(2)</span></div>
+        <div class="tab">已结束 <span class="count">(18)</span></div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="coupon-card">
+          <div class="coupon-face"><div class="amt">¥30</div><div class="cond">满199可用</div></div>
+          <div class="coupon-body">
+            <div class="coupon-row">
+              <div>
+                <div style="font-weight:600;">新人专享券</div>
+                <div class="coupon-meta"><span>有效期：领取后7天内</span><span>适用：全场通用</span><span>每人限领1张</span></div>
+              </div>
+              <div style="text-align:right;">
+                <span class="tag tag-good tag-dot">进行中</span>
+                <div style="margin-top:8px;"><button class="btn btn-sm">编辑</button> <button class="btn btn-sm">发放</button> <button class="btn btn-sm">终止</button></div>
+              </div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:78%;"></div></div>
+            <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">已领取 3,900 / 5,000 张</div>
+          </div>
+        </div>
+
+        <div class="coupon-card">
+          <div class="coupon-face"><div class="amt">9折</div><div class="cond">满99可用</div></div>
+          <div class="coupon-body">
+            <div class="coupon-row">
+              <div>
+                <div style="font-weight:600;">连衣裙分类满99享9折</div>
+                <div class="coupon-meta"><span>有效期：2026-08-01 ~ 2026-08-31</span><span>适用：连衣裙分类</span><span>每人限领2张</span></div>
+              </div>
+              <div style="text-align:right;">
+                <span class="tag tag-good tag-dot">进行中</span>
+                <div style="margin-top:8px;"><button class="btn btn-sm">编辑</button> <button class="btn btn-sm">发放</button> <button class="btn btn-sm">终止</button></div>
+              </div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:45%;"></div></div>
+            <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">已领取 900 / 2,000 张</div>
+          </div>
+        </div>
+
+        <div class="coupon-card">
+          <div class="coupon-face"><div class="amt">¥15</div><div class="cond">满99可用</div></div>
+          <div class="coupon-body">
+            <div class="coupon-row">
+              <div>
+                <div style="font-weight:600;">618大促满99减15</div>
+                <div class="coupon-meta"><span>有效期：固定 2026-06-10 ~ 2026-06-20</span><span>适用：全场通用</span><span>每人限领1张</span></div>
+              </div>
+              <div style="text-align:right;">
+                <span class="tag tag-muted">已结束</span>
+                <div style="margin-top:8px;"><button class="btn btn-sm" disabled>已结束</button></div>
+              </div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;"></div></div>
+            <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">已领取 10,000 / 10,000 张 · 核销 6,214 张</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask hidden" id="newCouponModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header">新建优惠券<span class="modal-close" onclick="document.getElementById('newCouponModal').classList.add('hidden')">✕</span></div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label"><span class="req">*</span>优惠券名称</label>
+        <input class="form-input" placeholder="例如：新人专享券">
+      </div>
+      <div class="form-item">
+        <label class="form-label">优惠类型</label>
+        <div class="form-radio-group">
+          <div class="form-radio-card selected" onclick="selectCard(this)"><div class="title">满减券</div><div class="desc">满X元减Y元</div></div>
+          <div class="form-radio-card" onclick="selectCard(this)"><div class="title">折扣券</div><div class="desc">满X元打Y折</div></div>
+        </div>
+      </div>
+      <div class="form-row form-item">
+        <div><label class="form-label"><span class="req">*</span>门槛金额</label><input class="form-input" value="199"></div>
+        <div><label class="form-label"><span class="req">*</span>优惠金额</label><input class="form-input" value="30"></div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">有效期</label>
+        <select class="form-select"><option>固定时间段</option><option>领取后N天内有效</option></select>
+      </div>
+      <div class="form-row form-item">
+        <div><label class="form-label"><span class="req">*</span>发放总量</label><input class="form-input" value="5000"></div>
+        <div><label class="form-label"><span class="req">*</span>每人限领</label><input class="form-input" value="1"></div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">适用范围</label>
+        <select class="form-select"><option>全场通用</option><option>指定分类</option><option>指定商品</option></select>
+      </div>
+      <div class="form-item">
+        <label class="form-label">领取方式</label>
+        <div style="display:flex; gap:16px; font-size:13px; color:var(--text-secondary);">
+          <label><input type="checkbox" checked> 用户主动领取</label>
+          <label><input type="checkbox"> 新人注册自动发放</label>
+          <label><input type="checkbox"> 后台指定发放</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('newCouponModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('newCouponModal').classList.add('hidden')">保存并发布</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function selectCard(el) {
+    el.parentElement.querySelectorAll('.form-radio-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: shop-job
+  flyway:
+    enabled: false  # schema 统一由 shop-admin-api 管理
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3308}/${DB_NAME:shop_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:wchabc123!!}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # shop-job 本身不主动用 Redis，但 Redis 在 classpath 上（经 shop-framework 传递依赖），
+      # actuator 会自动装配 Redis 健康探针；不配密码则容器里健康检查恒为 DOWN。
+      password: ${REDIS_PASSWORD:}
+
+shop:
+  storage:
+    local-dir: ${STORAGE_DIR:./data/uploads}
+  backup:
+    dir: ${BACKUP_DIR:./data/backups}
+  trade:
+    auto-confirm-days: ${TRADE_AUTO_CONFIRM_DAYS:15}
+    after-sale-apply-days: ${TRADE_AFTER_SALE_APPLY_DAYS:7}
+  jwt:
+    secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_secret_key}
+    expire-hours: 12
+  crypto:
+    aes-key: ${AES_KEY:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_aes_key}
+  acme:
+    enabled: ${ACME_ENABLED:false}
+    directory-url: ${ACME_DIRECTORY_URL:https://acme-staging-v02.api.letsencrypt.org/directory}
+    email: ${ACME_EMAIL:}
+    cert-dir: ${ACME_CERT_DIR:./data/certs}
+    reload-command: ${ACME_RELOAD_COMMAND:}
+  rocketmq:
+    enabled: ${SHOP_ROCKETMQ_ENABLED:true}
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
+  producer:
+    group: shop-job-producer
+  consumer:
+    group: shop-job-order-close
+
+logging:
+  level:
+    com.shopplatform: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # 只暴露 health：默认放开的 env/configprops/beans 会泄露数据库密码、JWT secret、
+        # 微信支付商户凭证等，容器里这些都是环境变量注入的，等于把密钥挂在公网端点上。
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    # 容器编排只关心"进程是否活着 + 依赖是否可用"，readiness 探针交给 compose healthcheck。
+    defaults:
+      enabled: true

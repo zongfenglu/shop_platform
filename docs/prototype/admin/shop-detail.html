@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>商城详情 - 平台超管</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+  .kv-row { display:flex; padding:10px 0; border-bottom:1px dashed var(--gridline); font-size:13px; }
+  .kv-row .k { width:120px; color:var(--text-muted); flex-shrink:0; }
+  .kv-row .v { font-weight:500; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo">火</div><div class="name">多开云商城</div><div class="badge">超管</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>数据看板</a>
+      <a class="nav-item active" href="shop-list.html"><span class="ico">▤</span>商城管理</a>
+      <a class="nav-item" href="package-list.html"><span class="ico">◇</span>套餐管理</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">￥</span>订购管理</a>
+      <a class="nav-item" href="domain-list.html"><span class="ico">⌘</span>域名管理</a>
+      <a class="nav-item" href="mp-client.html"><span class="ico">▣</span>客户端管理</a>
+      <div class="nav-group-title">系统</div>
+      <a class="nav-item" href="platform-account.html"><span class="ico">◎</span>平台账号</a>
+      <a class="nav-item" href="platform-setting.html"><span class="ico">⚙</span>平台设置</a>
+      <a class="nav-item" href="ops-center.html"><span class="ico">⏱</span>运维中心</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><a href="shop-list.html">商城管理</a> ／ <b id="bcName">商城详情</b></div>
+      <div class="topbar-right"><div class="topbar-user"><div class="avatar">平</div>平台管理员</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="shopTitle" style="display:flex;align-items:center;gap:10px;">花间集女装旗舰店</div>
+          <div class="page-desc">SH100231 · huajianji.shop.com · 创建于 2025-09-12</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn">重置密码</button>
+          <button class="btn" onclick="document.getElementById('disableModal').classList.remove('hidden')">停用商城</button>
+          <a href="../store/dashboard.html?platform=1" class="btn btn-primary">🔑 免密登录商户后台</a>
+        </div>
+      </div>
+
+      <div class="grid grid-4" style="margin-bottom:18px;">
+        <div class="card kpi"><div class="kpi-label">当前套餐</div><div class="kpi-value" style="font-size:20px;">标准版</div><div class="kpi-foot"><span class="tag tag-good tag-dot" id="statusTag">正常</span></div></div>
+        <div class="card kpi"><div class="kpi-label">到期时间</div><div class="kpi-value" style="font-size:20px;">2027-08-15</div><div class="kpi-foot"><span style="font-size:12px;color:var(--text-muted);">剩余 371 天</span></div></div>
+        <div class="card kpi"><div class="kpi-label">商品数 / 上限</div><div class="kpi-value" style="font-size:20px;">862 <span style="font-size:12px;color:var(--text-muted);">/ 5000</span></div></div>
+        <div class="card kpi"><div class="kpi-label">累计 GMV</div><div class="kpi-value" style="font-size:20px;">¥286,420</div></div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="tabs" style="margin-bottom:18px;">
+          <div class="tab active" data-t="1" onclick="showTab(1,this)">概览</div>
+          <div class="tab" data-t="2" onclick="showTab(2,this)">套餐与配额</div>
+          <div class="tab" data-t="3" onclick="showTab(3,this)">域名</div>
+          <div class="tab" data-t="4" onclick="showTab(4,this)">操作日志</div>
+        </div>
+
+        <div class="tab-panel active" data-p="1">
+          <div class="kv-row"><div class="k">联系人</div><div class="v">王丽 · 138****2201</div></div>
+          <div class="kv-row"><div class="k">所属行业</div><div class="v">服饰鞋包</div></div>
+          <div class="kv-row"><div class="k">商户后台地址</div><div class="v">https://huajianji.shop.com/store</div></div>
+          <div class="kv-row"><div class="k">店主账号</div><div class="v">huajianji_admin</div></div>
+          <div class="kv-row"><div class="k">存储用量</div><div class="v">6.2 GB / 20 GB</div></div>
+          <div class="kv-row"><div class="k">本月短信</div><div class="v">340 / 1000 条</div></div>
+          <div class="kv-row"><div class="k">备注</div><div class="v">代理商「云众」渠道开通，续费需提前对接代理商</div></div>
+        </div>
+
+        <div class="tab-panel" data-p="2">
+          <table class="table">
+            <thead><tr><th>功能项</th><th>说明</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr><td>商品管理</td><td>商品数上限 5000</td><td><span class="tag tag-good">已开放</span></td></tr>
+              <tr><td>营销中心</td><td>优惠券/满减/秒杀/拼团/砍价</td><td><span class="tag tag-good">已开放</span></td></tr>
+              <tr><td>分销体系</td><td>二级分销</td><td><span class="tag tag-good">已开放</span></td></tr>
+              <tr><td>门店自提</td><td>门店数上限 5</td><td><span class="tag tag-good">已开放</span></td></tr>
+              <tr><td>DIY 装修</td><td>页面数上限 30</td><td><span class="tag tag-good">已开放</span></td></tr>
+              <tr><td>微信第三方托管</td><td>需旗舰版</td><td><span class="tag tag-muted">未开放</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="3">
+          <table class="table">
+            <thead><tr><th>域名</th><th>类型</th><th>证书状态</th><th>解析状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>huajianji.shop.com</td><td>平台泛域名</td><td><span class="tag tag-good">有效</span></td><td><span class="tag tag-good">已生效</span></td><td><button class="btn btn-sm" disabled>默认</button></td></tr>
+              <tr><td>www.huajianji-mall.com</td><td>自定义域名</td><td><span class="tag tag-good">有效 · 89天后到期</span></td><td><span class="tag tag-good">已生效</span></td><td><button class="btn btn-sm">解绑</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-panel" data-p="4">
+          <table class="table">
+            <thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td class="num">2026-08-01 09:12</td><td>平台管理员</td><td>免密登录</td><td>协助排查发货异常问题</td></tr>
+              <tr><td class="num">2026-07-15 14:03</td><td>系统</td><td>套餐续费</td><td>标准版续费12个月，订单号 PO20260715003</td></tr>
+              <tr><td class="num">2025-09-12 10:31</td><td>平台管理员</td><td>创建商城</td><td>初始化完成，耗时 2.3s</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask hidden" id="disableModal">
+  <div class="modal">
+    <div class="modal-header">停用商城<span class="modal-close" onclick="document.getElementById('disableModal').classList.add('hidden')">✕</span></div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">停用后该商城的小程序/H5将无法访问，商户后台仅超管可登录。请填写停用原因：</label>
+        <textarea class="form-textarea" rows="3" placeholder="例如：违规经营 / 租户申请下线 / 欠费超过宽限期"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('disableModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-danger" onclick="document.getElementById('disableModal').classList.add('hidden')">确认停用</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const p = new URLSearchParams(location.search);
+  const name = p.get('name');
+  const status = p.get('status');
+  if (name) { document.getElementById('shopTitle').firstChild.textContent = name; document.getElementById('bcName').textContent = name; }
+  const statusMap = {
+    good: ['tag-good','正常'], warning: ['tag-warning','3日后到期'], trial: ['tag-good','试用中'],
+    expired: ['tag-critical','已过期'], disabled: ['tag-critical','已停用']
+  };
+  if (status && statusMap[status]) {
+    const el = document.getElementById('statusTag');
+    el.className = 'tag tag-dot ' + statusMap[status][0];
+    el.textContent = statusMap[status][1];
+  }
+  function showTab(i, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelector('.tab-panel[data-p="'+i+'"]').classList.add('active');
+  }
+</script>
+</body>
+</html>

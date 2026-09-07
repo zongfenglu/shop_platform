@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>砍价活动 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .m-subnav { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .m-subnav a { padding:7px 16px; border-radius:999px; font-size:13px; color:var(--text-secondary); background:var(--surface); border:1px solid var(--border); }
+  .m-subnav a.active { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .progress-track { height:8px; border-radius:4px; background:var(--surface-2); overflow:hidden; }
+  .progress-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#ff9143,#e34948); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item active" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>营销中心</b> ／ 砍价</div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="m-subnav">
+        <a href="marketing-coupon.html">优惠券</a>
+        <a href="marketing-seckill.html">秒杀</a>
+        <a href="marketing-group.html">拼团</a>
+        <a class="active" href="marketing-bargain.html">砍价</a>
+        <a href="#" style="opacity:.5;">满减包邮</a>
+        <a href="#" style="opacity:.5;">积分商城</a>
+        <a href="#" style="opacity:.5;">签到</a>
+      </div>
+
+      <div class="page-header">
+        <div><div class="page-title">砍价活动</div><div class="page-desc">进行中活动 1 个 · 累计参与 1,286 人次</div></div>
+        <button class="btn btn-primary">＋ 发起砍价活动</button>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:16px;">
+        <div style="display:flex; gap:16px; align-items:flex-start;">
+          <div style="width:64px;height:64px;border-radius:10px;background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex;align-items:center;justify-content:center;font-size:24px;color:#c9b6a8; flex-shrink:0;">🧥</div>
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:14px;">羊毛混纺加厚大衣 · 黑色/L</div>
+            <div style="font-size:12.5px; color:var(--text-muted); margin-top:4px;">原价 ¥599.00 · 底价 <b style="color:var(--price);">¥399.00</b> · 每人可发起1次 · 每次最多5人帮砍 · 24小时有效</div>
+          </div>
+          <span class="tag tag-good tag-dot">进行中</span>
+          <button class="btn btn-sm">编辑</button>
+        </div>
+      </div>
+
+      <div class="grid grid-4" style="margin-bottom:16px;">
+        <div class="card kpi"><div class="kpi-label">发起砍价人数</div><div class="kpi-value">312</div></div>
+        <div class="card kpi"><div class="kpi-label">参与助力人次</div><div class="kpi-value">974</div></div>
+        <div class="card kpi"><div class="kpi-label">砍到底价人数</div><div class="kpi-value">86</div></div>
+        <div class="card kpi"><div class="kpi-label">转化下单数</div><div class="kpi-value">64</div></div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="card-title">砍价进行中记录</div>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+              <span>张婷 发起砍价 · 已有3人帮砍</span>
+              <span>当前 ¥459.00 <span style="color:var(--text-muted);">/ 底价¥399.00</span></span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:70%;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+              <span>陈昊 发起砍价 · 已砍至底价</span>
+              <span style="color:var(--status-good-text); font-weight:600;">¥399.00 · 可下单</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+              <span>刘思琪 发起砍价 · 已有1人帮砍</span>
+              <span>当前 ¥549.00 <span style="color:var(--text-muted);">/ 底价¥399.00</span></span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:25%;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .my-hero { background:linear-gradient(135deg,#2b2b2b,#3d3d3d); color:#fff; padding:22px 16px 40px; }
+  .my-user { display:flex; align-items:center; gap:12px; }
+  .my-avatar { width:52px; height:52px; border-radius:50%; background:#e34948; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; }
+  .my-name { font-size:16px; font-weight:700; }
+  .my-sub { font-size:11.5px; opacity:.75; margin-top:2px; }
+  .order-shortcut { background:#fff; margin:-26px 14px 0; border-radius:12px; box-shadow:var(--shadow-md); padding:16px 4px; display:flex; position:relative; z-index:2; }
+  .order-shortcut .item { flex:1; text-align:center; font-size:11px; color:var(--text-secondary); position:relative; }
+  .order-shortcut .ico { font-size:20px; display:block; margin-bottom:6px; }
+  .order-shortcut .badge { position:absolute; top:-6px; right:22%; background:var(--price); color:#fff; font-size:9px; border-radius:999px; padding:1px 4px; min-width:14px; }
+  .asset-row { display:flex; background:#fff; margin:12px 14px; border-radius:12px; box-shadow:var(--shadow-sm); }
+  .asset-row .item { flex:1; text-align:center; padding:14px 0; }
+  .asset-row .n { font-size:18px; font-weight:700; }
+  .asset-row .l { font-size:11px; color:var(--text-muted); margin-top:2px; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+
+  <div class="phone-body">
+    <div class="my-hero">
+      <div class="my-user">
+        <div class="my-avatar">张</div>
+        <div><div class="my-name">张婷</div><div class="my-sub">🥈 银卡会员 · 成长值 1,280</div></div>
+      </div>
+    </div>
+
+    <div class="order-shortcut">
+      <a href="order-list.html" class="item"><span class="ico">💰</span>待付款<span class="badge">1</span></a>
+      <a href="order-list.html" class="item"><span class="ico">📦</span>待发货<span class="badge">1</span></a>
+      <a href="order-list.html" class="item"><span class="ico">🚚</span>待收货<span class="badge">1</span></a>
+      <a href="#" class="item"><span class="ico">✍️</span>待评价</a>
+      <a href="#" class="item"><span class="ico">↺</span>退款/售后</a>
+    </div>
+
+    <div class="asset-row">
+      <a class="item"><div class="n">¥128.50</div><div class="l">我的余额</div></a>
+      <a class="item" href="points-mall.html"><div class="n">1,280</div><div class="l">我的积分</div></a>
+      <a class="item" href="coupon-center.html"><div class="n">3</div><div class="l">优惠券</div></a>
+    </div>
+
+    <div class="m-card-block">
+      <div class="m-cell"><div class="l">📍 收货地址</div><div class="r">›</div></div>
+      <div class="m-cell"><div class="l">❤ 我的收藏</div><div class="r">›</div></div>
+      <div class="m-cell"><div class="l">🕐 浏览足迹</div><div class="r">›</div></div>
+    </div>
+
+    <div class="m-card-block">
+      <a class="m-cell" href="sign-in.html"><div class="l">📅 每日签到</div><div class="r">连续签到3天 ›</div></a>
+      <a class="m-cell" href="distribution-center.html"><div class="l">🔗 我要分销</div><div class="r">申请成为推广员 ›</div></a>
+      <a class="m-cell" href="store-locator.html"><div class="l">🏬 附近门店</div><div class="r">›</div></a>
+    </div>
+
+    <div class="m-card-block">
+      <a class="m-cell" href="customer-service.html"><div class="l">🎧 联系客服</div><div class="r">›</div></a>
+      <div class="m-cell"><div class="l">📄 协议与隐私</div><div class="r">›</div></div>
+      <div class="m-cell" style="border-bottom:none;"><div class="l">⚙ 设置</div><div class="r">›</div></div>
+    </div>
+  </div>
+
+  <div class="m-tabbar">
+    <a href="home.html"><span class="ico">⌂</span>首页</a>
+    <a><span class="ico">▦</span>分类</a>
+    <a href="cart.html"><span class="ico">🛒</span>购物车</a>
+    <a class="active"><span class="ico">☺</span>我的</a>
+  </div>
+</div></div>
+</body>
+</html>

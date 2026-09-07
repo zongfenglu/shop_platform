@@ -1,0 +1,46 @@
+# === Java / Maven ===
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# === IDE ===
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+*.log
+logs/
+
+# === 本地环境变量（含数据库密码等敏感信息，禁止提交） ===
+.env
+.env.local
+docker/.env
+docker/.env.*
+!docker/.env.prod.example
+application-local.yml
+application-local.yaml
+
+# === 前端 ===
+node_modules/
+dist/
+.output/
+.nuxt/
+
+# === uni-app ===
+unpackage/
+
+# === 数据库本地数据卷（docker-compose 挂载） ===
+docker/mysql-data/
+
+# === 本地上传与逻辑备份（可能含业务数据） ===
+data/uploads/
+data/backups/

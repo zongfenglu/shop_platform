@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>订单详情 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .kv-row { display:flex; padding:8px 0; font-size:13px; }
+  .kv-row .k { width:90px; color:var(--text-muted); flex-shrink:0; }
+  .order-thumb { width:52px; height:52px; border-radius:8px; background:linear-gradient(135deg,#f3e7e0,#eadad0); flex-shrink:0; display:flex;align-items:center;justify-content:center;color:#c9b6a8;font-size:18px; }
+  .price-line { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; color:var(--text-secondary); }
+  .price-line.total { font-size:15px; font-weight:700; color:var(--text-primary); border-top:1px solid var(--gridline); margin-top:6px; padding-top:12px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item active" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><a href="order-list.html">订单管理</a> ／ <b>订单详情</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">订单号 20260810049231</div>
+          <div class="page-desc">2026-08-10 09:24 下单 · 来自小程序</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn">订单备注</button>
+          <button class="btn btn-primary" id="shipBtn" onclick="document.getElementById('shipModal').classList.remove('hidden')">确认发货</button>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card card-pad">
+            <div class="card-title">订单状态</div>
+            <div class="status-timeline" style="margin-top:16px;">
+              <div class="node done"><div class="t">买家已下单</div><div class="d">2026-08-10 09:24:03</div></div>
+              <div class="node done"><div class="t">买家已付款 · 微信支付 ¥199.00</div><div class="d">2026-08-10 09:24:35</div></div>
+              <div class="node"><div class="t">商家发货</div><div class="d">待处理</div></div>
+              <div class="node"><div class="t">买家确认收货</div><div class="d">-</div></div>
+            </div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="card-title">收货信息</div>
+            <div class="kv-row"><div class="k">收货人</div><div>张婷 · 138****2231</div></div>
+            <div class="kv-row"><div class="k">收货地址</div><div>浙江省杭州市西湖区文三路 90 号东部软件园 6 幢 502</div></div>
+            <div class="kv-row"><div class="k">配送方式</div><div>快递配送</div></div>
+            <div class="kv-row"><div class="k">买家留言</div><div>麻烦发顺丰，谢谢～</div></div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="card-title">商家备注</div>
+            <div class="form-hint">暂无备注</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card card-pad">
+            <div class="card-title">商品信息</div>
+            <div style="display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--gridline);">
+              <div class="order-thumb">👗</div>
+              <div style="flex:1;">
+                <div style="font-weight:500; font-size:13px;">法式碎花连衣裙 2026夏季新款</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">杏色 / M</div>
+              </div>
+              <div style="text-align:right; font-size:13px;">
+                <div>¥199.00</div>
+                <div style="color:var(--text-muted); font-size:12px;">×1</div>
+              </div>
+            </div>
+            <div class="price-line"><span>商品总额</span><span>¥199.00</span></div>
+            <div class="price-line"><span>运费</span><span>¥0.00</span></div>
+            <div class="price-line"><span>优惠券</span><span style="color:var(--status-critical);">-¥10.00</span></div>
+            <div class="price-line total"><span>实付金额</span><span>¥189.00</span></div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="card-title">支付信息</div>
+            <div class="kv-row"><div class="k">支付方式</div><div>微信支付</div></div>
+            <div class="kv-row"><div class="k">交易流水号</div><div>4200062611202608100012345678</div></div>
+            <div class="kv-row"><div class="k">支付时间</div><div>2026-08-10 09:24:35</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask hidden" id="shipModal">
+  <div class="modal">
+    <div class="modal-header">确认发货<span class="modal-close" onclick="document.getElementById('shipModal').classList.add('hidden')">✕</span></div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">发货方式</label>
+        <select class="form-select"><option>快递发货</option><option>无需物流（虚拟商品）</option></select>
+      </div>
+      <div class="form-row form-item">
+        <div>
+          <label class="form-label"><span class="req">*</span>物流公司</label>
+          <select class="form-select"><option>顺丰速运</option><option>中通快递</option><option>圆通速递</option><option>韵达快递</option></select>
+        </div>
+        <div>
+          <label class="form-label"><span class="req">*</span>运单号</label>
+          <input class="form-input" placeholder="请输入运单号">
+        </div>
+      </div>
+      <div class="form-hint">发货后将自动通知买家，超时未确认收货将自动完成订单</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('shipModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" onclick="location.reload()">确认发货</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const p = new URLSearchParams(location.search);
+  if (p.get('pickup') === '1') {
+    document.querySelector('.status-timeline .node:nth-child(3) .t').textContent = '门店核销';
+    document.querySelectorAll('.kv-row')[2].querySelector('div:last-child').textContent = '门店自提 · 花间集(西湖银泰店)';
+    document.getElementById('shipBtn').textContent = '生成核销码';
+  }
+</script>
+</body>
+</html>

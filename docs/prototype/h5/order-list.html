@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的订单</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .o-tabs { display:flex; background:#fff; border-bottom:1px solid var(--gridline); position:sticky; top:46px; z-index:4; }
+  .o-tabs .t { flex:1; text-align:center; padding:11px 0; font-size:12.5px; color:var(--text-secondary); }
+  .o-tabs .t.active { color:var(--primary); font-weight:600; border-bottom:2px solid var(--primary); }
+  .o-card { background:#fff; margin:10px 14px; border-radius:10px; box-shadow:var(--shadow-sm); overflow:hidden; }
+  .o-card-hd { display:flex; justify-content:space-between; padding:12px 14px; font-size:12px; color:var(--text-muted); border-bottom:1px solid var(--gridline); }
+  .o-card-hd .st { font-weight:600; }
+  .o-card-hd .st.warning { color:#b57a00; }
+  .o-card-hd .st.good { color:var(--text-muted); }
+  .o-goods-row { display:flex; gap:10px; padding:12px 14px; }
+  .o-ph { width:56px; height:56px; border-radius:8px; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex;align-items:center;justify-content:center;font-size:20px;color:#c9b6a8; flex-shrink:0; }
+  .o-foot { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding:0 14px 14px; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar"><span class="back" onclick="history.back()">‹</span>我的订单</div>
+  <div class="o-tabs">
+    <div class="t">全部</div><div class="t active">待付款</div><div class="t">待发货</div><div class="t">待收货</div><div class="t">已完成</div>
+  </div>
+
+  <div class="phone-body">
+    <div class="o-card">
+      <div class="o-card-hd"><span>2026-08-10 · 花间集女装旗舰店</span><span class="st warning">待付款</span></div>
+      <div class="o-goods-row"><div class="o-ph">👗</div><div style="flex:1;"><div style="font-size:12.5px;">法式碎花连衣裙 · 杏色/M</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">×1</div></div><div style="font-size:13px;">¥199.00</div></div>
+      <div class="o-foot">
+        <span style="font-size:12px;color:var(--text-muted);margin-right:auto;padding-left:14px;">应付 ¥199.00</span>
+        <a href="#" class="btn btn-sm">取消订单</a>
+        <a href="checkout.html" class="btn btn-sm btn-primary" style="background:var(--price);border-color:var(--price);">去支付</a>
+      </div>
+    </div>
+
+    <div class="o-card">
+      <div class="o-card-hd"><span>2026-08-09 · 花间集女装旗舰店</span><span class="st">待发货</span></div>
+      <div class="o-goods-row"><div class="o-ph">🧣</div><div style="flex:1;"><div style="font-size:12.5px;">真丝方巾礼盒装</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">×1</div></div><div style="font-size:13px;">¥99.00</div></div>
+      <div class="o-foot"><a href="order-detail.html?status=toship" class="btn btn-sm">查看详情</a></div>
+    </div>
+
+    <div class="o-card">
+      <div class="o-card-hd"><span>2026-08-05 · 花间集女装旗舰店</span><span class="st">待收货</span></div>
+      <div class="o-goods-row"><div class="o-ph">🧥</div><div style="flex:1;"><div style="font-size:12.5px;">羊毛混纺加厚大衣 · 黑色/L</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">×1</div></div><div style="font-size:13px;">¥459.00</div></div>
+      <div class="o-foot">
+        <a href="#" class="btn btn-sm">申请售后</a>
+        <a href="order-detail.html?status=toreceive" class="btn btn-sm btn-primary">确认收货</a>
+      </div>
+    </div>
+
+    <div class="o-card">
+      <div class="o-card-hd"><span>2026-07-20 · 花间集女装旗舰店</span><span class="st good">已完成</span></div>
+      <div class="o-goods-row"><div class="o-ph">👖</div><div style="flex:1;"><div style="font-size:12.5px;">高腰直筒牛仔裤 · 蓝色/M</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">×2</div></div><div style="font-size:13px;">¥318.00</div></div>
+      <div class="o-foot">
+        <a href="#" class="btn btn-sm">再次购买</a>
+        <a href="order-detail.html?status=finished" class="btn btn-sm">评价</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-tabbar">
+    <a href="home.html"><span class="ico">⌂</span>首页</a>
+    <a><span class="ico">▦</span>分类</a>
+    <a href="cart.html"><span class="ico">🛒</span>购物车</a>
+    <a href="my.html" class="active"><span class="ico">☺</span>我的</a>
+  </div>
+</div></div>
+</body>
+</html>

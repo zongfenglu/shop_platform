@@ -1,0 +1,45 @@
+/*
+ * 全局样式入口。
+ *
+ * prototype.css 是从 docs/prototype/shared/style.css **原样复制**过来的设计系统
+ * （token + 通用组件 + 布局），刻意不做改写：原型是 UI 的唯一来源，
+ * 改动只应发生在原型侧再同步过来，否则两边会各自漂移，后面的页面就没有对照物了。
+ *
+ * 本文件只放 Vue 工程特有的补充：Ant Design Vue 与原型 token 的对齐、滚动条等。
+ */
+@import './prototype.css';
+
+#app {
+  min-height: 100vh;
+}
+
+/* Ant Design Vue 的默认蓝与原型主色不同，用 CSS 变量把它接到原型 token 上，
+   避免出现"页面是原型配色、弹窗按钮是 antd 蓝"的割裂感。 */
+:root {
+  --ant-primary-color: var(--primary);
+}
+
+.ant-btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.ant-btn-primary:not(:disabled):hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* antd 的表单控件沿用原型的圆角与边框色 */
+.ant-input,
+.ant-input-password,
+.ant-select-selector {
+  border-radius: var(--r-sm) !important;
+}
+
+/* 深色主题下 antd 的浮层背景需要跟着 surface 走，否则白底黑字刺眼 */
+html[data-theme='graphite'] .ant-modal-content,
+html[data-theme='ocean'] .ant-modal-content,
+html[data-theme='graphite'] .ant-dropdown-menu,
+html[data-theme='ocean'] .ant-dropdown-menu {
+  background: var(--surface);
+  color: var(--text-primary);
+}

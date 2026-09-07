@@ -1,0 +1,34 @@
+/*
+ * 消费者端设计 token。
+ *
+ * 取值与 docs/prototype/shared/style.css 的 :root 一致（原型是 UI 唯一来源），
+ * 但**不能直接 @import 原型那份文件**：那份含大量后台专用的 class（sidebar/table/topbar）
+ * 和 CSS 变量继承写法，小程序端不支持全局 class 复用，也用不到那些组件。
+ * 这里只保留 token，组件样式各页面按原型 h5/*.html 自己写。
+ */
+:root,
+page {
+  --page-bg: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --border: rgba(11, 11, 11, 0.1);
+
+  --primary: #2a78d6;
+  --primary-hover: #1c5cab;
+  --primary-bg: #eaf2fc;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+
+  /* 价格用电商惯例红，不是状态色 */
+  --price: #e34948;
+
+  --r-sm: 12rpx;
+  --r-md: 20rpx;
+  --r-lg: 32rpx;
+}

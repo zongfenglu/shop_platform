@@ -1,0 +1,57 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: shop-mp
+  flyway:
+    enabled: false
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3308}/${DB_NAME:shop_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:wchabc123!!}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
+  producer:
+    group: shop-mp-producer
+
+shop:
+  jwt:
+    secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_secret_key}
+    expire-hours: 12
+  crypto:
+    aes-key: ${AES_KEY:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_aes_key}
+  store-console-url: ${STORE_CONSOLE_URL:http://localhost:5174}
+  platform:
+    base-domain: ${PLATFORM_BASE_DOMAIN:shop.com}
+
+logging:
+  level:
+    com.shopplatform: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

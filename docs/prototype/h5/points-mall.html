@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>积分商城</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .pm-hero { background:linear-gradient(135deg,#ff9143,#e34948); color:#fff; padding:18px 16px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .pm-hero .n { font-size:26px; font-weight:800; }
+  .pm-hero .l { font-size:11px; opacity:.85; }
+  .pm-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; margin-top:-10px; }
+  .pm-card { background:#fff; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-sm); }
+  .pm-ph { width:100%; aspect-ratio:1/1; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex; align-items:center; justify-content:center; font-size:26px; color:#c9b6a8; }
+  .pm-info { padding:8px 10px 10px; }
+  .pm-title { font-size:12px; line-height:1.4; height:2.8em; overflow:hidden; margin-bottom:6px; }
+  .pm-points { color:var(--price); font-weight:700; font-size:14px; }
+  .pm-points .u { font-size:10.5px; font-weight:500; }
+  .pm-btn { font-size:10.5px; background:var(--price); color:#fff; padding:3px 10px; border-radius:999px; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar"><span class="back" onclick="history.back()">‹</span>积分商城</div>
+
+  <div class="phone-body">
+    <div class="pm-hero">
+      <div><div class="l">我的积分</div><div class="n">1,280</div></div>
+      <div style="text-align:right; font-size:11px;">
+        <div>积分明细 ›</div>
+        <div style="margin-top:4px; opacity:.85;">签到得积分 ›</div>
+      </div>
+    </div>
+
+    <div class="pm-grid">
+      <div class="pm-card">
+        <div class="pm-ph">🎟</div>
+        <div class="pm-info">
+          <div class="pm-title">满99元无门槛优惠券</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pm-points">300<span class="u">积分</span></span>
+            <span class="pm-btn">兑换</span>
+          </div>
+        </div>
+      </div>
+      <div class="pm-card">
+        <div class="pm-ph">🧣</div>
+        <div class="pm-info">
+          <div class="pm-title">真丝方巾礼盒装</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pm-points">2800<span class="u">积分</span></span>
+            <span class="pm-btn">兑换</span>
+          </div>
+        </div>
+      </div>
+      <div class="pm-card">
+        <div class="pm-ph">🎁</div>
+        <div class="pm-info">
+          <div class="pm-title">品牌帆布包（积分+现金）</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pm-points">1200<span class="u">+¥19</span></span>
+            <span class="pm-btn">兑换</span>
+          </div>
+        </div>
+      </div>
+      <div class="pm-card">
+        <div class="pm-ph">🎟</div>
+        <div class="pm-info">
+          <div class="pm-title">9折优惠券（满99可用）</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pm-points" style="color:var(--text-muted);">1500<span class="u">积分</span></span>
+            <span class="pm-btn" style="background:var(--surface-2); color:var(--text-muted);">积分不足</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-tabbar">
+    <a href="home.html"><span class="ico">⌂</span>首页</a>
+    <a><span class="ico">▦</span>分类</a>
+    <a href="cart.html"><span class="ico">🛒</span>购物车</a>
+    <a href="my.html"><span class="ico">☺</span>我的</a>
+  </div>
+</div></div>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>售后管理 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .kv-row { display:flex; padding:8px 0; font-size:13px; }
+  .kv-row .k { width:90px; color:var(--text-muted); flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item active" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>售后管理</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">售后管理</div><div class="page-desc">3 单待处理，请及时审核以避免超时自动同意</div></div>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <div class="tabs" style="border-bottom:none;">
+          <div class="tab active">待处理 <span class="count">(3)</span></div>
+          <div class="tab">待收货 <span class="count">(2)</span></div>
+          <div class="tab">已同意 <span class="count">(186)</span></div>
+          <div class="tab">已拒绝 <span class="count">(12)</span></div>
+          <div class="tab">已关闭 <span class="count">(8)</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <table class="table">
+          <thead><tr><th>售后单号</th><th>关联订单</th><th>商品</th><th class="num">申请金额</th><th>类型</th><th>申请原因</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>AS20260810003</td>
+              <td>20260809048902</td>
+              <td>真丝方巾礼盒装</td>
+              <td class="num">¥99.00</td>
+              <td>仅退款</td>
+              <td>拍错了/多拍/不想要</td>
+              <td><span class="tag tag-serious">待处理</span></td>
+              <td><button class="btn btn-sm btn-primary" onclick="openModal(this)">审核</button></td>
+            </tr>
+            <tr>
+              <td>AS20260809998</td>
+              <td>20260808048711</td>
+              <td>羊毛混纺加厚大衣 · 黑色/L</td>
+              <td class="num">¥599.00</td>
+              <td>退货退款</td>
+              <td>质量问题，有色差</td>
+              <td><span class="tag tag-serious">待处理</span></td>
+              <td><button class="btn btn-sm btn-primary" onclick="openModal(this)">审核</button></td>
+            </tr>
+            <tr>
+              <td>AS20260809975</td>
+              <td>20260807048602</td>
+              <td>高腰直筒牛仔裤 · 蓝色/M</td>
+              <td class="num">¥159.00</td>
+              <td>退货退款</td>
+              <td>尺码不合适</td>
+              <td><span class="tag tag-serious">待处理</span></td>
+              <td><button class="btn btn-sm btn-primary" onclick="openModal(this)">审核</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted);">
+          <span>共 3 条</span><span>‹ 1 ›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask hidden" id="asModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">售后审核<span class="modal-close" onclick="document.getElementById('asModal').classList.add('hidden')">✕</span></div>
+    <div class="modal-body">
+      <div class="kv-row"><div class="k">售后单号</div><div id="mAsNo">AS20260810003</div></div>
+      <div class="kv-row"><div class="k">关联订单</div><div id="mOrderNo">20260809048902</div></div>
+      <div class="kv-row"><div class="k">申请类型</div><div id="mType">仅退款</div></div>
+      <div class="kv-row"><div class="k">申请原因</div><div id="mReason">拍错了/多拍/不想要</div></div>
+      <div class="kv-row"><div class="k">申请金额</div><div id="mAmount" style="font-weight:700;">¥99.00</div></div>
+      <div class="kv-row"><div class="k">买家说明</div><div>拍错颜色了，还没发货可以直接退款吗</div></div>
+      <div class="form-item" style="margin-top:12px;">
+        <label class="form-label">审核意见</label>
+        <textarea class="form-textarea" rows="2" placeholder="选填，将展示给买家"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" onclick="document.getElementById('asModal').classList.add('hidden')">拒绝</button>
+      <button class="btn" onclick="document.getElementById('asModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('asModal').classList.add('hidden')">同意退款</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openModal(btn) {
+    const tr = btn.closest('tr');
+    const tds = tr.querySelectorAll('td');
+    document.getElementById('mAsNo').textContent = tds[0].textContent;
+    document.getElementById('mOrderNo').textContent = tds[1].textContent;
+    document.getElementById('mType').textContent = tds[4].textContent;
+    document.getElementById('mReason').textContent = tds[5].textContent;
+    document.getElementById('mAmount').textContent = tds[3].textContent;
+    document.getElementById('asModal').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

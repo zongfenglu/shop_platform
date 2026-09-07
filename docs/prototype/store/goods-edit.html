@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>发布商品 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .section-title { font-size:14px; font-weight:700; margin: 28px 0 16px; padding-top:20px; border-top:1px solid var(--gridline); }
+  .section-title:first-child { margin-top:0; padding-top:0; border-top:none; }
+  .upload-box {
+    width:84px; height:84px; border:1px dashed var(--border-strong); border-radius:var(--r-md);
+    display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:12px; flex-direction:column; gap:4px; cursor:pointer;
+  }
+  .spec-tag { display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); border-radius:6px; padding:5px 10px; font-size:12.5px; margin:0 8px 8px 0; }
+  .spec-tag .x { cursor:pointer; color:var(--text-muted); }
+  .sku-table input { width:100%; height:30px; border:1px solid var(--border-strong); border-radius:6px; padding:0 8px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item active" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><a href="goods-list.html">商品管理</a> ／ <b>发布商品</b></div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content" style="max-width:920px;">
+      <div class="card card-pad">
+
+        <div class="section-title">基本信息</div>
+        <div class="form-item">
+          <label class="form-label"><span class="req">*</span>商品名称</label>
+          <input class="form-input" value="法式碎花连衣裙 2026夏季新款">
+        </div>
+        <div class="form-row form-item">
+          <div>
+            <label class="form-label">副标题</label>
+            <input class="form-input" value="收腰显瘦 · 雪纺面料 · 三色可选">
+          </div>
+          <div>
+            <label class="form-label">商品编码</label>
+            <input class="form-input" value="G20260112">
+          </div>
+        </div>
+        <div class="form-row form-item">
+          <div>
+            <label class="form-label"><span class="req">*</span>商品分类</label>
+            <select class="form-select"><option>连衣裙</option><option>外套</option><option>裤装</option><option>配饰</option></select>
+          </div>
+          <div>
+            <label class="form-label">品牌</label>
+            <select class="form-select"><option>无品牌</option><option>花间集自制</option></select>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label"><span class="req">*</span>商品主图</label>
+          <div style="display:flex; gap:10px;">
+            <div class="upload-box" style="border-color:var(--primary); color:var(--primary); background:var(--primary-bg);">🖼<br>封面图</div>
+            <div class="upload-box">＋<br>上传图片</div>
+            <div class="upload-box">＋<br>上传图片</div>
+            <div class="upload-box">＋<br>上传图片</div>
+          </div>
+          <div class="form-hint">建议尺寸 800×800px，最多9张，第一张作为封面</div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">商品服务</label>
+          <div style="display:flex; gap:16px; font-size:13px; color:var(--text-secondary);">
+            <label><input type="checkbox" checked> 七天无理由退换</label>
+            <label><input type="checkbox" checked> 假一赔十</label>
+            <label><input type="checkbox"> 全国包邮</label>
+          </div>
+        </div>
+
+        <div class="section-title">规格与库存</div>
+        <div class="form-item">
+          <label class="form-label">规格类型</label>
+          <div style="display:flex; gap:0; width:220px; border:1px solid var(--border-strong); border-radius:8px; overflow:hidden;">
+            <div id="specSingleBtn" onclick="setSpecType('single')" style="flex:1;text-align:center;padding:8px 0;cursor:pointer;font-size:13px;">单规格</div>
+            <div id="specMultiBtn" onclick="setSpecType('multi')" style="flex:1;text-align:center;padding:8px 0;cursor:pointer;font-size:13px;background:var(--primary);color:#fff;font-weight:600;">多规格</div>
+          </div>
+        </div>
+
+        <!-- 单规格 -->
+        <div id="singleSpecBox" class="hidden">
+          <div class="form-row form-item">
+            <div><label class="form-label"><span class="req">*</span>销售价</label><input class="form-input" value="199.00"></div>
+            <div><label class="form-label">划线价</label><input class="form-input" value="259.00"></div>
+            <div><label class="form-label"><span class="req">*</span>库存</label><input class="form-input" value="428"></div>
+          </div>
+        </div>
+
+        <!-- 多规格 -->
+        <div id="multiSpecBox">
+          <div class="form-item">
+            <label class="form-label">规格：颜色</label>
+            <div><span class="spec-tag">杏色 <span class="x">✕</span></span><span class="spec-tag">黑色 <span class="x">✕</span></span><span class="spec-tag">豆沙绿 <span class="x">✕</span></span><span class="spec-tag" style="background:transparent;border:1px dashed var(--border-strong);color:var(--text-muted);">＋ 添加规格值</span></div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">规格：尺码</label>
+            <div><span class="spec-tag">S <span class="x">✕</span></span><span class="spec-tag">M <span class="x">✕</span></span><span class="spec-tag">L <span class="x">✕</span></span><span class="spec-tag" style="background:transparent;border:1px dashed var(--border-strong);color:var(--text-muted);">＋ 添加规格值</span></div>
+          </div>
+          <div class="form-item">
+            <button class="btn btn-sm">批量填充价格/库存</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="table sku-table">
+              <thead><tr><th>颜色</th><th>尺码</th><th style="width:110px;">销售价</th><th style="width:110px;">划线价</th><th style="width:90px;">库存</th><th>SKU编码</th></tr></thead>
+              <tbody>
+                <tr><td>杏色</td><td>S</td><td><input value="199.00"></td><td><input value="259.00"></td><td><input value="48"></td><td><input value="G20260112-01"></td></tr>
+                <tr><td>杏色</td><td>M</td><td><input value="199.00"></td><td><input value="259.00"></td><td><input value="76"></td><td><input value="G20260112-02"></td></tr>
+                <tr><td>杏色</td><td>L</td><td><input value="199.00"></td><td><input value="259.00"></td><td><input value="52"></td><td><input value="G20260112-03"></td></tr>
+                <tr><td>黑色</td><td>S</td><td><input value="199.00"></td><td><input value="259.00"></td><td><input value="60"></td><td><input value="G20260112-04"></td></tr>
+                <tr><td>黑色</td><td>M</td><td><input value="219.00"></td><td><input value="259.00"></td><td><input value="88"></td><td><input value="G20260112-05"></td></tr>
+                <tr><td>黑色</td><td>L</td><td><input value="219.00"></td><td><input value="259.00"></td><td><input value="41"></td><td><input value="G20260112-06"></td></tr>
+                <tr><td>豆沙绿</td><td>S</td><td><input value="199.00"></td><td><input value="259.00"></td><td><input value="30"></td><td><input value="G20260112-07"></td></tr>
+                <tr><td>豆沙绿</td><td>M</td><td><input value="199.00"></td><td><input value="259.00"></td><td><input value="33"></td><td><input value="G20260112-08"></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section-title">物流</div>
+        <div class="form-row form-item">
+          <div>
+            <label class="form-label">运费模板</label>
+            <select class="form-select"><option>包邮（全国，偏远地区除外）</option><option>按件计费</option><option>按重量计费</option></select>
+          </div>
+          <div>
+            <label class="form-label">是否虚拟商品</label>
+            <select class="form-select"><option>否，需要物流发货</option><option>是，无需物流</option></select>
+          </div>
+        </div>
+
+        <div class="section-title">商品详情</div>
+        <div class="form-item">
+          <textarea class="form-textarea" rows="6" placeholder="商品详情图文介绍...">法式复古碎花设计，雪纺面料垂坠感强，收腰版型显瘦，适合通勤与约会场景穿着。面料：95%聚酯纤维+5%氨纶。</textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px; padding-top:20px; border-top:1px solid var(--gridline);">
+          <a href="goods-list.html" class="btn btn-ghost">取消</a>
+          <button class="btn">存入仓库</button>
+          <a href="goods-list.html" class="btn btn-primary">立即上架</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function setSpecType(type) {
+    const single = type === 'single';
+    document.getElementById('singleSpecBox').classList.toggle('hidden', !single);
+    document.getElementById('multiSpecBox').classList.toggle('hidden', single);
+    document.getElementById('specSingleBtn').style.cssText = single ? 'flex:1;text-align:center;padding:8px 0;cursor:pointer;font-size:13px;background:var(--primary);color:#fff;font-weight:600;' : 'flex:1;text-align:center;padding:8px 0;cursor:pointer;font-size:13px;';
+    document.getElementById('specMultiBtn').style.cssText = !single ? 'flex:1;text-align:center;padding:8px 0;cursor:pointer;font-size:13px;background:var(--primary);color:#fff;font-weight:600;' : 'flex:1;text-align:center;padding:8px 0;cursor:pointer;font-size:13px;';
+  }
+</script>
+</body>
+</html>

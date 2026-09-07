@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>数据看板 - 平台超管</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .chart-card { position: relative; }
+  .chart-tooltip {
+    position: absolute; pointer-events: none; background: #0b0b0b; color: #fff;
+    font-size: 11.5px; padding: 6px 10px; border-radius: 6px; line-height: 1.5;
+    transform: translate(-50%, -110%); white-space: nowrap; opacity: 0; transition: opacity .1s;
+    z-index: 5;
+  }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-label { width: 120px; font-size: 12.5px; color: var(--text-secondary); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; position: relative; height: 20px; }
+  .bar-fill { height: 20px; border-radius: 0 4px 4px 0; background: var(--series-1); }
+  .bar-value { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 70px; text-align: right; flex-shrink: 0; }
+  .health-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px dashed var(--gridline); font-size:13px; }
+  .health-row:last-child { border-bottom:none; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">火</div>
+      <div class="name">多开云商城</div>
+      <div class="badge">超管</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item active" href="dashboard.html"><span class="ico">◨</span>数据看板</a>
+      <a class="nav-item" href="shop-list.html"><span class="ico">▤</span>商城管理</a>
+      <a class="nav-item" href="package-list.html"><span class="ico">◇</span>套餐管理</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">￥</span>订购管理</a>
+      <a class="nav-item" href="domain-list.html"><span class="ico">⌘</span>域名管理</a>
+      <a class="nav-item" href="mp-client.html"><span class="ico">▣</span>客户端管理</a>
+      <div class="nav-group-title">系统</div>
+      <a class="nav-item" href="platform-account.html"><span class="ico">◎</span>平台账号</a>
+      <a class="nav-item" href="platform-setting.html"><span class="ico">⚙</span>平台设置</a>
+      <a class="nav-item" href="ops-center.html"><span class="ico">⏱</span>运维中心</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>数据看板</b></div>
+      <div class="topbar-right">
+        <div class="topbar-user"><div class="avatar">平</div>平台管理员</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">数据看板</div>
+          <div class="page-desc">全平台 128 家商城运营概况 · 数据截至 2026-08-10 09:30</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm">今日</button>
+          <button class="btn btn-sm" style="background:var(--primary-bg);color:var(--primary-hover);border-color:var(--primary-bg-2);">近7天</button>
+          <button class="btn btn-sm">近30天</button>
+        </div>
+      </div>
+
+      <div class="grid grid-4" style="margin-bottom:16px;">
+        <div class="card kpi">
+          <div class="kpi-label">商城总数</div>
+          <div class="kpi-value">128</div>
+          <div class="kpi-foot"><span class="kpi-delta up">▲ 6 本周新增</span></div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-label">全平台GMV</div>
+          <div class="kpi-value">¥2.86M</div>
+          <div class="kpi-foot">
+            <span class="kpi-delta up">▲ 12.4%</span>
+            <svg class="kpi-spark" width="72" height="28" viewBox="0 0 72 28"><polyline points="0,20 9,17 18,19 27,12 36,15 45,9 54,11 63,6 72,4" fill="none" stroke="#c3c2b7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="72" cy="4" r="3" fill="var(--primary)"/></svg>
+          </div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-label">本月订购收入</div>
+          <div class="kpi-value">¥86,420</div>
+          <div class="kpi-foot"><span class="kpi-delta up">▲ 8.1%</span></div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-label">续费率</div>
+          <div class="kpi-value">82.6%</div>
+          <div class="kpi-foot"><span class="tag tag-good tag-dot">健康</span></div>
+        </div>
+      </div>
+
+      <div class="grid grid-2" style="margin-bottom:16px;">
+        <div class="card card-pad chart-card">
+          <div class="card-title">近7日新增商城 &amp; GMV趋势</div>
+          <div class="card-sub">悬停查看每日明细</div>
+          <div style="position:relative;">
+            <svg id="trendSvg" width="100%" height="200" viewBox="0 0 560 200" style="overflow:visible;">
+              <g id="gridLines"></g>
+              <path id="areaPath" fill="var(--primary)" opacity="0.10"></path>
+              <path id="linePath" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+              <circle id="endDot" r="5" fill="var(--primary)" stroke="#fcfcfb" stroke-width="2"></circle>
+              <line id="crosshair" x1="0" y1="16" x2="0" y2="176" stroke="#c3c2b7" stroke-width="1" opacity="0"></line>
+              <circle id="hoverDot" r="5" fill="var(--primary)" stroke="#fcfcfb" stroke-width="2" opacity="0"></circle>
+              <rect id="hoverCatcher" x="40" y="0" width="510" height="200" fill="transparent"></rect>
+            </svg>
+            <div class="chart-tooltip" id="tooltip"></div>
+          </div>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-title">Top5 活跃商城</div>
+          <div class="card-sub">按近7日GMV排序</div>
+          <div class="bar-row"><div class="bar-label">花间集女装旗舰店</div><div class="bar-track"><div class="bar-fill" style="width:92%;"></div></div><div class="bar-value">¥28.6万</div></div>
+          <div class="bar-row"><div class="bar-label">悦动运动户外</div><div class="bar-track"><div class="bar-fill" style="width:68%;"></div></div><div class="bar-value">¥15.3万</div></div>
+          <div class="bar-row"><div class="bar-label">三禾有机生鲜</div><div class="bar-track"><div class="bar-fill" style="width:38%;"></div></div><div class="bar-value">¥9.4万</div></div>
+          <div class="bar-row"><div class="bar-label">初见母婴优选</div><div class="bar-track"><div class="bar-fill" style="width:18%;"></div></div><div class="bar-value">¥4.5万</div></div>
+          <div class="bar-row"><div class="bar-label">Nova 数码配件</div><div class="bar-track"><div class="bar-fill" style="width:5%;"></div></div><div class="bar-value">¥1.2万</div></div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card card-pad">
+          <div class="card-title">到期预警</div>
+          <div class="card-sub">7日内到期商城，建议主动跟进续费</div>
+          <table class="table">
+            <thead><tr><th>商城</th><th>套餐</th><th>到期时间</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>三禾有机生鲜</td><td>标准版</td><td class="num">3天后</td><td><a href="shop-detail.html?name=三禾有机生鲜&status=warning" class="btn btn-sm">查看</a></td></tr>
+              <tr><td>拾光手作烘焙</td><td>基础版</td><td class="num">已过期</td><td><a href="shop-detail.html?name=拾光手作烘焙&status=expired" class="btn btn-sm">查看</a></td></tr>
+              <tr><td>初见母婴优选</td><td>基础版</td><td class="num">已停用</td><td><a href="shop-detail.html?name=初见母婴优选&status=disabled" class="btn btn-sm">查看</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-title">系统健康</div>
+          <div class="card-sub">运维核心指标，异常项需及时处理</div>
+          <div class="health-row"><span>队列积压任务</span><span class="tag tag-good">0 个</span></div>
+          <div class="health-row"><span>失败任务（近24h）</span><span class="tag tag-warning">3 个</span></div>
+          <div class="health-row"><span>存储用量</span><span>468GB / 2TB</span></div>
+          <div class="health-row"><span>本月短信余量</span><span>82,400 / 100,000</span></div>
+          <div class="health-row"><span>数据库主从延迟</span><span class="tag tag-good">0.2s</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const days = ['08-04','08-05','08-06','08-07','08-08','08-09','08-10'];
+  const values = [1.8, 2.1, 1.9, 2.4, 2.6, 2.3, 2.86];
+  const maxTick = 3.2;
+  const px0 = 40, px1 = 550, py0 = 16, py1 = 176;
+  const n = values.length;
+  const xAt = i => px0 + i * (px1 - px0) / (n - 1);
+  const yAt = v => py1 - (v / maxTick) * (py1 - py0);
+
+  const ticks = [0, 0.8, 1.6, 2.4, 3.2];
+  const gridG = document.getElementById('gridLines');
+  const ns = 'http://www.w3.org/2000/svg';
+  ticks.forEach(t => {
+    const y = yAt(t);
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', px0); line.setAttribute('x2', px1);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#e1e0d9'); line.setAttribute('stroke-width', '1');
+    gridG.appendChild(line);
+    const text = document.createElementNS(ns, 'text');
+    text.setAttribute('x', px0 - 10); text.setAttribute('y', y + 4);
+    text.setAttribute('text-anchor', 'end'); text.setAttribute('font-size', '11');
+    text.setAttribute('fill', '#898781');
+    text.textContent = t.toFixed(1) + 'M';
+    gridG.appendChild(text);
+  });
+  [0, n-1].forEach(i => {
+    const text = document.createElementNS(ns, 'text');
+    text.setAttribute('x', xAt(i)); text.setAttribute('y', 195);
+    text.setAttribute('text-anchor', i===0?'start':'end'); text.setAttribute('font-size', '11');
+    text.setAttribute('fill', '#898781');
+    text.textContent = days[i];
+    gridG.appendChild(text);
+  });
+
+  document.getElementById('linePath').setAttribute('d', 'M' + values.map((v,i) => `${xAt(i)},${yAt(v)}`).join(' L '));
+  document.getElementById('areaPath').setAttribute('d',
+    'M' + xAt(0) + ',' + py1 + ' L' + values.map((v,i) => `${xAt(i)},${yAt(v)}`).join(' L ') + ` L${xAt(n-1)},${py1} Z`);
+  document.getElementById('endDot').setAttribute('cx', xAt(n-1));
+  document.getElementById('endDot').setAttribute('cy', yAt(values[n-1]));
+
+  const endLabel = document.createElementNS(ns, 'text');
+  endLabel.setAttribute('x', xAt(n-1) - 8); endLabel.setAttribute('y', yAt(values[n-1]) - 12);
+  endLabel.setAttribute('text-anchor', 'end'); endLabel.setAttribute('font-size', '12'); endLabel.setAttribute('font-weight', '700');
+  endLabel.setAttribute('fill', '#0b0b0b');
+  endLabel.textContent = '¥' + values[n-1] + 'M';
+  gridG.parentNode.appendChild(endLabel);
+
+  const svg = document.getElementById('trendSvg');
+  const tooltip = document.getElementById('tooltip');
+  const crosshair = document.getElementById('crosshair');
+  const hoverDot = document.getElementById('hoverDot');
+  document.getElementById('hoverCatcher').addEventListener('mousemove', e => {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = 560 / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    let idx = Math.round((mx - px0) / ((px1 - px0) / (n - 1)));
+    idx = Math.max(0, Math.min(n - 1, idx));
+    const x = xAt(idx), y = yAt(values[idx]);
+    crosshair.setAttribute('x1', x); crosshair.setAttribute('x2', x); crosshair.setAttribute('opacity', 1);
+    hoverDot.setAttribute('cx', x); hoverDot.setAttribute('cy', y); hoverDot.setAttribute('opacity', 1);
+    const scale = rect.width / 560;
+    tooltip.style.left = (x * scale) + 'px';
+    tooltip.style.top = (y * (rect.height/200)) + 'px';
+    tooltip.style.opacity = 1;
+    tooltip.innerHTML = days[idx] + '<br>GMV <b>¥' + values[idx] + 'M</b>';
+  });
+  document.getElementById('hoverCatcher').addEventListener('mouseleave', () => {
+    crosshair.setAttribute('opacity', 0); hoverDot.setAttribute('opacity', 0); tooltip.style.opacity = 0;
+  });
+</script>
+</body>
+</html>

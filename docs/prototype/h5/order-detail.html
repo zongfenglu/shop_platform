@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>订单详情</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  .status-hero { padding:22px 16px; color:#fff; background:linear-gradient(135deg,#ff9143,#e34948); }
+  .status-hero .s { font-size:17px; font-weight:700; margin-bottom:4px; }
+  .status-hero .d { font-size:12px; opacity:.9; }
+  .kv-row { display:flex; justify-content:space-between; padding:7px 0; font-size:12.5px; color:var(--text-secondary); }
+  .o-ph { width:56px; height:56px; border-radius:8px; background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex;align-items:center;justify-content:center;font-size:20px;color:#c9b6a8; flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="phone-wrap"><div class="phone">
+  <div class="phone-statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+  <div class="m-navbar"><span class="back" onclick="history.back()">‹</span>订单详情</div>
+
+  <div class="phone-body">
+    <div class="status-hero" id="hero">
+      <div class="s" id="heroTitle">待发货</div>
+      <div class="d" id="heroDesc">商家正在加急为您打包，请耐心等待</div>
+    </div>
+
+    <div class="m-card-block" style="margin-top:-14px;">
+      <div style="padding:14px;">
+        <div style="font-size:13px; font-weight:600; margin-bottom:4px;">📍 张婷 138 0000 2231</div>
+        <div style="font-size:12px; color:var(--text-secondary);">浙江省杭州市西湖区文三路90号东部软件园6幢502</div>
+      </div>
+    </div>
+
+    <div class="m-card-block">
+      <div style="padding:12px 14px 4px; display:flex; gap:10px; align-items:center;">
+        <div class="o-ph">🧣</div>
+        <div style="flex:1;">
+          <div style="font-size:12.5px;">真丝方巾礼盒装</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">默认 ×1</div>
+        </div>
+        <div style="font-size:13px;">¥99.00</div>
+      </div>
+      <div style="padding:10px 14px 14px;">
+        <div class="kv-row"><span>商品总额</span><span>¥99.00</span></div>
+        <div class="kv-row"><span>运费</span><span>¥0.00</span></div>
+        <div class="kv-row" style="font-weight:700; color:var(--text-primary);"><span>实付金额</span><span style="color:var(--price);">¥99.00</span></div>
+      </div>
+    </div>
+
+    <div class="m-card-block">
+      <div style="padding:14px;">
+        <div class="kv-row"><span>订单编号</span><span>20260809048902</span></div>
+        <div class="kv-row"><span>下单时间</span><span>2026-08-09 21:03</span></div>
+        <div class="kv-row"><span>支付方式</span><span>微信支付</span></div>
+        <div class="kv-row"><span>物流单号</span><span id="expressNo">顺丰 SF1234567890123</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-bottom-bar" id="actionBar">
+    <div style="flex:1;"></div>
+    <a href="#" class="m-btn m-btn-outline">申请售后</a>
+    <a href="#" class="m-btn m-btn-warm" style="flex:none;padding:0 22px;">催发货</a>
+  </div>
+</div></div>
+
+<script>
+  const status = new URLSearchParams(location.search).get('status') || 'toship';
+  const map = {
+    toship:   { title:'待发货', desc:'商家正在加急为您打包，请耐心等待', bar:'<div style="flex:1;"></div><a href="#" class="m-btn m-btn-outline">申请售后</a><a href="#" class="m-btn m-btn-warm" style="flex:none;padding:0 22px;">催发货</a>' },
+    toreceive:{ title:'待收货', desc:'商品已发出，预计1-2天送达', bar:'<div style="flex:1;"></div><a href="#" class="m-btn m-btn-outline">查看物流</a><a href="order-list.html" class="m-btn m-btn-warm" style="flex:none;padding:0 22px;">确认收货</a>' },
+    finished: { title:'交易完成', desc:'感谢您的支持，欢迎再次光临', bar:'<div style="flex:1;"></div><a href="#" class="m-btn m-btn-outline">再次购买</a><a href="#" class="m-btn m-btn-warm" style="flex:none;padding:0 22px;">评价晒单</a>' }
+  };
+  const m = map[status] || map.toship;
+  document.getElementById('heroTitle').textContent = m.title;
+  document.getElementById('heroDesc').textContent = m.desc;
+  document.getElementById('actionBar').innerHTML = m.bar;
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>秒杀活动 - 花间集女装旗舰店</title>
+<link rel="stylesheet" href="../shared/style.css">
+<script src="../shared/theme.js"></script>
+<style>
+  .m-subnav { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .m-subnav a { padding:7px 16px; border-radius:999px; font-size:13px; color:var(--text-secondary); background:var(--surface); border:1px solid var(--border); }
+  .m-subnav a.active { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .time-slot { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; border:1px solid var(--border-strong); font-size:12.5px; margin:0 8px 8px 0; cursor:pointer; }
+  .time-slot.active { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .time-slot .n { font-size:11px; opacity:.8; }
+  .sk-goods-row { display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--gridline); }
+  .sk-ph { width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#f3e7e0,#eadad0); display:flex;align-items:center;justify-content:center;font-size:18px;color:#c9b6a8; flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo" style="background:linear-gradient(135deg,#ff9143,#e34948);">花</div><div class="name">花间集</div><div class="badge">商户</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">交易</div>
+      <a class="nav-item" href="dashboard.html"><span class="ico">◨</span>首页看板</a>
+      <a class="nav-item" href="goods-list.html"><span class="ico">▤</span>商品</a>
+      <a class="nav-item" href="order-list.html"><span class="ico">▦</span>订单</a>
+      <a class="nav-item" href="after-sale-list.html"><span class="ico">↺</span>售后管理</a>
+      <div class="nav-group-title">运营</div>
+      <a class="nav-item" href="member-list.html"><span class="ico">◎</span>会员</a>
+      <a class="nav-item active" href="marketing-coupon.html"><span class="ico">◇</span>营销</a>
+      <a class="nav-item" href="distribution.html"><span class="ico">⇅</span>分销</a>
+      <a class="nav-item" href="store-offline.html"><span class="ico">⌂</span>门店</a>
+      <div class="nav-group-title">店铺</div>
+      <a class="nav-item" href="diy-page-list.html"><span class="ico">▧</span>装修</a>
+      <a class="nav-item" href="finance.html"><span class="ico">￥</span>财务</a>
+      <a class="nav-item" href="settings.html"><span class="ico">⚙</span>设置</a>
+      <a class="nav-item" href="client.html"><span class="ico">▣</span>客户端</a>
+      <a class="nav-item" href="staff.html"><span class="ico">◈</span>员工</a>
+      <div class="nav-group-title">账户</div>
+      <a class="nav-item" href="my-package.html"><span class="ico">◆</span>我的套餐</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb"><b>营销中心</b> ／ 秒杀</div>
+      <div class="topbar-right"><div data-theme-switcher></div><div class="topbar-user"><div class="avatar">王</div>王丽 · 超级店主</div></div>
+    </div>
+
+    <div class="content">
+      <div class="m-subnav">
+        <a href="marketing-coupon.html">优惠券</a>
+        <a class="active" href="marketing-seckill.html">秒杀</a>
+        <a href="marketing-group.html">拼团</a>
+        <a href="marketing-bargain.html">砍价</a>
+        <a href="#" style="opacity:.5;">满减包邮</a>
+        <a href="#" style="opacity:.5;">积分商城</a>
+        <a href="#" style="opacity:.5;">签到</a>
+      </div>
+
+      <div class="page-header">
+        <div><div class="page-title">秒杀活动</div><div class="page-desc">今日场次 4 个 · 已配置秒杀商品 18 个</div></div>
+        <button class="btn btn-primary">＋ 新建秒杀活动</button>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:16px;">
+        <div class="card-title">秒杀场次</div>
+        <div class="card-sub">每日固定时段，可配置多个场次</div>
+        <div>
+          <div class="time-slot active">10:00 <span class="n">进行中</span></div>
+          <div class="time-slot">14:00 <span class="n">未开始</span></div>
+          <div class="time-slot">18:00 <span class="n">未开始</span></div>
+          <div class="time-slot">21:00 <span class="n">未开始</span></div>
+          <div class="time-slot" style="border-style:dashed; color:var(--text-muted);">＋ 添加场次</div>
+        </div>
+      </div>
+
+      <div class="grid grid-4" style="margin-bottom:16px;">
+        <div class="card kpi"><div class="kpi-label">当前场次浏览量</div><div class="kpi-value">4,286</div></div>
+        <div class="card kpi"><div class="kpi-label">当前场次支付金额</div><div class="kpi-value">¥18,940</div></div>
+        <div class="card kpi"><div class="kpi-label">转化率</div><div class="kpi-value">6.8%</div></div>
+        <div class="card kpi"><div class="kpi-label">库存剩余</div><div class="kpi-value">142</div></div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="card-title">10:00 场次 · 秒杀商品</div>
+        <div class="sk-goods-row">
+          <div class="sk-ph">👗</div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:500;">法式碎花连衣裙 · 杏色/M</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">原价 ¥199.00 → 秒杀价 <b style="color:var(--price);">¥129.00</b></div>
+          </div>
+          <div style="text-align:right; font-size:12.5px;">
+            <div>限量 100 件 · 已售 <b>68</b></div>
+            <div style="color:var(--text-muted);">每人限购 2 件</div>
+          </div>
+          <button class="btn btn-sm">编辑</button>
+        </div>
+        <div class="sk-goods-row">
+          <div class="sk-ph">🧣</div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:500;">真丝方巾礼盒装</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">原价 ¥99.00 → 秒杀价 <b style="color:var(--price);">¥59.00</b></div>
+          </div>
+          <div style="text-align:right; font-size:12.5px;">
+            <div>限量 50 件 · 已售 <b style="color:var(--status-critical);">50</b></div>
+            <div style="color:var(--text-muted);">每人限购 1 件</div>
+          </div>
+          <button class="btn btn-sm" disabled>已售罄</button>
+        </div>
+        <div class="sk-goods-row" style="border-bottom:none;">
+          <div class="sk-ph">🧶</div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:500;">小香风针织衫 · 米白/S</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">原价 ¥219.00 → 秒杀价 <b style="color:var(--price);">¥159.00</b></div>
+          </div>
+          <div style="text-align:right; font-size:12.5px;">
+            <div>限量 80 件 · 已售 <b>24</b></div>
+            <div style="color:var(--text-muted);">每人限购 3 件</div>
+          </div>
+          <button class="btn btn-sm">编辑</button>
+        </div>
+        <div style="text-align:center; padding-top:14px;"><button class="btn btn-sm">＋ 添加秒杀商品</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

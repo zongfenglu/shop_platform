@@ -1,0 +1,79 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: shop-client-api
+  flyway:
+    enabled: false  # schema 统一由 shop-admin-api 管理
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3308}/${DB_NAME:shop_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:wchabc123!!}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # 默认连接池只有10个连接，下单链路每次要走多条串行SQL（查SKU/扣库存/建订单/建订单行/建地址），
+      # 高并发下单场景下10个连接会迅速排队——见 M1 质量门禁"单节点500 QPS"压测发现的真实瓶颈。
+      maximum-pool-size: ${DB_POOL_SIZE:50}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # 本地开发的 redis 容器没设密码，留空即可；生产 compose 强制要求 REDIS_PASSWORD
+      password: ${REDIS_PASSWORD:}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+shop:
+  jwt:
+    secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_secret_key}
+    expire-hours: 12
+  pay:
+    notify-base-url: ${PAY_NOTIFY_BASE_URL:http://localhost:8083}
+  crypto:
+    aes-key: ${AES_KEY:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_aes_key}
+  order:
+    pay-timeout-minutes: ${PAY_TIMEOUT_MINUTES:30}
+  storage:
+    # 只读：消费者端要能加载商户在装修里配的图片。与 store-api 指向 docker 同一个共享卷。
+    local-dir: ${STORAGE_DIR:./data/uploads}
+    public-prefix: /uploads
+  acme:
+    enabled: ${ACME_ENABLED:false}
+    directory-url: ${ACME_DIRECTORY_URL:https://acme-staging-v02.api.letsencrypt.org/directory}
+    email: ${ACME_EMAIL:}
+    cert-dir: ${ACME_CERT_DIR:./data/certs}
+    reload-command: ${ACME_RELOAD_COMMAND:}
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
+  producer:
+    group: shop-client-api-producer
+
+logging:
+  level:
+    com.shopplatform: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # 只暴露 health：默认放开的 env/configprops/beans 会泄露数据库密码、JWT secret、
+        # 微信支付商户凭证等，容器里这些都是环境变量注入的，等于把密钥挂在公网端点上。
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    # 容器编排只关心"进程是否活着 + 依赖是否可用"，readiness 探针交给 compose healthcheck。
+    defaults:
+      enabled: true
