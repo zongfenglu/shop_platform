@@ -34,6 +34,10 @@ if ! command -v nginx >/dev/null 2>&1; then
   fi
 fi
 
+# 清掉误拷到宿主机的容器配置（里面有 Docker 服务名 app，宿主机解析不了）
+rm -f /etc/nginx/conf.d/admin.conf /etc/nginx/conf.d/store.conf /etc/nginx/conf.d/h5.conf
+rm -f /etc/nginx/sites-enabled/admin.conf /etc/nginx/sites-enabled/store.conf /etc/nginx/sites-enabled/h5.conf
+
 tmp=$(mktemp)
 sed "s/__DOMAIN__/${domain}/g" "$TEMPLATE" > "$tmp"
 
