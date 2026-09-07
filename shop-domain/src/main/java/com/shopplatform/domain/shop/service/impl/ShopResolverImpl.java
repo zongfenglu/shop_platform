@@ -26,7 +26,7 @@ public class ShopResolverImpl implements ClientTenantFilter.ShopResolver {
 
     /** 与 ShopServiceImpl 建店保留前缀一致，避免 admin.域名 被当成店铺编号。 */
     private static final Set<String> RESERVED_SUBDOMAINS = Set.of(
-            "admin", "api", "www", "store", "mp", "cdn", "static", "mail", "ftp");
+            "admin", "api", "www", "store", "h5", "mp", "cdn", "static", "mail", "ftp");
 
     private final ShopDomainService shopDomainService;
     private final MpAuthorizerService mpAuthorizerService;
@@ -65,8 +65,7 @@ public class ShopResolverImpl implements ClientTenantFilter.ShopResolver {
     }
 
     /**
-     * 建店时分配 {code}.{平台基础域名}。库里若还没写下这条（改过基础域名、旧种子数据），
-     * 仍按前缀反查店铺编号，这样 H5 用 demo.你的域名 就能进演示店。
+     * 建店时分配 {code}.{平台基础域名}。h5.{基础域名} 是测试环境给演示店用的固定入口。
      */
     private Long resolveByPlatformSubdomain(String host) {
         if (platformBaseDomain.isEmpty()) {
@@ -77,7 +76,14 @@ public class ShopResolverImpl implements ClientTenantFilter.ShopResolver {
             return null;
         }
         String code = host.substring(0, host.length() - suffix.length());
-        if (code.isEmpty() || code.contains(".") || RESERVED_SUBDOMAINS.contains(code)) {
+        if (code.isEmpty() || code.contains(".")) {
+            return null;
+        }
+        if ("h5".equals(code)) {
+            Shop demo = shopService.findByCode("demo");
+            return demo == null ? null : demo.getId();
+        }
+        if (RESERVED_SUBDOMAINS.contains(code)) {
             return null;
         }
         Shop shop = shopService.findByCode(code);

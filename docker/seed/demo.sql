@@ -8,7 +8,7 @@ DELETE FROM coupon           WHERE id IN (4001, 4002);
 DELETE FROM store_user       WHERE id = 3001;
 DELETE FROM store_role       WHERE id = 2001;
 DELETE FROM diy_tabbar       WHERE id = 12001 OR shop_id = 1001;
-DELETE FROM shop_domain      WHERE id IN (13001, 13002) OR shop_id = 1001;
+DELETE FROM shop_domain      WHERE id IN (13001, 13002, 13003, 13004) OR shop_id = 1001;
 DELETE FROM shop_order       WHERE shop_id = 1001;
 DELETE FROM shop_package     WHERE id = 14001 OR shop_id = 1001;
 DELETE FROM shop             WHERE id = 1001;
@@ -55,10 +55,12 @@ VALUES (12001, 1001, JSON_ARRAY(
     JSON_OBJECT('icon', '', 'activeIcon', '', 'text', '我的', 'path', '/pages/my/index')
 ));
 
--- 8) 泛域名：demo.localhost / demo.shop.com，供 Host 识别（须 verify_status=verified）
+-- 8) Host 识别：演示店 H5 入口 h5.2doo.cn（须 verify_status=verified）
 INSERT INTO shop_domain (id, shop_id, domain, type, cert_status, verify_status, cname_status)
 VALUES
     (13001, 1001, 'demo.localhost', 'sub', 'valid', 'verified', 'ok'),
-    (13002, 1001, 'demo.shop.com', 'sub', 'valid', 'verified', 'ok');
+    (13002, 1001, 'demo.shop.com', 'sub', 'valid', 'verified', 'ok'),
+    (13003, 1001, 'h5.2doo.cn', 'sub', 'valid', 'verified', 'ok'),
+    (13004, 1001, 'demo.2doo.cn', 'sub', 'valid', 'verified', 'ok');
 
 COMMIT;

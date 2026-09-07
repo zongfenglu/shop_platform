@@ -86,4 +86,13 @@ class ShopResolverImplTest {
         assertNull(resolver.resolveByHost("admin.shop.test"));
         assertNull(resolver.resolveByHost("store.shop.test"));
     }
+
+    @Test
+    void resolveByHost_h5Subdomain_mapsToDemoShop() {
+        Shop demo = new Shop();
+        demo.setId(1001L);
+        when(shopService.findByCode("demo")).thenReturn(demo);
+        resolver = new ShopResolverImpl(shopDomainService, mock(MpAuthorizerService.class), shopService, "2doo.cn");
+        assertEquals(1001L, resolver.resolveByHost("h5.2doo.cn"));
+    }
 }

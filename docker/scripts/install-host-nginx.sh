@@ -1,23 +1,12 @@
 #!/usr/bin/env bash
-# 读取 docker/.env 的 PLATFORM_BASE_DOMAIN，安装/启用宿主机 Nginx。
+# 把 docker/nginx/*.conf 拷到 /etc/nginx/conf.d（域名已写死为 2doo.cn）。
 # 用法：sudo bash docker/scripts/install-host-nginx.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="$ROOT/.env"
-TEMPLATE="$ROOT/nginx/host.conf"
+SRC="$ROOT/nginx"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "请用 sudo 运行" >&2
-  exit 1
-fi
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "缺少 $ENV_FILE" >&2
-  exit 1
-fi
-domain=$(grep -E '^\s*PLATFORM_BASE_DOMAIN\s*=' "$ENV_FILE" | tail -n 1 \
-  | sed -E 's/^\s*PLATFORM_BASE_DOMAIN\s*=\s*//' | tr -d ' "')
-if [[ -z "$domain" ]]; then
-  echo "docker/.env 里没有 PLATFORM_BASE_DOMAIN" >&2
   exit 1
 fi
 
@@ -34,25 +23,14 @@ if ! command -v nginx >/dev/null 2>&1; then
   fi
 fi
 
-# 清掉误拷到宿主机的容器配置（里面有 Docker 服务名 app，宿主机解析不了）
-rm -f /etc/nginx/conf.d/admin.conf /etc/nginx/conf.d/store.conf /etc/nginx/conf.d/h5.conf
-rm -f /etc/nginx/sites-enabled/admin.conf /etc/nginx/sites-enabled/store.conf /etc/nginx/sites-enabled/h5.conf
-
-tmp=$(mktemp)
-sed "s/__DOMAIN__/${domain}/g" "$TEMPLATE" > "$tmp"
-
-if [[ -d /etc/nginx/sites-available ]]; then
-  dest=/etc/nginx/sites-available/shop-platform
-  cp "$tmp" "$dest"
-  ln -sf "$dest" /etc/nginx/sites-enabled/shop-platform
-  rm -f /etc/nginx/sites-enabled/default
-else
-  dest=/etc/nginx/conf.d/shop-platform.conf
-  cp "$tmp" "$dest"
+rm -f /etc/nginx/conf.d/shop-platform.conf /etc/nginx/conf.d/host.conf
+rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/shop-platform
+if [[ -f /etc/nginx/conf.d/default.conf ]]; then
+  mv -f /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak
 fi
-rm -f "$tmp"
+cp "$SRC/admin.conf" "$SRC/store.conf" "$SRC/h5.conf" /etc/nginx/conf.d/
 
 nginx -t
 systemctl enable --now nginx
 systemctl reload nginx
-echo "已启用 http://admin.${domain}  http://store.${domain}  http://demo.${domain}"
+echo "已启用 http://admin.2doo.cn  http://store.2doo.cn  http://h5.2doo.cn"

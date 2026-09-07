@@ -1,6 +1,6 @@
-# 测试环境 —— 全栈一键部署。只需改 .env 的 PLATFORM_BASE_DOMAIN。
+# 测试环境 —— 全栈一键部署。
 #   cd docker && docker compose up -d --build
-#   sudo bash scripts/install-host-nginx.sh
+#   sudo cp nginx/*.conf /etc/nginx/conf.d/ && sudo nginx -t && sudo systemctl reload nginx
 name: shop-platform
 
 x-backend-common: &backend-common
@@ -133,10 +133,10 @@ services:
       SHOP_ROCKETMQ_ENABLED: "${SHOP_ROCKETMQ_ENABLED:-false}"
       SPRING_FLYWAY_ENABLED: "true"
       SERVER_PORT: "8080"
-      PLATFORM_BASE_DOMAIN: ${PLATFORM_BASE_DOMAIN:-shop.test}
-      STORE_CONSOLE_URL: http://store.${PLATFORM_BASE_DOMAIN:-shop.test}
-      H5_PUBLIC_URL: http://demo.${PLATFORM_BASE_DOMAIN:-shop.test}
-      PAY_NOTIFY_BASE_URL: http://demo.${PLATFORM_BASE_DOMAIN:-shop.test}
+      PLATFORM_BASE_DOMAIN: ${PLATFORM_BASE_DOMAIN:-2doo.cn}
+      STORE_CONSOLE_URL: http://store.${PLATFORM_BASE_DOMAIN:-2doo.cn}
+      H5_PUBLIC_URL: http://h5.${PLATFORM_BASE_DOMAIN:-2doo.cn}
+      PAY_NOTIFY_BASE_URL: http://h5.${PLATFORM_BASE_DOMAIN:-2doo.cn}
       PAY_TIMEOUT_MINUTES: 30
     volumes:
       - uploads-data:/data/uploads
@@ -167,7 +167,7 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/admin
-        NGINX_CONF: nginx/admin.conf
+        NGINX_CONF: frontend-nginx/admin.conf
     image: shop-platform/admin-web:latest
     container_name: shop-admin-web
     restart: unless-stopped
@@ -186,7 +186,7 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/store
-        NGINX_CONF: nginx/store.conf
+        NGINX_CONF: frontend-nginx/store.conf
     image: shop-platform/store-web:latest
     container_name: shop-store-web
     restart: unless-stopped
@@ -205,7 +205,7 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-uniapp
-        NGINX_CONF: nginx/h5.conf
+        NGINX_CONF: frontend-nginx/h5.conf
         BUILD_CMD: build:h5
     image: shop-platform/h5:latest
     container_name: shop-h5

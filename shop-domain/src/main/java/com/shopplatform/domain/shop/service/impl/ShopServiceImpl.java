@@ -33,7 +33,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements ShopService {
 
     private static final List<String> RESERVED_CODES = List.of(
-            "admin", "api", "www", "store", "mp", "cdn", "static", "mail", "ftp");
+            "admin", "api", "www", "store", "h5", "mp", "cdn", "static", "mail", "ftp");
 
     private final PackageTplService packageTplService;
     private final ShopPackageService shopPackageService;

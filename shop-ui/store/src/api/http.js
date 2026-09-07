@@ -10,7 +10,7 @@ import { message } from 'ant-design-vue'
  *   2. HTTP 200 但 code !== 0 → 也算业务失败，抛出去让调用方 catch，避免每个页面都写 if (res.code === 0)
  *
  * baseURL 刻意留空：前端全部用相对路径 /store/**，开发时由 Vite proxy 转发，
- * 生产由 Nginx 反代（docker/nginx/store.conf）。这样代码里没有环境判断，也不会有 CORS。
+ * 生产由 Nginx 反代（docker/frontend-nginx/store.conf）。这样代码里没有环境判断，也不会有 CORS。
  */
 const http = axios.create({
   timeout: 20000,

@@ -361,7 +361,7 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/admin
-        NGINX_CONF: nginx/admin.conf
+        NGINX_CONF: frontend-nginx/admin.conf
         BACKEND: admin-api:8081
         NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
         NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
@@ -384,7 +384,7 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/store
-        NGINX_CONF: nginx/store.conf
+        NGINX_CONF: frontend-nginx/store.conf
         BACKEND: store-api:8082
         NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
         NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
@@ -407,7 +407,7 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-uniapp
-        NGINX_CONF: nginx/h5.conf
+        NGINX_CONF: frontend-nginx/h5.conf
         BUILD_CMD: build:h5
         BACKEND: client-api:8083
         NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}

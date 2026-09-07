@@ -40,7 +40,7 @@ fi
 names=(
   "admin.$domain"
   "store.$domain"
-  "demo.$domain"
+  "h5.$domain"
   "www.$domain"
   "$domain"
 )
@@ -55,7 +55,7 @@ echo
 echo "URLs:"
 echo "  admin  http://admin.$domain"
 echo "  store  http://store.$domain"
-echo "  H5     http://demo.$domain"
+echo "  H5     http://h5.$domain"
 echo
 
 if [[ "$APPLY" -eq 0 ]]; then

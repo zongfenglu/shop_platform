@@ -31,7 +31,7 @@ if (-not $ip) { $ip = "192.168.x.x" }
 $hosts = @(
     "$ip  admin.$domain",
     "$ip  store.$domain",
-    "$ip  demo.$domain",
+    "$ip  h5.$domain",
     "$ip  www.$domain",
     "$ip  $domain"
 )
@@ -44,7 +44,7 @@ Write-Host ""
 Write-Host "URLs:"
 Write-Host "  admin  http://admin.$domain"
 Write-Host "  store  http://store.$domain"
-Write-Host "  H5     http://demo.$domain"
+Write-Host "  H5     http://h5.$domain"
 Write-Host ""
 
 if (-not $Apply) {
