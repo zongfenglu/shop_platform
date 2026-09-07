@@ -1,5 +1,6 @@
-# 测试环境 —— 全栈一键部署
-# 用法: cd docker && docker compose up -d --build
+# 测试环境 —— 全栈一键部署。只需改 .env 的 PLATFORM_BASE_DOMAIN。
+#   cd docker && docker compose up -d --build
+#   sudo bash scripts/install-host-nginx.sh
 name: shop-platform
 
 x-backend-common: &backend-common
@@ -167,7 +168,6 @@ services:
       args:
         APP_DIR: shop-ui/admin
         NGINX_CONF: nginx/admin.conf
-        BACKEND: app:8080
     image: shop-platform/admin-web:latest
     container_name: shop-admin-web
     restart: unless-stopped
@@ -187,7 +187,6 @@ services:
       args:
         APP_DIR: shop-ui/store
         NGINX_CONF: nginx/store.conf
-        BACKEND: app:8080
     image: shop-platform/store-web:latest
     container_name: shop-store-web
     restart: unless-stopped
@@ -208,7 +207,6 @@ services:
         APP_DIR: shop-uniapp
         NGINX_CONF: nginx/h5.conf
         BUILD_CMD: build:h5
-        BACKEND: app:8080
     image: shop-platform/h5:latest
     container_name: shop-h5
     restart: unless-stopped
