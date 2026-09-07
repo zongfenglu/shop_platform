@@ -1,5 +1,5 @@
 -- 本地演示种子数据（续）：秒杀场次 / 秒杀活动 / 限时折扣活动 + 活动商品
--- 配合 seed-demo-goods.sql 的商品 8001(sku 9001,原价100) / 8002(sku 9002,原价80)
+-- 配合 demo-goods.sql 的商品 8001(sku 9001,原价100) / 8002(sku 9002,原价80)
 -- 可重复执行（先按 id 删除再插入）
 -- 注意：秒杀限量池在 Redis，DB 插入后需用 redis-cli 初始化（见 README/演示步骤），
 --       或等对账 Job 每分钟自动 reconcile（stock = seckill_num - sold）。

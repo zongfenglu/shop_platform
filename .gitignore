@@ -26,6 +26,7 @@ logs/
 docker/.env
 docker/.env.*
 !docker/.env.prod.example
+!docker/.env.example
 application-local.yml
 application-local.yaml
 

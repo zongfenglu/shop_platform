@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     port: 5173,
     // 开发时同源代理到 admin-api：前端一律用相对路径 /admin/**，
-    // 生产环境由 Nginx 做同样的反代（docker/nginx-admin.conf），两边行为一致，
+    // 生产环境由 Nginx 做同样的反代（docker/nginx/admin.conf），两边行为一致，
     // 因此代码里不需要区分环境的 baseURL，也没有 CORS 问题。
     proxy: {
       '/admin': {

@@ -1,5 +1,5 @@
 -- 本地演示种子数据（续）：自提门店
--- 配合 seed-demo.sql 的商城 1001。可重复执行。
+-- 配合 demo.sql 的商城 1001。可重复执行。
 
 START TRANSACTION;
 

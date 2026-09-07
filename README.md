@@ -79,7 +79,7 @@ docker restart shop-xxl-job-admin
 
 需要连别的库时用环境变量覆盖，不要改 yml：`DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `REDIS_HOST` / `REDIS_PORT` / `ROCKETMQ_NAME_SERVER`。
 
-本地演示数据（商城 `demo` / 账号 `admin` / 密码 `123456`）用 `docker/load-demo-seed.cmd` 导入。必须带 `--default-character-set=utf8mb4`（脚本已写好）；在容器里 `mysql -e "source ..."` 会按 latin1 读 UTF-8 文件，中文会变成 `æ¼ç¤ºå•†åŸŽ` 这类乱码。
+本地演示数据（商城 `demo` / 账号 `admin` / 密码 `123456`）用 `docker/seed/load.cmd`（Linux 用 `docker/seed/load.sh`）导入。必须带 `--default-character-set=utf8mb4`（脚本已写好）；在容器里 `mysql -e "source ..."` 会按 latin1 读 UTF-8 文件，中文会变成 `æ¼ç¤ºå•†åŸŽ` 这类乱码。
 
 ### 前端
 

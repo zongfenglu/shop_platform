@@ -132,9 +132,11 @@ services:
       SHOP_ROCKETMQ_ENABLED: "${SHOP_ROCKETMQ_ENABLED:-false}"
       SPRING_FLYWAY_ENABLED: "true"
       SERVER_PORT: "8080"
-      PAY_NOTIFY_BASE_URL: http://localhost:8083
+      PLATFORM_BASE_DOMAIN: ${PLATFORM_BASE_DOMAIN:-shop.test}
+      STORE_CONSOLE_URL: http://store.${PLATFORM_BASE_DOMAIN:-shop.test}
+      H5_PUBLIC_URL: http://demo.${PLATFORM_BASE_DOMAIN:-shop.test}
+      PAY_NOTIFY_BASE_URL: http://demo.${PLATFORM_BASE_DOMAIN:-shop.test}
       PAY_TIMEOUT_MINUTES: 30
-      STORE_CONSOLE_URL: http://localhost:8091
     volumes:
       - uploads-data:/data/uploads
       - backups-data:/data/backups
@@ -164,7 +166,8 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/admin
-        NGINX_CONF: nginx-admin-lite.conf
+        NGINX_CONF: nginx/admin.conf
+        BACKEND: app:8080
     image: shop-platform/admin-web:latest
     container_name: shop-admin-web
     restart: unless-stopped
@@ -183,7 +186,8 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/store
-        NGINX_CONF: nginx-store-lite.conf
+        NGINX_CONF: nginx/store.conf
+        BACKEND: app:8080
     image: shop-platform/store-web:latest
     container_name: shop-store-web
     restart: unless-stopped
@@ -202,8 +206,9 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-uniapp
-        NGINX_CONF: nginx-h5-lite.conf
+        NGINX_CONF: nginx/h5.conf
         BUILD_CMD: build:h5
+        BACKEND: app:8080
     image: shop-platform/h5:latest
     container_name: shop-h5
     restart: unless-stopped

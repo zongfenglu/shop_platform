@@ -26,7 +26,7 @@ class ShopResolverImplTest {
     void setUp() {
         shopDomainService = mock(ShopDomainService.class);
         shopService = mock(ShopService.class);
-        resolver = new ShopResolverImpl(shopDomainService, mock(MpAuthorizerService.class), shopService);
+        resolver = new ShopResolverImpl(shopDomainService, mock(MpAuthorizerService.class), shopService, "shop.com");
     }
 
     @Test
@@ -50,7 +50,7 @@ class ShopResolverImplTest {
     void resolveByAppId_delegatesToAuthorizer() {
         var mp = mock(MpAuthorizerService.class);
         when(mp.findShopIdByAppId("wx123")).thenReturn(1001L);
-        resolver = new ShopResolverImpl(shopDomainService, mp, shopService);
+        resolver = new ShopResolverImpl(shopDomainService, mp, shopService, "shop.com");
         assertEquals(1001L, resolver.resolveByAppId("wx123"));
     }
 
@@ -68,5 +68,22 @@ class ShopResolverImplTest {
         shop.setStatus(ShopStatus.DISABLED.getCode());
         when(shopService.getByIdWithTenant(1001L)).thenReturn(shop);
         assertThrows(BusinessException.class, () -> resolver.ensureAccessible(1001L));
+    }
+
+    @Test
+    void resolveByHost_fallsBackToShopCodeOnPlatformDomain() {
+        Shop shop = new Shop();
+        shop.setId(1001L);
+        when(shopDomainService.findByDomain("demo.shop.test")).thenReturn(null);
+        when(shopService.findByCode("demo")).thenReturn(shop);
+        resolver = new ShopResolverImpl(shopDomainService, mock(MpAuthorizerService.class), shopService, "shop.test");
+        assertEquals(1001L, resolver.resolveByHost("Demo.Shop.Test"));
+    }
+
+    @Test
+    void resolveByHost_reservedSubdomain_notAShop() {
+        resolver = new ShopResolverImpl(shopDomainService, mock(MpAuthorizerService.class), shopService, "shop.test");
+        assertNull(resolver.resolveByHost("admin.shop.test"));
+        assertNull(resolver.resolveByHost("store.shop.test"));
     }
 }

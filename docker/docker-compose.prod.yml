@@ -361,7 +361,8 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/admin
-        NGINX_CONF: nginx-admin.conf
+        NGINX_CONF: nginx/admin.conf
+        BACKEND: admin-api:8081
         NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
         NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
     image: shop-platform/admin-web:${IMAGE_TAG:-latest}
@@ -383,7 +384,8 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-ui/store
-        NGINX_CONF: nginx-store.conf
+        NGINX_CONF: nginx/store.conf
+        BACKEND: store-api:8082
         NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
         NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
     image: shop-platform/store-web:${IMAGE_TAG:-latest}
@@ -405,9 +407,9 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_DIR: shop-uniapp
-        NGINX_CONF: nginx-h5.conf
-        # uni-app 的 H5 构建脚本名与 Vue 项目不同
+        NGINX_CONF: nginx/h5.conf
         BUILD_CMD: build:h5
+        BACKEND: client-api:8083
         NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
         NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
     image: shop-platform/h5:${IMAGE_TAG:-latest}

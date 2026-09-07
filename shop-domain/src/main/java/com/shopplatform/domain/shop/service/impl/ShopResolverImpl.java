@@ -10,7 +10,11 @@ import com.shopplatform.domain.shop.entity.ShopDomain;
 import com.shopplatform.domain.shop.service.ShopDomainService;
 import com.shopplatform.domain.shop.service.ShopService;
 import com.shopplatform.framework.security.ClientTenantFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * {@link ClientTenantFilter.ShopResolver} 的落地实现，供消费者端(shop-client-api)注册过滤器时使用。
@@ -20,16 +24,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class ShopResolverImpl implements ClientTenantFilter.ShopResolver {
 
+    /** 与 ShopServiceImpl 建店保留前缀一致，避免 admin.域名 被当成店铺编号。 */
+    private static final Set<String> RESERVED_SUBDOMAINS = Set.of(
+            "admin", "api", "www", "store", "mp", "cdn", "static", "mail", "ftp");
+
     private final ShopDomainService shopDomainService;
     private final MpAuthorizerService mpAuthorizerService;
     private final ShopService shopService;
+    private final String platformBaseDomain;
 
     public ShopResolverImpl(ShopDomainService shopDomainService,
                             MpAuthorizerService mpAuthorizerService,
-                            ShopService shopService) {
+                            ShopService shopService,
+                            @Value("${shop.platform.base-domain:shop.com}") String platformBaseDomain) {
         this.shopDomainService = shopDomainService;
         this.mpAuthorizerService = mpAuthorizerService;
         this.shopService = shopService;
+        this.platformBaseDomain = platformBaseDomain == null
+                ? "shop.com"
+                : platformBaseDomain.trim().toLowerCase(Locale.ROOT);
     }
 
     @Override
@@ -44,9 +57,31 @@ public class ShopResolverImpl implements ClientTenantFilter.ShopResolver {
         }
         if (normalized.startsWith("www.")) {
             domain = shopDomainService.findByDomain(normalized.substring(4));
-            return domain == null ? null : domain.getShopId();
+            if (domain != null) {
+                return domain.getShopId();
+            }
         }
-        return null;
+        return resolveByPlatformSubdomain(normalized);
+    }
+
+    /**
+     * 建店时分配 {code}.{平台基础域名}。库里若还没写下这条（改过基础域名、旧种子数据），
+     * 仍按前缀反查店铺编号，这样 H5 用 demo.你的域名 就能进演示店。
+     */
+    private Long resolveByPlatformSubdomain(String host) {
+        if (platformBaseDomain.isEmpty()) {
+            return null;
+        }
+        String suffix = "." + platformBaseDomain;
+        if (!host.endsWith(suffix) || host.length() <= suffix.length()) {
+            return null;
+        }
+        String code = host.substring(0, host.length() - suffix.length());
+        if (code.isEmpty() || code.contains(".") || RESERVED_SUBDOMAINS.contains(code)) {
+            return null;
+        }
+        Shop shop = shopService.findByCode(code);
+        return shop == null ? null : shop.getId();
     }
 
     @Override
