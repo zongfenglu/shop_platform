@@ -31,6 +31,33 @@ const freightTemplates = ref([])
 const specs = ref([])
 const specsLoading = ref(false)
 
+// 分类树：接口返回带 parentId 的扁平列表，这里按层级组装后再摊平（带 level），
+// 渲染成缩进的树形复选框——和 CategoryManageView 的展示逻辑一致。
+const categoryTreeRows = computed(() => {
+  const map = new Map()
+  for (const c of categories.value) map.set(String(c.id), { ...c, children: [] })
+  const roots = []
+  for (const node of map.values()) {
+    const pid = String(node.parentId ?? '0')
+    if (pid === '0' || !map.has(pid)) roots.push(node)
+    else map.get(pid).children.push(node)
+  }
+  const sortNodes = (arr) => {
+    arr.sort((a, b) => (a.sort || 0) - (b.sort || 0) || String(a.id).localeCompare(String(b.id)))
+    arr.forEach((n) => sortNodes(n.children))
+  }
+  sortNodes(roots)
+  const out = []
+  const walk = (nodes, level) => {
+    for (const n of nodes) {
+      out.push({ ...n, level })
+      if (n.children.length) walk(n.children, level + 1)
+    }
+  }
+  walk(roots, 1)
+  return out
+})
+
 async function loadSpecs() {
   specsLoading.value = true
   try {
@@ -92,7 +119,7 @@ async function onCreateSpec() {
 const newValueDrafts = reactive({})
 async function onAddSpecValue(specId) {
   const value = (newValueDrafts[specId] || '').trim()
-  if (!value) return
+  if (!value) return false
   const beforeSpec = specs.value.find((s) => String(s.id) === String(specId))
   const beforeIds = new Set((beforeSpec?.values || []).map((v) => String(v.id)))
   try {
@@ -111,8 +138,23 @@ async function onAddSpecValue(specId) {
       }
     }
     rebuildSkuMatrix()
+    return true
   } catch (e) {
     // 已由拦截器提示
+    return false
+  }
+}
+
+/**
+ * 把各规格"添加规格值"输入框里尚未提交的草稿全部落库。用户经常打完字不按回车、
+ * 不点"添加"直接点保存——不冲掉这些草稿的话,SKU 矩阵是空的,提交会误报
+ * "所选规格下没有可用的规格值组合",但用户明明"填写了规格值"。
+ */
+async function flushPendingValueDrafts() {
+  for (const spec of selectedSpecs()) {
+    if ((newValueDrafts[spec.id] || '').trim()) {
+      await onAddSpecValue(spec.id)
+    }
   }
 }
 
@@ -269,6 +311,18 @@ function parseJson(value, fallback) {
   }
 }
 
+/**
+ * 解析数据库里的 ID 数组 JSON（categoryIds 列）。新数据经后端 Long→String 序列化
+ * 存的是 ["2097…"]（带引号），老数据是 [7001]（裸数字）——裸的 19 位雪花 ID 直接
+ * JSON.parse 会超过 Number.MAX_SAFE_INTEGER 精度丢失，得到一个"看起来合法但不对"
+ * 的 ID，回显时和分类列表的字符串 id 对不上。只给未带引号的长数字补引号再 parse。
+ */
+function parseIdArray(value) {
+  if (!value) return []
+  const quoted = String(value).replace(/(?<!["\d])(\d{15,})(?!["\d])/g, '"$1"')
+  return parseJson(quoted, []).map(String)
+}
+
 async function loadForEdit() {
   loading.value = true
   try {
@@ -278,7 +332,7 @@ async function loadForEdit() {
     form.name = goods.name || ''
     form.subName = goods.subName || ''
     form.code = goods.code || ''
-    form.categoryIds = parseJson(goods.categoryIds, []).map(Number)
+    form.categoryIds = parseIdArray(goods.categoryIds)
     form.images = parseJson(goods.images, [])
     form.deliveryType = parseJson(goods.deliveryType, ['express'])
     form.freightTemplateId = goods.freightTemplateId ?? null
@@ -327,6 +381,9 @@ async function loadForEdit() {
 }
 
 async function onSubmit() {
+  // 先把"添加规格值"输入框里没按回车的草稿落库，再重算矩阵——否则用户明明填了
+  // 规格值，却因为没提交而被误报"没有可用的规格值组合"。
+  if (specType.value === 'multi') await flushPendingValueDrafts()
   rebuildSkuMatrix()
   if (!validate()) {
     message.error(errors.sku || '请检查表单中标红的必填项')
@@ -425,16 +482,23 @@ async function onSubmit() {
     </div>
     <div class="form-item">
       <label class="form-label"><span class="req">*</span>商品分类</label>
-      <div style="display: flex; flex-wrap: wrap; gap: 8px 20px">
-        <label v-for="c in categories" :key="c.id" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary)">
-          <input type="checkbox" :value="c.id" v-model="form.categoryIds" />{{ c.name }}
+      <div v-if="categoryTreeRows.length" class="category-tree">
+        <label
+          v-for="c in categoryTreeRows"
+          :key="c.id"
+          class="category-node"
+          :style="{ paddingLeft: (c.level - 1) * 22 + 'px' }"
+        >
+          <input type="checkbox" :value="String(c.id)" v-model="form.categoryIds" />
+          <span v-if="c.level > 1" class="category-branch">└</span>
+          {{ c.name }}
         </label>
-        <span v-if="categories.length === 0" style="font-size: 12px; color: var(--text-muted)">
-          暂无分类，请先到
-          <a href="javascript:;" @click="router.push({ name: 'goods-categories' })">分类管理</a>
-          创建
-        </span>
       </div>
+      <span v-else style="font-size: 12px; color: var(--text-muted)">
+        暂无分类，请先到
+        <a href="javascript:;" @click="router.push({ name: 'goods-categories' })">分类管理</a>
+        创建
+      </span>
       <div v-if="errors.categoryIds" class="field-error">{{ errors.categoryIds }}</div>
     </div>
     <div class="form-item">
@@ -527,6 +591,7 @@ async function onSubmit() {
             placeholder="＋ 添加规格值"
             @keyup.enter="onAddSpecValue(spec.id)"
           />
+          <button class="btn btn-sm" @click="onAddSpecValue(spec.id)">添加</button>
         </div>
       </div>
 
@@ -658,5 +723,27 @@ async function onSubmit() {
   font-size: 12px;
   color: var(--status-critical);
   margin-top: 4px;
+}
+.category-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.category-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.category-branch {
+  color: var(--text-muted);
+  font-size: 12px;
 }
 </style>

@@ -1,24 +1,35 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { getStoreDashboard } from '@/api/dashboard'
+import { pageOrders } from '@/api/order'
+import { pageAfterSales } from '@/api/afterSale'
+import { listDealerWithdraws, approveDealerWithdraw, rejectDealerWithdraw } from '@/api/dealer'
+import { message } from 'ant-design-vue'
 
 const activeTab = ref('flows')
 
-const flows = [
-  { time: '2026-08-10 09:24', type: '交易收入', cls: 'tag-good', desc: '订单 20260810049231', amount: '+¥189.00', amountCls: 'income', balance: '¥42,860.00' },
-  { time: '2026-08-09 21:03', type: '退款支出', cls: 'tag-critical', desc: '售后单 AS20260809998', amount: '-¥599.00', amountCls: 'expense', balance: '¥42,671.00' },
-  { time: '2026-08-09 16:45', type: '佣金支出', cls: 'tag-serious', desc: '分销佣金结算 · 陈晓', amount: '-¥19.90', amountCls: 'expense', balance: '¥43,270.00' },
-  { time: '2026-08-08 09:12', type: '提现', cls: 'tag-muted', desc: '分销商提现 · 孙悦', amount: '-¥86.00', amountCls: 'expense', balance: '¥43,289.90' },
-]
-
-const withdrawals = [
-  { user: '陈晓（分销佣金）', amount: '¥1,860.00', method: '微信零钱', time: '2026-08-10 10:20', status: '待审核', cls: 'tag-warning' },
-  { user: '刘思思（分销佣金）', amount: '¥420.00', method: '银行卡', time: '2026-08-09 16:45', status: '待审核', cls: 'tag-warning' },
-]
-
-const reconciles = [
-  { date: '2026-08-09', system: '¥28,940.00', wechat: '¥28,940.00', diff: '¥0.00', status: '一致', cls: 'tag-good' },
-  { date: '2026-08-08', system: '¥31,200.00', wechat: '¥31,180.00', diff: '-¥20.00', status: '存在差异', cls: 'tag-serious' },
-]
+const loading = ref(false)
+const orders = ref([])
+const afterSales = ref([])
+const withdrawals = ref([])
+const overview = ref(null)
+const flows = computed(() => orders.value.filter((o) => o.payStatus === 'paid').map((o) => ({ time: formatDate(o.payTime || o.createTime), type: '交易收入', cls: 'tag-good', desc: `订单 ${o.orderNo}`, amount: `+¥${Number(o.payPrice || 0).toFixed(2)}`, amountCls: 'income', balance: '—' })))
+const monthIncome = computed(() => orders.value.filter((o) => o.payStatus === 'paid').reduce((sum, o) => sum + Number(o.payPrice || 0), 0))
+const refundTotal = computed(() => afterSales.value.filter((a) => ['refunded', 'approved'].includes(a.status)).reduce((sum, a) => sum + Number(a.refundAmount || a.amount || 0), 0))
+const reconciles = []
+function formatDate(v) { return v ? String(v).replace('T', ' ').slice(0, 19) : '—' }
+async function load() {
+  loading.value = true
+  try {
+    const [dash, orderPage, salePage, withdrawList] = await Promise.all([getStoreDashboard(), pageOrders({ pageNum: 1, pageSize: 100 }), pageAfterSales({ pageNum: 1, pageSize: 100 }), listDealerWithdraws('pending')])
+    overview.value = dash
+    orders.value = orderPage.records || []
+    afterSales.value = salePage.records || []
+    withdrawals.value = withdrawList || []
+  } catch (e) { orders.value = []; afterSales.value = []; withdrawals.value = [] } finally { loading.value = false }
+}
+onMounted(load)
+async function audit(item, action) { try { if (action === 'approve') await approveDealerWithdraw(item.id); else await rejectDealerWithdraw(item.id); message.success('操作成功'); await load() } catch (e) {} }
 </script>
 
 <template>
@@ -27,14 +38,13 @@ const reconciles = [
       <div class="page-title">财务管理</div>
       <div class="page-desc">资金流水、提现审核与经营报表</div>
     </div>
-    <button class="btn">导出报表</button>
   </div>
 
   <div class="grid grid-4" style="margin-bottom: 16px">
-    <div class="card kpi"><div class="kpi-label">账户余额</div><div class="kpi-value">¥42,860.00</div></div>
-    <div class="card kpi"><div class="kpi-label">本月交易收入</div><div class="kpi-value">¥286,420.00</div></div>
-    <div class="card kpi"><div class="kpi-label">本月退款支出</div><div class="kpi-value" style="color: var(--status-critical)">¥8,940.00</div></div>
-    <div class="card kpi"><div class="kpi-label">待处理提现</div><div class="kpi-value">3 笔</div></div>
+    <div class="card kpi"><div class="kpi-label">账户余额</div><div class="kpi-value">暂无数据</div></div>
+    <div class="card kpi"><div class="kpi-label">已支付订单收入</div><div class="kpi-value">¥{{ monthIncome.toFixed(2) }}</div></div>
+    <div class="card kpi"><div class="kpi-label">已处理退款</div><div class="kpi-value" style="color: var(--status-critical)">¥{{ refundTotal.toFixed(2) }}</div></div>
+    <div class="card kpi"><div class="kpi-label">待处理提现</div><div class="kpi-value">{{ withdrawals.length }} 笔</div></div>
   </div>
 
   <div class="card card-pad">
@@ -44,6 +54,7 @@ const reconciles = [
       <div class="tab" :class="{ active: activeTab === 'reconcile' }" @click="activeTab = 'reconcile'">交易对账</div>
     </div>
 
+    <a-spin :spinning="loading">
     <template v-if="activeTab === 'flows'">
       <div style="display: flex; gap: 12px; margin-bottom: 14px">
         <select class="form-select" style="width: 160px">
@@ -74,13 +85,13 @@ const reconciles = [
       <table class="table">
         <thead><tr><th>申请人</th><th class="num">金额</th><th>类型</th><th>申请时间</th><th>状态</th><th>操作</th></tr></thead>
         <tbody>
-          <tr v-for="item in withdrawals" :key="item.user">
-            <td>{{ item.user }}</td>
-            <td class="num">{{ item.amount }}</td>
-            <td>{{ item.method }}</td>
-            <td>{{ item.time }}</td>
-            <td><span class="tag" :class="item.cls">{{ item.status }}</span></td>
-            <td><button class="btn btn-sm btn-primary">通过</button> <button class="btn btn-sm">拒绝</button></td>
+          <tr v-for="item in withdrawals" :key="item.id">
+            <td>{{ item.userId || '—' }}</td>
+            <td class="num">¥{{ Number(item.amount || 0).toFixed(2) }}</td>
+            <td>{{ item.method || '—' }}</td>
+            <td>{{ formatDate(item.createTime) }}</td>
+            <td><span class="tag tag-warning">{{ item.status || 'pending' }}</span></td>
+            <td><button class="btn btn-sm btn-primary" @click="audit(item, 'approve')">通过</button> <button class="btn btn-sm" @click="audit(item, 'reject')">拒绝</button></td>
           </tr>
         </tbody>
       </table>
@@ -101,6 +112,7 @@ const reconciles = [
         </tbody>
       </table>
     </template>
+    </a-spin>
   </div>
 </template>
 
