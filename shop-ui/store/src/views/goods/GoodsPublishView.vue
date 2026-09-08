@@ -93,10 +93,24 @@ const newValueDrafts = reactive({})
 async function onAddSpecValue(specId) {
   const value = (newValueDrafts[specId] || '').trim()
   if (!value) return
+  const beforeSpec = specs.value.find((s) => String(s.id) === String(specId))
+  const beforeIds = new Set((beforeSpec?.values || []).map((v) => String(v.id)))
   try {
     await createSpecValue(specId, value)
     newValueDrafts[specId] = ''
     await loadSpecs()
+    // 规格值列表刷新后，已有的勾选集合需要纳入新值；否则新值虽显示为可选，
+    // 但不会参与 SKU 矩阵，导致提交时误报“没有可用的规格值组合”。
+    const spec = specs.value.find((s) => String(s.id) === String(specId))
+    if (spec) {
+      const existing = checkedValueIds[specId]
+      if (existing) {
+        for (const item of spec.values || []) {
+          if (!beforeIds.has(String(item.id))) existing.add(item.id)
+        }
+      }
+    }
+    rebuildSkuMatrix()
   } catch (e) {
     // 已由拦截器提示
   }
