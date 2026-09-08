@@ -57,8 +57,8 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         long owned = count(new LambdaQueryWrapper<UserCoupon>()
                 .eq(UserCoupon::getUserId, userId)
                 .eq(UserCoupon::getCouponId, couponId));
-        int limit = coupon.getLimitPerUser() == null ? 1 : coupon.getLimitPerUser();
-        if (owned >= limit) {
+        int limit = coupon.getLimitPerUser() == null ? 0 : coupon.getLimitPerUser();
+        if (limit > 0 && owned >= limit) {
             throw new BusinessException(ErrorCode.COUPON_NOT_AVAILABLE, "已达领取上限");
         }
 

@@ -29,6 +29,17 @@ function asList(res) {
   return Array.isArray(res) ? res : []
 }
 
+function parseIdArray(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value !== 'string' || !value.trim()) return []
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
 function firstGoodsImage(row) {
   if (!row?.images) return ''
   if (Array.isArray(row.images)) return row.images[0] || ''
@@ -167,7 +178,7 @@ async function submitCoupon() {
     endTime: couponForm.expireType === 'fixed' && couponForm.endTime ? couponForm.endTime : null,
     expireDays: couponForm.expireType === 'receive' ? Number(couponForm.expireDays) : null,
     totalNum: Number(couponForm.totalNum) || 0,
-    limitPerUser: Number(couponForm.limitPerUser) || 1,
+    limitPerUser: Math.max(0, Number(couponForm.limitPerUser) || 0),
     applyRange: couponForm.applyRange,
     applyRangeConfig: couponForm.applyRange === 'all' ? [] : parseIds(couponForm.applyRangeConfig),
     status: couponForm.status,
@@ -357,7 +368,7 @@ function openCreateActive() {
 function openEditActive(a) {
   editingActiveId.value = a.id
   Object.assign(activeForm, {
-    name: a.name, timeIds: Array.isArray(a.timeIds) ? a.timeIds : [],
+    name: a.name, timeIds: parseIdArray(a.timeIds),
     startDate: a.startDate, endDate: a.endDate, status: a.status || 'on', remark: a.remark || '',
   })
   activeModalOpen.value = true
@@ -387,7 +398,7 @@ function selectActive(id) {
   loadGoods(id)
 }
 function activeTimeNames(a) {
-  const ids = Array.isArray(a.timeIds) ? a.timeIds : []
+  const ids = parseIdArray(a.timeIds)
   if (!ids.length) return '限时折扣（全天）'
   return ids.map((id) => seckillTimes.value.find((t) => t.id === id)?.name || ('#' + id)).join('、')
 }
@@ -835,7 +846,7 @@ onMounted(async () => {
             <div class="coupon-meta">
               <span>有效期：{{ couponValidity(item) }}</span>
               <span>适用：{{ couponScope(item) }}</span>
-              <span>每人限领 {{ item.limitPerUser || 1 }} 张</span>
+              <span>每人限领 {{ item.limitPerUser > 0 ? item.limitPerUser : '不限' }} 张</span>
             </div>
           </div>
           <div style="text-align: right">
@@ -904,7 +915,7 @@ onMounted(async () => {
         </div>
         <div class="form-row form-item">
           <div><label class="form-label">发放总量（0=不限）</label><input v-model.number="couponForm.totalNum" type="number" min="0" class="form-input" /></div>
-          <div><label class="form-label">每人限领</label><input v-model.number="couponForm.limitPerUser" type="number" min="1" class="form-input" /></div>
+          <div><label class="form-label">每人限领（0=不限）</label><input v-model.number="couponForm.limitPerUser" type="number" min="0" class="form-input" /></div>
         </div>
         <div class="form-item">
           <label class="form-label">适用范围</label>

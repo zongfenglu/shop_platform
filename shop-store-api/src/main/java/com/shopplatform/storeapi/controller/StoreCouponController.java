@@ -68,7 +68,7 @@ public class StoreCouponController {
         coupon.setEndTime(req.endTime());
         coupon.setExpireDays(req.expireDays());
         coupon.setTotalNum(req.totalNum() == null ? 0 : req.totalNum());
-        coupon.setLimitPerUser(req.limitPerUser() == null ? 1 : req.limitPerUser());
+        coupon.setLimitPerUser(req.limitPerUser() == null ? 0 : Math.max(0, req.limitPerUser()));
         coupon.setApplyRange(req.applyRange() == null ? "all" : req.applyRange());
         coupon.setApplyRangeConfig(toJson(req.applyRangeConfig()));
         coupon.setStatus(req.status() == null ? "on" : req.status());

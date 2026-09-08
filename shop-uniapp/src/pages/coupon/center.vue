@@ -51,7 +51,7 @@ async function receive(c) {
       <view class="right">
         <view class="name">{{ c.name }}</view>
         <view class="meta">{{ validity(c) }}</view>
-        <view class="meta">每人限领 {{ c.limitPerUser || 1 }} 张 · 已领 {{ c.receivedNum || 0 }}/{{ c.totalNum || 0 }}</view>
+        <view class="meta">每人限领 {{ c.limitPerUser > 0 ? c.limitPerUser : '不限' }} 张 · 已领 {{ c.receivedNum || 0 }}/{{ c.totalNum || 0 }}</view>
         <button class="btn" size="mini" @click="receive(c)">立即领取</button>
       </view>
     </view>
