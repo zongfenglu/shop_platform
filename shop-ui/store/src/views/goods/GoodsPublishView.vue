@@ -67,7 +67,7 @@ function onPickSpecType(type) {
 const selectedSpecIds = ref([])
 
 function toggleSpec(specId) {
-  const i = selectedSpecIds.value.indexOf(specId)
+  const i = selectedSpecIds.value.findIndex((id) => String(id) === String(specId))
   if (i >= 0) {
     selectedSpecIds.value.splice(i, 1)
   } else {
@@ -106,7 +106,7 @@ async function onAddSpecValue(specId) {
       const existing = checkedValueIds[specId]
       if (existing) {
         for (const item of spec.values || []) {
-          if (!beforeIds.has(String(item.id))) existing.add(item.id)
+          if (!beforeIds.has(String(item.id))) existing.add(String(item.id))
         }
       }
     }
@@ -118,7 +118,7 @@ async function onAddSpecValue(specId) {
 
 function selectedSpecs() {
   return selectedSpecIds.value
-    .map((id) => specs.value.find((s) => s.id === id))
+    .map((id) => specs.value.find((s) => String(s.id) === String(id)))
     .filter(Boolean)
 }
 
@@ -126,18 +126,20 @@ function selectedSpecs() {
 const checkedValueIds = reactive({})
 function isValueChecked(specId, valueId) {
   const set = checkedValueIds[specId]
-  return set ? set.has(valueId) : true
+  return set ? set.has(String(valueId)) : true
 }
 function toggleValueChecked(specId, valueId) {
-  if (!checkedValueIds[specId]) {
-    const spec = specs.value.find((s) => s.id === specId)
-    checkedValueIds[specId] = new Set((spec?.values || []).map((v) => v.id))
+  const specKey = String(specId)
+  if (!checkedValueIds[specKey]) {
+    const spec = specs.value.find((s) => String(s.id) === specKey)
+    checkedValueIds[specKey] = new Set((spec?.values || []).map((v) => String(v.id)))
   }
-  const set = checkedValueIds[specId]
-  if (set.has(valueId)) {
-    set.delete(valueId)
+  const set = checkedValueIds[specKey]
+  const valueKey = String(valueId)
+  if (set.has(valueKey)) {
+    set.delete(valueKey)
   } else {
-    set.add(valueId)
+    set.add(valueKey)
   }
   // Set 的 add/delete 不是 Vue 能追踪的响应式变更（不像数组/对象赋值），
   // 矩阵重算必须在这里显式触发，不能只指望 watch(selectedSpecIds) 兜底。
@@ -297,7 +299,7 @@ async function loadForEdit() {
       return
     }
 
-    const valueById = new Map(specs.value.flatMap((s) => (s.values || []).map((v) => [String(v.id), s.id])))
+    const valueById = new Map(specs.value.flatMap((s) => (s.values || []).map((v) => [String(v.id), String(s.id)])))
     const selectedIds = []
     const valueIdsBySpec = new Map()
     for (const sku of skus) {
@@ -306,7 +308,7 @@ async function loadForEdit() {
         if (!specId) continue
         if (!selectedIds.includes(specId)) selectedIds.push(specId)
         if (!valueIdsBySpec.has(specId)) valueIdsBySpec.set(specId, new Set())
-        valueIdsBySpec.get(specId).add(Number(valueId))
+        valueIdsBySpec.get(specId).add(String(valueId))
       }
     }
     selectedSpecIds.value = selectedIds
@@ -497,7 +499,7 @@ async function onSubmit() {
               v-for="s in specs"
               :key="s.id"
               class="spec-chip"
-              :class="{ selected: selectedSpecIds.includes(s.id) }"
+              :class="{ selected: selectedSpecIds.some((id) => String(id) === String(s.id)) }"
               @click="toggleSpec(s.id)"
             >{{ s.name }}</span>
           </div>
