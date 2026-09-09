@@ -2000,4 +2000,8 @@ function removePage(page) {
 .preview-block {
   pointer-events: none;
 }
+/* 视频控件需要可点击才能播放 */
+.preview-block :deep(video) {
+  pointer-events: auto;
+}
 </style>
