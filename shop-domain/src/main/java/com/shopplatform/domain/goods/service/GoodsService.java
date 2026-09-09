@@ -41,6 +41,8 @@ public interface GoodsService extends TenantSafeService<Goods> {
             BigDecimal freightFee,
             List<Long> serviceIds,
             Boolean isVirtual,
+            /** 单品分销佣金比例（百分比），null=用店铺默认。仅 dealer_setting.commission_type=goods 时参与计佣 */
+            BigDecimal commissionRate,
             List<SkuItem> skuItems
     ) {
     }

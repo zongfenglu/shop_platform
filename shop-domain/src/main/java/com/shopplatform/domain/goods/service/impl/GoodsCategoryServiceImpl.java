@@ -94,7 +94,7 @@ public class GoodsCategoryServiceImpl extends ServiceImpl<GoodsCategoryMapper, G
         int level = 1;
         Long parentId = category.getParentId();
         while (parentId != null && parentId != 0L) {
-            GoodsCategory parent = getById(parentId);
+            GoodsCategory parent = findParent(parentId);
             if (parent == null) {
                 break;
             }
@@ -105,6 +105,14 @@ public class GoodsCategoryServiceImpl extends ServiceImpl<GoodsCategoryMapper, G
             parentId = parent.getParentId();
         }
         return level;
+    }
+
+    /**
+     * 查父分类。不用裸 getById（绕过租户校验，ArchUnit 禁止）；也不用 getByIdWithTenant——
+     * 父节点缺失（脏数据）时 levelOf 要宽容 break 而不是抛 404。lambdaQuery 走租户拦截器。
+     */
+    protected GoodsCategory findParent(Long parentId) {
+        return lambdaQuery().eq(GoodsCategory::getId, parentId).one();
     }
 
     private static Long normalizeParentId(Long parentId) {

@@ -59,6 +59,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         goods.setFreightFee(cmd.freightFee());
         goods.setServiceIds(toJson(cmd.serviceIds()));
         goods.setIsVirtual(Boolean.TRUE.equals(cmd.isVirtual()));
+        goods.setCommissionRate(validateCommissionRate(cmd.commissionRate()));
         goods.setLimitType("none");
         goods.setSort(0);
 
@@ -107,8 +108,14 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         goods.setFreightFee(cmd.freightFee());
         goods.setServiceIds(toJson(cmd.serviceIds()));
         goods.setIsVirtual(Boolean.TRUE.equals(cmd.isVirtual()));
+        goods.setCommissionRate(validateCommissionRate(cmd.commissionRate()));
         goods.setStockTotal(skuItems.stream().mapToInt(i -> Optional.ofNullable(i.stock()).orElse(0)).sum());
         this.updateById(goods);
+        // updateById 的默认策略跳过 null 字段——商户把单品佣金清空回"用店铺默认"时必须显式置 NULL
+        if (cmd.commissionRate() == null) {
+            this.lambdaUpdate().eq(Goods::getId, goods.getId())
+                    .set(Goods::getCommissionRate, null).update();
+        }
 
         List<GoodsSku> existing = goodsSkuService.listByGoodsId(goodsId);
         Map<String, GoodsSku> existingBySpec = existing.stream()
@@ -179,6 +186,17 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
 
     private String normalizeSpecValueIds(String raw) {
         return raw == null ? "" : raw;
+    }
+
+    /** 单品佣金比例是百分比，限 0-100；null 合法（用店铺默认） */
+    private java.math.BigDecimal validateCommissionRate(java.math.BigDecimal rate) {
+        if (rate == null) {
+            return null;
+        }
+        if (rate.signum() < 0 || rate.compareTo(new java.math.BigDecimal("100")) > 0) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "单品佣金比例必须在 0-100 之间");
+        }
+        return rate;
     }
 
     private String toJson(Object value) {

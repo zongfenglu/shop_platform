@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import { pcaTextArr } from 'element-china-area-data'
 import {
   createOfflineStore,
   listOfflineStores,
@@ -21,6 +22,16 @@ const verifyCode = ref('')
 const verifying = ref(false)
 
 const form = reactive({ name: '', phone: '', region: '', detail: '', businessHours: '' })
+// 省市区级联的选中值（文本三段，如 ['四川省','成都市','武侯区']）。后端 region 是单个字符串，
+// 存取时用 '/' 拼接/拆分——与库里已有的自由文本兼容：拆不回三段的老数据保持原文显示，重选后覆盖。
+const regionParts = ref([])
+
+function regionToParts(text) {
+  const parts = String(text || '').split('/').map((s) => s.trim()).filter(Boolean)
+  if (parts.length < 2 || parts.length > 3) return []
+  // 只有能在区划数据里找到对应省份的才回显到级联；否则视为老的自由文本
+  return pcaTextArr.some((p) => p.value === parts[0]) ? parts : []
+}
 
 const storeNameById = computed(() => new Map(stores.value.map((s) => [s.id, s.name])))
 
@@ -42,6 +53,7 @@ onMounted(load)
 
 function resetForm() {
   Object.assign(form, { name: '', phone: '', region: '', detail: '', businessHours: '' })
+  regionParts.value = []
 }
 
 function openCreate() {
@@ -59,7 +71,12 @@ function openEdit(store) {
     detail: store.detail || '',
     businessHours: store.businessHours || '',
   })
+  regionParts.value = regionToParts(store.region)
   modalOpen.value = true
+}
+
+function onRegionChange(parts) {
+  form.region = (parts || []).join('/')
 }
 
 function closeModal() {
@@ -198,7 +215,17 @@ function dateText(value) {
       <div class="modal-body">
         <div class="form-item"><label class="form-label"><span class="req">*</span>门店名称</label><input v-model="form.name" class="form-input" /></div>
         <div class="form-item"><label class="form-label">联系电话</label><input v-model="form.phone" class="form-input" /></div>
-        <div class="form-item"><label class="form-label">所在地区</label><input v-model="form.region" class="form-input" placeholder="省/市/区" /></div>
+        <div class="form-item">
+          <label class="form-label">所在地区</label>
+          <a-cascader
+            v-model:value="regionParts"
+            :options="pcaTextArr"
+            placeholder="请选择省 / 市 / 区"
+            style="width: 100%"
+            @change="onRegionChange"
+          />
+          <div v-if="form.region && !regionParts.length" class="form-hint">当前保存值：{{ form.region }}（老数据，重新选择后覆盖）</div>
+        </div>
         <div class="form-item"><label class="form-label">详细地址</label><input v-model="form.detail" class="form-input" /></div>
         <div class="form-item"><label class="form-label">营业时间</label><input v-model="form.businessHours" class="form-input" placeholder="例如 10:00 - 22:00" /></div>
       </div>

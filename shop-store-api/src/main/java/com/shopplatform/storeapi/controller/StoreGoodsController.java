@@ -86,6 +86,6 @@ public class StoreGoodsController {
                 request.categoryIds(), request.brandId(), request.name(), request.subName(), request.code(),
                 request.images(), request.specType(), request.content(), request.deliveryType(),
                 request.freightTemplateId(), request.freightFee(), request.serviceIds(),
-                request.isVirtual(), skuItems);
+                request.isVirtual(), request.commissionRate(), skuItems);
     }
 }

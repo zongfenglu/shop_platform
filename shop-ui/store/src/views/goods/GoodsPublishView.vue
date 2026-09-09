@@ -261,6 +261,8 @@ const form = reactive({
   freightTemplateId: null,
   isVirtual: false,
   content: '',
+  // 单品分销佣金比例（%），null=用店铺默认。数字不是 id，v-model.number 安全
+  commissionRate: null,
   price: null,
   linePrice: null,
   costPrice: null,
@@ -275,11 +277,15 @@ function validate() {
   errors.name = form.name.trim() ? '' : '请输入商品名称'
   errors.categoryIds = form.categoryIds.length ? '' : '请至少选择一个分类'
   errors.deliveryType = form.deliveryType.length ? '' : '请至少选择一种配送方式'
+  errors.commissionRate =
+    form.commissionRate === null || form.commissionRate === '' || (form.commissionRate >= 0 && form.commissionRate <= 100)
+      ? ''
+      : '佣金比例必须在 0-100 之间'
 
   if (specType.value === 'single') {
     errors.price = form.price !== null && form.price >= 0 ? '' : '请输入销售价'
     errors.stock = form.stock !== null && form.stock >= 0 ? '' : '请输入库存'
-    return !errors.name && !errors.categoryIds && !errors.price && !errors.stock && !errors.deliveryType
+    return !errors.name && !errors.categoryIds && !errors.price && !errors.stock && !errors.deliveryType && !errors.commissionRate
   }
 
   errors.sku = ''
@@ -290,7 +296,7 @@ function validate() {
   } else if (skuRows.value.some((r) => r.price === null || r.price < 0 || r.stock === null || r.stock < 0)) {
     errors.sku = 'SKU 矩阵里每一行的销售价和库存都必须填写'
   }
-  return !errors.name && !errors.categoryIds && !errors.deliveryType && !errors.sku
+  return !errors.name && !errors.categoryIds && !errors.deliveryType && !errors.sku && !errors.commissionRate
 }
 
 function contentOrNull(html) {
@@ -338,6 +344,7 @@ async function loadForEdit() {
     form.freightTemplateId = goods.freightTemplateId ?? null
     form.isVirtual = Boolean(goods.isVirtual)
     form.content = goods.content || ''
+    form.commissionRate = goods.commissionRate ?? null
     specType.value = goods.specType === 'multi' ? 'multi' : 'single'
 
     if (specType.value === 'single') {
@@ -434,6 +441,7 @@ async function onSubmit() {
       freightFee: null,
       serviceIds: [],
       isVirtual: form.isVirtual,
+      commissionRate: form.commissionRate === null || form.commissionRate === '' ? null : form.commissionRate,
       skuItems,
     }
     if (isEdit) {
@@ -651,6 +659,16 @@ async function onSubmit() {
           <option :value="false">否，需要物流发货</option>
           <option :value="true">是，无需物流</option>
         </select>
+      </div>
+    </div>
+
+    <p class="card-title" style="margin-top: 24px">分销</p>
+    <div class="form-row form-item">
+      <div>
+        <label class="form-label">单品佣金比例（%）</label>
+        <input v-model.number="form.commissionRate" type="number" min="0" max="100" step="0.01" class="form-input" placeholder="留空则使用分销设置里的店铺默认比例" />
+        <div class="form-hint">仅当分销设置的佣金类型为「按商品佣金」时生效；填 0 表示该商品不参与分佣</div>
+        <div v-if="errors.commissionRate" class="field-error">{{ errors.commissionRate }}</div>
       </div>
     </div>
 

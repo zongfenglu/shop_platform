@@ -58,8 +58,9 @@ class GoodsCategoryServiceImplTest {
         GoodsCategory l2 = cat(2L, 1L);
         GoodsCategory l3 = cat(3L, 2L);
         doReturn(l3).when(service).getById(3L);
-        doReturn(l2).when(service).getById(2L);
-        doReturn(l1).when(service).getById(1L);
+        doReturn(l3).when(service).findParent(3L);
+        doReturn(l2).when(service).findParent(2L);
+        doReturn(l1).when(service).findParent(1L);
 
         assertThrows(BusinessException.class,
                 () -> service.create(new GoodsCategoryService.SaveCommand(3L, "不能再分", null, 0, true)));

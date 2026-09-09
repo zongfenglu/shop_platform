@@ -215,7 +215,14 @@ onMounted(() => { loadSettings(); loadDealerUsers(); loadDealerOrders(); loadWit
   <div v-if="activeTab === 'settings'" class="card card-pad">
     <div class="form-item"><label class="form-label">分销开关</label><select v-model="settingForm.isEnable" class="form-select" style="width:200px"><option :value="1">开启</option><option :value="0">关闭</option></select></div>
     <div class="form-item" style="margin-top:12px"><label class="form-label">佣金比例（%）</label><input v-model.number="settingForm.commissionRate" type="number" min="0" max="100" step="0.01" class="form-input" style="width:200px" /></div>
-    <div class="form-item" style="margin-top:12px"><label class="form-label">佣金类型</label><select v-model="settingForm.commissionType" class="form-select" style="width:200px"><option value="order">整单佣金</option><option value="goods">按商品佣金</option></select></div>
+    <div class="form-item" style="margin-top:12px">
+      <label class="form-label">佣金类型</label>
+      <select v-model="settingForm.commissionType" class="form-select" style="width:200px"><option value="order">整单佣金</option><option value="goods">按商品佣金</option></select>
+      <div class="form-hint" style="max-width:520px">
+        整单佣金：按订单实付金额（含运费）× 上方统一比例计佣。<br />
+        按商品佣金：按每个商品行的实付金额（不含运费）× 该商品的「单品佣金比例」逐行计佣求和；未单独设置比例的商品使用上方统一比例，设为 0 的商品不参与分佣。单品比例在「商品 → 编辑商品 → 分销」里设置。
+      </div>
+    </div>
     <div class="form-item" style="margin-top:12px"><label class="form-label">最低提现金额</label><input v-model.number="settingForm.minWithdraw" type="number" min="0" step="0.01" class="form-input" style="width:200px" /></div>
     <div class="form-item" style="margin-top:12px"><label class="form-label">自动审核</label><select v-model="settingForm.autoApprove" class="form-select" style="width:200px"><option :value="0">人工审核</option><option :value="1">自动通过</option></select></div>
     <button class="btn btn-primary" style="margin-top:16px" @click="submitSettings">保存设置</button>

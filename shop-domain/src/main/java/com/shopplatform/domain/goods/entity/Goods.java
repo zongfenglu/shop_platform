@@ -59,6 +59,9 @@ public class Goods extends BaseEntity {
 
     private Integer limitNum;
 
+    /** 单品分销佣金比例（百分比）。null=使用店铺 dealer_setting 的默认比例。仅 commission_type=goods 时生效 */
+    private java.math.BigDecimal commissionRate;
+
     private Integer sort;
 
     public Long getShopId() {
@@ -227,6 +230,14 @@ public class Goods extends BaseEntity {
 
     public void setLimitNum(Integer limitNum) {
         this.limitNum = limitNum;
+    }
+
+    public java.math.BigDecimal getCommissionRate() {
+        return commissionRate;
+    }
+
+    public void setCommissionRate(java.math.BigDecimal commissionRate) {
+        this.commissionRate = commissionRate;
     }
 
     public Integer getSort() {
