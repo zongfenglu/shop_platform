@@ -966,19 +966,27 @@ function removePage(page) {
             <div class="form-item">
               <label class="form-label">视频高度（px）</label>
               <input class="form-input" type="number" v-model.number="selectedItem.height" min="80" max="400" />
-              <div class="form-hint">滑块可用数字精确调整</div>
             </div>
             <div class="form-item">
               <label class="form-label">视频封面</label>
               <ImageField v-model="selectedItem.cover" />
             </div>
             <div class="form-item">
-              <label class="form-label">视频地址</label>
-              <div style="display: flex; gap: 8px">
-                <input class="form-input" v-model="selectedItem.url" placeholder="https://... 或从素材库选择" style="flex: 1" />
-                <button class="btn btn-sm" @click="openVideoPicker(selectedItem)">素材库</button>
+              <label class="form-label">视频来源</label>
+              <!-- 从素材库选择后，url 以 /uploads/ 开头；手填外链以 http(s):// 开头 -->
+              <div v-if="selectedItem.url && !selectedItem.url.startsWith('http')" class="video-source-card">
+                <span class="video-source-icon">▶</span>
+                <span class="video-source-name">{{ selectedItem.url.split('/').pop() }}</span>
+                <button class="btn btn-sm" @click="openVideoPicker(selectedItem)">更换</button>
+                <button class="btn btn-sm" @click="selectedItem.url = ''">清除</button>
               </div>
-              <div class="form-hint">支持粘贴外链，或上传 MP4 到素材库后选用（单个不超过 50MB）</div>
+              <template v-else>
+                <div style="display: flex; gap: 8px; margin-bottom: 6px">
+                  <input class="form-input" v-model="selectedItem.url" placeholder="https://... 外链地址" style="flex: 1" />
+                </div>
+                <button class="btn btn-sm" style="width: 100%" @click="openVideoPicker(selectedItem)">从素材库选择</button>
+                <div class="form-hint" style="margin-top: 6px">外链或从素材库选 MP4（上限 50MB）</div>
+              </template>
             </div>
             <div class="form-item">
               <label class="form-label">自动播放</label>
@@ -1287,29 +1295,38 @@ function removePage(page) {
     </div>
   </div>
 
-  <div v-if="previewModalOpen" class="modal-mask" @click.self="closePreview">
-    <div class="modal" style="width: 420px">
-      <div class="modal-header">
-        <span>预览 - {{ editorPage.name }}</span>
+  <div v-if="previewModalOpen" class="modal-mask preview-mask" @click.self="closePreview">
+    <div class="preview-dialog">
+      <div class="preview-dialog-head">
+        <span class="preview-dialog-title">预览 · {{ editorPage.name }}</span>
+        <span class="preview-dialog-hint">仅供参考，实际效果以真机为准</span>
         <button class="modal-close" aria-label="关闭" @click="closePreview">×</button>
       </div>
-      <div class="modal-body">
-        <div class="phone-shell">
-          <div class="phone-screen preview-screen" :style="pageCanvasStyle()">
-            <div v-if="items.length === 0" class="empty-state" style="padding: 30px 0">
-              <div class="icon">◎</div>
-              <div>暂无内容</div>
+      <div class="preview-dialog-body">
+        <div class="preview-phone">
+          <div class="preview-notch" />
+          <div class="preview-screen" :style="pageCanvasStyle()">
+            <div class="preview-status">
+              <span>9:41</span>
+              <span>{{ editorPage.name || '页面标题' }}</span>
+              <span>▮▮▮</span>
             </div>
-            <div v-for="element in items" :key="element._cid" class="canvas-block preview-only">
-              <BlockPreview
-                :item="element"
-                :coupon-list="couponList"
-                :seckill-actives="seckillActives"
-                :group-actives="groupActives"
-                :bargain-actives="bargainActives"
-                :store-list="storeList"
-                :goods-meta="goodsMeta"
-              />
+            <div class="preview-scroll">
+              <div v-if="items.length === 0" class="empty-state" style="padding: 30px 0">
+                <div class="icon">◎</div>
+                <div>暂无内容</div>
+              </div>
+              <div v-for="element in items" :key="element._cid" class="preview-block">
+                <BlockPreview
+                  :item="element"
+                  :coupon-list="couponList"
+                  :seckill-actives="seckillActives"
+                  :group-actives="groupActives"
+                  :bargain-actives="bargainActives"
+                  :store-list="storeList"
+                  :goods-meta="goodsMeta"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -1882,5 +1899,105 @@ function removePage(page) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ---- 视频组属性面板 ---- */
+.video-source-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+.video-source-icon { color: var(--text-muted); flex-shrink: 0; }
+.video-source-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+/* ---- 预览弹窗 ---- */
+.preview-mask { z-index: 110; }
+.preview-dialog {
+  width: 420px;
+  max-width: 96vw;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  overflow: hidden;
+}
+.preview-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--gridline);
+  flex-shrink: 0;
+}
+.preview-dialog-title { font-size: 14px; font-weight: 700; }
+.preview-dialog-hint { font-size: 12px; color: var(--text-muted); flex: 1; }
+.preview-dialog-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 0;
+  display: flex;
+  justify-content: center;
+  background: var(--surface-2);
+}
+.preview-phone {
+  width: 375px;
+  border: 8px solid #1c1c1e;
+  border-radius: 44px;
+  background: #1c1c1e;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  flex-shrink: 0;
+}
+.preview-notch {
+  height: 30px;
+  background: #1c1c1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preview-notch::after {
+  content: '';
+  width: 100px;
+  height: 18px;
+  background: #0a0a0a;
+  border-radius: 0 0 14px 14px;
+}
+.preview-screen {
+  min-height: 550px;
+  border-radius: 0 0 34px 34px;
+  overflow: hidden;
+}
+.preview-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  background: rgba(255,255,255,.06);
+  font-size: 11px;
+  font-weight: 650;
+  color: #fff;
+}
+.preview-scroll {
+  overflow-y: auto;
+  max-height: 560px;
+}
+.preview-block {
+  pointer-events: none;
 }
 </style>
