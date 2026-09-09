@@ -91,10 +91,19 @@ function skuLabel(sku) {
 function indexGoodsDetail(detail) {
   const g = detail?.goods
   if (!g?.id) return
-  goodsMeta.value[String(g.id)] = { name: g.name || `#${g.id}`, image: firstGoodsImage(g) }
+  goodsMeta.value[String(g.id)] = { name: g.name || `#${g.id}`, image: firstGoodsImage(g), code: g.code || '' }
   for (const sku of detail.skus || []) {
     skuMeta.value[String(sku.id)] = { label: skuLabel(sku), price: sku.price, goodsId: g.id }
   }
+}
+
+/** 列表里商品的第二行说明：优先展示商品编码；没有编码时退回 id 尾号（完整 19 位没人读得了） */
+function goodsSubLabel(id) {
+  if (id == null || id === '') return ''
+  const meta = goodsMeta.value[String(id)]
+  if (meta?.code) return `编码 ${meta.code}`
+  const s = String(id)
+  return s.length > 8 ? `ID …${s.slice(-8)}` : `ID ${s}`
 }
 
 async function rememberGoods(ids) {
@@ -155,7 +164,9 @@ function openEditCoupon(item) {
     name: item.name, type: item.type,
     reducePrice: item.reducePrice ?? 10, discountRatio: item.discountRatio ?? 0.9,
     minPrice: item.minPrice ?? 0, expireType: item.expireType,
-    startTime: item.startTime || '', endTime: item.endTime || '', expireDays: item.expireDays ?? 7,
+    // 优惠时间精确到日，后端存的是 LocalDateTime，取日期部分展示
+    startTime: (item.startTime || '').slice(0, 10), endTime: (item.endTime || '').slice(0, 10),
+    expireDays: item.expireDays ?? 7,
     totalNum: item.totalNum ?? 0, limitPerUser: item.limitPerUser ?? 1,
     applyRange: item.applyRange || 'all',
     applyRangeConfig: Array.isArray(item.applyRangeConfig) ? item.applyRangeConfig.join(',') : (item.applyRangeConfig || ''),
@@ -167,15 +178,29 @@ function openEditCoupon(item) {
 function closeCouponModal() { couponModalOpen.value = false }
 
 async function submitCoupon() {
-  if (!couponForm.name.trim()) return
+  if (!couponForm.name.trim()) {
+    message.warning('请填写优惠券名称')
+    return
+  }
+  if (couponForm.expireType === 'fixed') {
+    if (!couponForm.startTime || !couponForm.endTime) {
+      message.warning('请选择优惠开始和结束日期')
+      return
+    }
+    if (couponForm.startTime > couponForm.endTime) {
+      message.warning('开始日期不能晚于结束日期')
+      return
+    }
+  }
   const payload = {
     name: couponForm.name.trim(), type: couponForm.type,
     reducePrice: couponForm.type === 'reduce' ? Number(couponForm.reducePrice) : null,
     discountRatio: couponForm.type === 'discount' ? Number(couponForm.discountRatio) : null,
     minPrice: Number(couponForm.minPrice) || 0,
     expireType: couponForm.expireType,
-    startTime: couponForm.expireType === 'fixed' && couponForm.startTime ? couponForm.startTime : null,
-    endTime: couponForm.expireType === 'fixed' && couponForm.endTime ? couponForm.endTime : null,
+    // 精确到日：起始日 00:00:00 生效、结束日 23:59:59 失效
+    startTime: couponForm.expireType === 'fixed' ? couponForm.startTime + 'T00:00:00' : null,
+    endTime: couponForm.expireType === 'fixed' ? couponForm.endTime + 'T23:59:59' : null,
     expireDays: couponForm.expireType === 'receive' ? Number(couponForm.expireDays) : null,
     totalNum: Number(couponForm.totalNum) || 0,
     limitPerUser: Math.max(0, Number(couponForm.limitPerUser) || 0),
@@ -197,7 +222,8 @@ async function removeCoupon(id) {
 
 async function toggleCouponStatus(item) {
   const next = item.status === 'on' ? 'off' : 'on'
-  await updateCoupon(item.id, { ...item, applyRangeConfig: parseIds(item.applyRangeConfig), status: next })
+  // applyRangeConfig 后端返回的是 JSON 字符串（如 '["1","2"]'），要还原成数组再回传
+  await updateCoupon(item.id, { ...item, applyRangeConfig: parseIdArray(item.applyRangeConfig), status: next })
   await loadCoupons()
 }
 
@@ -208,7 +234,7 @@ function couponFace(item) {
 function couponCondition(item) { return Number(item.minPrice) > 0 ? `满${item.minPrice}可用` : '无门槛' }
 function couponValidity(item) {
   if (item.expireType === 'receive') return `领取后 ${item.expireDays || 7} 天内有效`
-  return `${item.startTime || ''} ~ ${item.endTime || ''}`
+  return `${(item.startTime || '').slice(0, 10)} ~ ${(item.endTime || '').slice(0, 10)}`
 }
 function couponScope(item) {
   if (item.applyRange === 'category') return '指定分类'
@@ -322,6 +348,7 @@ const goodsModalOpen = ref(false)
 const editingGoodsId = ref(null)
 const goodsForm = reactive({ activeId: null, goodsId: null, skuId: null, seckillPrice: '', seckillNum: 0, limitPerUser: 0, status: 'on', sort: 0 })
 const seckillSkuOptions = ref([])
+const seckillSelectedGoods = ref(null)
 
 async function loadTimes() {
   seckillTimes.value = asList(await listSeckillTimes())
@@ -347,7 +374,18 @@ function openEditTime(t) {
 }
 function closeTimeModal() { timeModalOpen.value = false }
 async function submitTime() {
-  if (!timeForm.name.trim()) return
+  if (!timeForm.name.trim()) {
+    message.warning('请填写场次名称')
+    return
+  }
+  if (!timeForm.startTime || !timeForm.endTime) {
+    message.warning('请选择场次开始和结束时间')
+    return
+  }
+  if (timeForm.startTime >= timeForm.endTime) {
+    message.warning('场次开始时间必须早于结束时间')
+    return
+  }
   const payload = { name: timeForm.name.trim(), startTime: timeForm.startTime, endTime: timeForm.endTime, sort: Number(timeForm.sort) || 0, status: timeForm.status }
   if (editingTimeId.value) await updateSeckillTime(editingTimeId.value, payload)
   else await createSeckillTime(payload)
@@ -368,14 +406,26 @@ function openCreateActive() {
 function openEditActive(a) {
   editingActiveId.value = a.id
   Object.assign(activeForm, {
-    name: a.name, timeIds: parseIdArray(a.timeIds),
+    // 统一转 String 与场次 checkbox 的 value 对齐——time_ids 里可能存的是数字（老数据），类型不一致会导致勾选状态丢失
+    name: a.name, timeIds: parseIdArray(a.timeIds).map(String),
     startDate: a.startDate, endDate: a.endDate, status: a.status || 'on', remark: a.remark || '',
   })
   activeModalOpen.value = true
 }
 function closeActiveModal() { activeModalOpen.value = false }
 async function submitActive() {
-  if (!activeForm.name.trim()) return
+  if (!activeForm.name.trim()) {
+    message.warning('请填写活动名称')
+    return
+  }
+  if (!activeForm.startDate || !activeForm.endDate) {
+    message.warning('请选择活动开始和结束日期')
+    return
+  }
+  if (activeForm.startDate > activeForm.endDate) {
+    message.warning('活动开始日期不能晚于结束日期')
+    return
+  }
   const payload = {
     name: activeForm.name.trim(),
     timeIds: activeForm.timeIds || [],
@@ -400,18 +450,21 @@ function selectActive(id) {
 function activeTimeNames(a) {
   const ids = parseIdArray(a.timeIds)
   if (!ids.length) return '限时折扣（全天）'
-  return ids.map((id) => seckillTimes.value.find((t) => t.id === id)?.name || ('#' + id)).join('、')
+  // sameId：time_ids 里可能是数字（老数据）也可能是字符串，统一按字符串比
+  return ids.map((id) => seckillTimes.value.find((t) => sameId(t.id, id))?.name || ('#' + id)).join('、')
 }
 
 function openCreateGoods() {
   if (!selectedActiveId.value) return
   editingGoodsId.value = null
+  seckillSelectedGoods.value = null
   seckillSkuOptions.value = []
   Object.assign(goodsForm, { activeId: selectedActiveId.value, goodsId: null, skuId: null, seckillPrice: '', seckillNum: 0, limitPerUser: 0, status: 'on', sort: 0 })
   goodsModalOpen.value = true
 }
 function openEditGoods(g) {
   editingGoodsId.value = g.id
+  seckillSelectedGoods.value = null
   seckillSkuOptions.value = []
   Object.assign(goodsForm, {
     activeId: g.activeId, goodsId: g.goodsId, skuId: g.skuId,
@@ -423,6 +476,7 @@ function openEditGoods(g) {
 function closeGoodsModal() { goodsModalOpen.value = false }
 function onSeckillGoodsLoaded({ goods, skus }) {
   indexGoodsDetail({ goods, skus })
+  seckillSelectedGoods.value = goods || null
   seckillSkuOptions.value = skus || []
   if (goodsForm.skuId && !seckillSkuOptions.value.some((s) => sameId(s.id, goodsForm.skuId))) {
     goodsForm.skuId = null
@@ -445,9 +499,25 @@ async function submitGoods() {
     message.warning('请选择商品、SKU 并填写秒杀价')
     return
   }
+  if (Number(goodsForm.seckillPrice) <= 0) {
+    message.warning('秒杀价必须大于 0')
+    return
+  }
+  if (seckillSelectedGoods.value && seckillSelectedGoods.value.status !== 'on') {
+    message.warning('该商品当前在仓库中（未上架），请先上架再参与活动')
+    return
+  }
+  // 同一活动同一 SKU 不允许重复添加，先在前端拦一道，后端也有校验兜底
+  const dup = seckillGoodsList.value.find((g) =>
+    sameId(g.skuId, goodsForm.skuId) && (!editingGoodsId.value || !sameId(g.id, editingGoodsId.value)))
+  if (dup) {
+    message.warning('该商品规格已在当前活动中，请勿重复添加')
+    return
+  }
   const payload = {
     activeId: selectedActiveId.value || goodsForm.activeId,
-    goodsId: Number(goodsForm.goodsId), skuId: Number(goodsForm.skuId),
+    // id 一律保持字符串直传：19 位雪花 id 经 Number() 会丢精度，存进去的就是另一个 id（见 CONTRIBUTING.md）
+    goodsId: String(goodsForm.goodsId), skuId: String(goodsForm.skuId),
     seckillPrice: Number(goodsForm.seckillPrice),
     seckillNum: Number(goodsForm.seckillNum) || 0, limitPerUser: Number(goodsForm.limitPerUser) || 0,
     status: goodsForm.status, sort: Number(goodsForm.sort) || 0,
@@ -557,14 +627,14 @@ async function submitGroup() {
   const groupPrice = {}
   for (const row of groupSkuRows.value) {
     if (row.groupPrice === '' || row.groupPrice == null) continue
-    groupPrice[Number(row.skuId)] = Number(row.groupPrice)
+    groupPrice[String(row.skuId)] = Number(row.groupPrice)
   }
   if (!Object.keys(groupPrice).length) {
     message.warning('请至少填写一个 SKU 的拼团价')
     return
   }
   const payload = {
-    goodsId: Number(groupForm.goodsId), groupNum: Number(groupForm.groupNum) || 2,
+    goodsId: String(groupForm.goodsId), groupNum: Number(groupForm.groupNum) || 2,
     groupPrice, validHours: Number(groupForm.validHours) || 24,
     isMock: Number(groupForm.isMock) || 0,
     startTime: groupForm.startTime, endTime: groupForm.endTime, status: groupForm.status,
@@ -616,7 +686,7 @@ async function submitBargain() {
     return
   }
   const payload = {
-    goodsId: Number(bargainForm.goodsId), floorPrice: Number(bargainForm.floorPrice),
+    goodsId: String(bargainForm.goodsId), floorPrice: Number(bargainForm.floorPrice),
     validHours: Number(bargainForm.validHours) || 24, helpLimit: Number(bargainForm.helpLimit) || 0,
     startTime: bargainForm.startTime, endTime: bargainForm.endTime, status: bargainForm.status,
   }
@@ -648,8 +718,9 @@ function nowLocalPlusHours(h) {
 }
 
 function parseIds(text) {
+  // id 保持字符串：Number() 会把 19 位雪花 id 四舍五入成另一个 id，后端 Long 反序列化接受数字字符串
   if (!text) return []
-  return text.split(',').map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n))
+  return text.split(',').map((s) => s.trim()).filter((s) => /^\d+$/.test(s))
 }
 
 function headerAction() {
@@ -714,7 +785,7 @@ async function submitSignConfig() {
         message.warning(`连续 ${r.days} 天的奖励请选择优惠券`)
         return
       }
-      rules.push({ days: Number(r.days), type: 'coupon', couponId: Number(r.couponId) })
+      rules.push({ days: Number(r.days), type: 'coupon', couponId: String(r.couponId) })
     } else {
       rules.push({ days: Number(r.days), type: 'points', value: Number(r.value) || 0 })
     }
@@ -778,8 +849,8 @@ async function submitPointsGoods() {
   }
   const payload = {
     name: pointsGoodsForm.name.trim(), image: pointsGoodsForm.image || null,
-    goodsId: pointsGoodsForm.type === 'goods' ? Number(pointsGoodsForm.goodsId) : null,
-    couponId: pointsGoodsForm.type === 'coupon' ? Number(pointsGoodsForm.couponId) : null,
+    goodsId: pointsGoodsForm.type === 'goods' ? String(pointsGoodsForm.goodsId) : null,
+    couponId: pointsGoodsForm.type === 'coupon' ? String(pointsGoodsForm.couponId) : null,
     points: Number(pointsGoodsForm.points), cash: Number(pointsGoodsForm.cash) || 0,
     stock: Number(pointsGoodsForm.stock) || 0, status: pointsGoodsForm.status,
     sort: Number(pointsGoodsForm.sort) || 0,
@@ -906,8 +977,8 @@ onMounted(async () => {
           </select>
         </div>
         <div v-if="couponForm.expireType === 'fixed'" class="form-row form-item">
-          <div><label class="form-label">开始时间</label><input v-model="couponForm.startTime" type="datetime-local" class="form-input" /></div>
-          <div><label class="form-label">结束时间</label><input v-model="couponForm.endTime" type="datetime-local" class="form-input" /></div>
+          <div><label class="form-label"><span class="req">*</span>开始日期</label><input v-model="couponForm.startTime" type="date" class="form-input" /></div>
+          <div><label class="form-label"><span class="req">*</span>结束日期（当天 23:59 失效）</label><input v-model="couponForm.endTime" type="date" class="form-input" /></div>
         </div>
         <div v-else class="form-item">
           <label class="form-label">领取后有效天数</label>
@@ -1087,7 +1158,7 @@ onMounted(async () => {
                 <img v-if="goodsCover(g.goodsId)" :src="goodsCover(g.goodsId)" alt="" class="goods-cell-thumb" />
                 <div>
                   <div class="goods-cell-name">{{ goodsLabel(g.goodsId) }}</div>
-                  <div class="goods-cell-sub">ID {{ g.goodsId }}</div>
+                  <div class="goods-cell-sub">{{ goodsSubLabel(g.goodsId) }}</div>
                 </div>
               </div>
             </td>
@@ -1111,8 +1182,8 @@ onMounted(async () => {
       <div class="modal-body">
         <div class="form-item"><label class="form-label"><span class="req">*</span>场次名称</label><input v-model="timeForm.name" class="form-input" placeholder="如 10:00场" /></div>
         <div class="form-row form-item">
-          <div><label class="form-label">开始时间</label><input v-model="timeForm.startTime" type="time" class="form-input" /></div>
-          <div><label class="form-label">结束时间</label><input v-model="timeForm.endTime" type="time" class="form-input" /></div>
+          <div><label class="form-label"><span class="req">*</span>开始时间</label><input v-model="timeForm.startTime" type="time" class="form-input" /></div>
+          <div><label class="form-label"><span class="req">*</span>结束时间</label><input v-model="timeForm.endTime" type="time" class="form-input" /></div>
         </div>
         <div class="form-row form-item">
           <div><label class="form-label">排序</label><input v-model.number="timeForm.sort" type="number" min="0" class="form-input" /></div>
@@ -1157,8 +1228,8 @@ onMounted(async () => {
       <div class="modal-header"><span>{{ editingGoodsId ? '编辑秒杀商品' : '添加秒杀商品' }}</span><button class="modal-close" @click="closeGoodsModal">×</button></div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto">
         <div class="form-item">
-          <label class="form-label"><span class="req">*</span>商品</label>
-          <GoodsPicker v-model="goodsForm.goodsId" @loaded="onSeckillGoodsLoaded" />
+          <label class="form-label"><span class="req">*</span>商品（仅出售中的商品可参与）</label>
+          <GoodsPicker v-model="goodsForm.goodsId" only-on-sale @loaded="onSeckillGoodsLoaded" />
         </div>
         <div class="form-item">
           <label class="form-label"><span class="req">*</span>规格</label>
@@ -1194,7 +1265,7 @@ onMounted(async () => {
               <img v-if="goodsCover(a.goodsId)" :src="goodsCover(a.goodsId)" alt="" class="goods-cell-thumb" />
               <div>
                 <div class="goods-cell-name">{{ goodsLabel(a.goodsId) }}</div>
-                <div class="goods-cell-sub">ID {{ a.goodsId }}</div>
+                <div class="goods-cell-sub">{{ goodsSubLabel(a.goodsId) }}</div>
               </div>
             </div>
           </td>
@@ -1266,7 +1337,7 @@ onMounted(async () => {
               <img v-if="goodsCover(a.goodsId)" :src="goodsCover(a.goodsId)" alt="" class="goods-cell-thumb" />
               <div>
                 <div class="goods-cell-name">{{ goodsLabel(a.goodsId) }}</div>
-                <div class="goods-cell-sub">ID {{ a.goodsId }}</div>
+                <div class="goods-cell-sub">{{ goodsSubLabel(a.goodsId) }}</div>
               </div>
             </div>
           </td>

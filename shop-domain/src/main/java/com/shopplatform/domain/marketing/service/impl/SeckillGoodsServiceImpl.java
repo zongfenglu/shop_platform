@@ -29,6 +29,19 @@ public class SeckillGoodsServiceImpl extends ServiceImpl<SeckillGoodsMapper, Sec
     }
 
     @Override
+    public boolean existsByActiveAndSku(Long activeId, Long skuId, Long excludeId) {
+        return count(new LambdaQueryWrapper<SeckillGoods>()
+                .eq(SeckillGoods::getActiveId, activeId)
+                .eq(SeckillGoods::getSkuId, skuId)
+                .ne(excludeId != null, SeckillGoods::getId, excludeId)) > 0;
+    }
+
+    @Override
+    public void removeByActive(Long activeId) {
+        remove(new LambdaQueryWrapper<SeckillGoods>().eq(SeckillGoods::getActiveId, activeId));
+    }
+
+    @Override
     public boolean incrSold(Long id, int qty) {
         return baseMapper.incrSold(id, qty) > 0;
     }

@@ -11,6 +11,8 @@ const props = defineProps({
   placeholder: { type: String, default: '搜索商品名称或编码' },
   triggerText: { type: String, default: '' },
   resetOnSelect: { type: Boolean, default: false },
+  /** 只列出出售中的商品（营销活动等场景仓库中商品不可选） */
+  onlyOnSale: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue', 'loaded', 'select'])
@@ -39,6 +41,7 @@ async function search() {
   try {
     const page = await pageGoods({
       keyword: keyword.value.trim() || undefined,
+      status: props.onlyOnSale ? 'on' : undefined,
       pageNum: 1,
       pageSize: 20,
     })
