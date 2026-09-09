@@ -1430,7 +1430,9 @@ function removePage(page) {
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr) 300px;
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
+  /* 最低高度保证内容稀少时三列仍有可用空间 */
+  min-height: calc(100vh - 180px);
 }
 
 .editor-left,
@@ -1439,8 +1441,11 @@ function removePage(page) {
   border-radius: 10px;
   background: var(--surface);
   padding: 14px;
-  max-height: calc(100vh - 170px);
+  /* 在 stretch 的 grid 行中用 100% 拉满，各自独立滚动 */
+  height: 100%;
+  max-height: calc(100vh - 180px);
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .editor-canvas {
@@ -1448,6 +1453,9 @@ function removePage(page) {
   border-radius: 10px;
   background: var(--surface);
   padding: 14px;
+  overflow-y: auto;
+  max-height: calc(100vh - 180px);
+  box-sizing: border-box;
 }
 
 .editor-toolbar {

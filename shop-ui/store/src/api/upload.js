@@ -5,24 +5,35 @@ import http from './http'
  *
  * 上传走 multipart/form-data —— 不要手工设置 Content-Type，
  * 让 axios 根据 FormData 自动带上带 boundary 的头，手写会导致后端解析不出文件。
+ *
+ * onProgress(pct: 0-100) 是可选的上传进度回调，pct 只反映浏览器→服务端的网络传输；
+ * 服务端处理（解压、写磁盘）在 100% 之后，这段时间进度条保持 100% 直到响应返回。
  */
-export function uploadImage(file, groupId) {
+export function uploadImage(file, groupId, onProgress) {
   const form = new FormData()
   form.append('file', file)
   if (groupId != null && groupId !== '') {
     form.append('groupId', groupId)
   }
-  return http.post('/store/upload/image', form)
+  return http.post('/store/upload/image', form, {
+    onUploadProgress: onProgress
+      ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+      : undefined,
+  })
 }
 
 /** 仅支持 MP4（后端按 magic byte 校验），上限 50MB */
-export function uploadVideo(file, groupId) {
+export function uploadVideo(file, groupId, onProgress) {
   const form = new FormData()
   form.append('file', file)
   if (groupId != null && groupId !== '') {
     form.append('groupId', groupId)
   }
-  return http.post('/store/upload/video', form)
+  return http.post('/store/upload/video', form, {
+    onUploadProgress: onProgress
+      ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+      : undefined,
+  })
 }
 
 export function pageMaterials(params) {

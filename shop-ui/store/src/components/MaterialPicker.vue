@@ -28,7 +28,8 @@ const emit = defineEmits(['update:open', 'select'])
 
 const loading = ref(false)
 const uploading = ref(false)
-const uploadProgress = ref('')
+// uploadJobs: { name, size, pct, done, error }[]  — one entry per file being uploaded
+const uploadJobs = ref([])
 const records = ref([])
 const pageNum = ref(1)
 const total = ref(0)
@@ -179,15 +180,28 @@ async function uploadFiles(files) {
     return
   }
   uploading.value = true
+  uploadJobs.value = list.map((f) => ({ name: f.name, size: f.size, pct: 0, done: false, error: false }))
   const groupId = currentGroupId.value
   const uploaded = []
   try {
     for (let i = 0; i < list.length; i += 1) {
-      uploadProgress.value = `${i + 1}/${list.length}`
-      const material = isVideo.value ? await uploadVideo(list[i], groupId) : await uploadImage(list[i], groupId)
-      if (material?.url) uploaded.push(material.url)
+      uploadJobs.value[i].pct = 0
+      const onProgress = (pct) => { uploadJobs.value[i].pct = pct }
+      try {
+        const material = isVideo.value
+          ? await uploadVideo(list[i], groupId, onProgress)
+          : await uploadImage(list[i], groupId, onProgress)
+        uploadJobs.value[i].pct = 100
+        uploadJobs.value[i].done = true
+        if (material?.url) uploaded.push(material.url)
+      } catch {
+        uploadJobs.value[i].error = true
+      }
     }
-    message.success(uploaded.length > 1 ? `已上传 ${uploaded.length} ${unitLabel.value}` : '已上传')
+    const succeeded = uploadJobs.value.filter((j) => j.done).length
+    if (succeeded) {
+      message.success(succeeded > 1 ? `已上传 ${succeeded} ${unitLabel.value}` : '已上传')
+    }
     pageNum.value = 1
     await reload()
     if (uploaded.length) {
@@ -198,11 +212,10 @@ async function uploadFiles(files) {
         selectedUrls.value = [uploaded[0]]
       }
     }
-  } catch {
-    // 拦截器已提示
   } finally {
     uploading.value = false
-    uploadProgress.value = ''
+    // keep job list visible briefly so user can see final state, then clear
+    setTimeout(() => { uploadJobs.value = [] }, 2000)
     if (fileInput.value) fileInput.value.value = ''
   }
 }
@@ -380,12 +393,31 @@ function onSearch() {
             />
             <button type="button" class="btn btn-sm" @click="onSearch">搜索</button>
             <label class="btn btn-sm btn-primary" :class="{ disabled: uploading }">
-              {{ uploading ? `上传中 ${uploadProgress}` : '上传到此分组' }}
+              {{ uploading ? '上传中…' : '上传到此分组' }}
               <input ref="fileInput" type="file" :accept="isVideo ? 'video/mp4' : 'image/*'" multiple hidden :disabled="uploading" @change="onFile" />
             </label>
           </div>
 
           <div v-if="dragOver" class="lib-drop-hint">松开鼠标，上传到「{{ scopeTitle }}」</div>
+
+          <!-- per-file upload progress — shown while uploading, fades out 2s after done -->
+          <div v-if="uploadJobs.length" class="lib-upload-jobs">
+            <div v-for="(job, i) in uploadJobs" :key="i" class="lib-job">
+              <div class="lib-job-name" :title="job.name">{{ job.name }}</div>
+              <div class="lib-job-bar-wrap">
+                <div
+                  class="lib-job-bar"
+                  :class="{ done: job.done, error: job.error }"
+                  :style="{ width: job.pct + '%' }"
+                />
+              </div>
+              <div class="lib-job-pct">
+                <span v-if="job.error" class="lib-job-err">失败</span>
+                <span v-else-if="job.done" class="lib-job-ok">✓</span>
+                <span v-else>{{ job.pct }}%</span>
+              </div>
+            </div>
+          </div>
 
           <div v-if="loading" class="lib-empty">加载中…</div>
           <div v-else-if="!records.length" class="lib-empty">
@@ -440,7 +472,8 @@ function onSearch() {
 .lib {
   width: 920px;
   max-width: min(920px, 94vw);
-  max-height: min(720px, 90vh);
+  /* Fixed height so the dialog never shrinks when there are few items */
+  height: min(680px, 90vh);
   background: var(--surface);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-modal);
@@ -674,4 +707,51 @@ function onSearch() {
 }
 .lib-foot-hint { font-size: 12px; color: var(--text-muted); }
 .lib-foot-actions { display: flex; gap: 8px; }
+
+/* per-file upload progress */
+.lib-upload-jobs {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lib-job {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.lib-job-name {
+  width: 160px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+.lib-job-bar-wrap {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.lib-job-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: width 120ms ease;
+}
+.lib-job-bar.done { background: var(--status-good-text, #22a665); }
+.lib-job-bar.error { background: var(--status-critical, #d63b3b); }
+.lib-job-pct {
+  width: 36px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.lib-job-ok { color: var(--status-good-text, #22a665); font-weight: 600; }
+.lib-job-err { color: var(--status-critical, #d63b3b); }
 </style>
