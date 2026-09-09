@@ -303,6 +303,17 @@ function removeItem(index) {
 const goodsMeta = ref({})
 const materialOpen = ref(false)
 const materialTarget = ref(null)
+const videoPickerOpen = ref(false)
+const videoPickerItem = ref(null)
+
+function openVideoPicker(item) {
+  videoPickerItem.value = item
+  videoPickerOpen.value = true
+}
+
+function onVideoSelect(url) {
+  if (videoPickerItem.value) videoPickerItem.value.url = url
+}
 
 function firstGoodsImage(row) {
   if (!row?.images) return ''
@@ -520,6 +531,17 @@ async function loadTemplates() {
   const [industry, mine] = await Promise.all([listDiyTemplates().catch(() => []), listMyTemplates().catch(() => [])])
   industryTemplates.value = industry || []
   myTemplates.value = mine || []
+}
+
+/** 模板摘要：底色 + 组件构成，让不同风格在列表里一眼可辨（模板本身只是 JSON，没有截图） */
+function templateSummary(template) {
+  try {
+    const parsed = JSON.parse(template.pageData)
+    const names = (parsed.items || []).map((it) => BLOCK_META[it.type]?.title || it.type)
+    return { bg: parsed.page?.bgColor || '#f8f8f8', parts: names.join(' · ') || '空页面' }
+  } catch {
+    return { bg: '#f8f8f8', parts: '' }
+  }
 }
 
 function applyTemplateToCanvas(template) {
@@ -790,14 +812,22 @@ function removePage(page) {
           <div class="comp-group-title">页面模板</div>
           <div class="tpl-list">
             <div v-for="t in industryTemplates" :key="'i' + t.id" class="tpl-item" @click="applyTemplateToCanvas(t)">
-              <span class="ico">📋</span>{{ t.name }}
+              <span class="tpl-swatch" :style="{ background: templateSummary(t).bg }"></span>
+              <span class="tpl-meta">
+                <span class="tpl-name">{{ t.name }}</span>
+                <span class="tpl-parts">{{ templateSummary(t).parts }}</span>
+              </span>
             </div>
           </div>
           <template v-if="myTemplates.length">
             <div class="comp-group-title" style="margin-top: 4px; font-size: 12px; color: var(--text-muted)">我的模板</div>
             <div class="tpl-list">
               <div v-for="t in myTemplates" :key="'m' + t.id" class="tpl-item" @click="applyTemplateToCanvas(t)">
-                <span class="ico">📋</span>{{ t.name }}
+                <span class="tpl-swatch" :style="{ background: templateSummary(t).bg }"></span>
+                <span class="tpl-meta">
+                  <span class="tpl-name">{{ t.name }}</span>
+                  <span class="tpl-parts">{{ templateSummary(t).parts }}</span>
+                </span>
               </div>
             </div>
           </template>
@@ -944,7 +974,11 @@ function removePage(page) {
             </div>
             <div class="form-item">
               <label class="form-label">视频地址</label>
-              <input class="form-input" v-model="selectedItem.url" placeholder="https://..." />
+              <div style="display: flex; gap: 8px">
+                <input class="form-input" v-model="selectedItem.url" placeholder="https://... 或从素材库选择" style="flex: 1" />
+                <button class="btn btn-sm" @click="openVideoPicker(selectedItem)">素材库</button>
+              </div>
+              <div class="form-hint">支持粘贴外链，或上传 MP4 到素材库后选用（单个不超过 50MB）</div>
             </div>
             <div class="form-item">
               <label class="form-label">自动播放</label>
@@ -1302,6 +1336,7 @@ function removePage(page) {
     </div>
   </div>
   <MaterialPicker v-model:open="materialOpen" @select="onMaterialSelect" />
+  <MaterialPicker v-model:open="videoPickerOpen" media-type="video" @select="onVideoSelect" />
 </template>
 
 <style scoped>
@@ -1496,6 +1531,31 @@ function removePage(page) {
 .tpl-item .ico {
   width: 16px;
   text-align: center;
+}
+
+.tpl-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tpl-meta {
+  display: grid;
+  min-width: 0;
+}
+
+.tpl-name {
+  font-weight: 600;
+}
+
+.tpl-parts {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .preview-only {

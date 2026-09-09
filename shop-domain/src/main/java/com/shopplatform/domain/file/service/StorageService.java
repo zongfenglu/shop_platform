@@ -17,6 +17,12 @@ public interface StorageService {
     StoredFile storeImage(MultipartFile file, Long shopId);
 
     /**
+     * 保存一个视频（装修视频组等场景），返回可用于 {@code <video src>} 的相对 URL。
+     * 与 storeImage 相同的安全约束：magic byte 嗅探、服务端生成文件名。
+     */
+    StoredFile storeVideo(MultipartFile file, Long shopId);
+
+    /**
      * 统计某商城本地上传目录占用。目录不存在时返回 0，不抛错。
      * shopId 必须是 Long（服务端已有的租户 ID），禁止传入客户端路径片段。
      */

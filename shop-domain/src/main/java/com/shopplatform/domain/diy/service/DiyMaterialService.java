@@ -13,10 +13,11 @@ public interface DiyMaterialService extends TenantSafeService<DiyMaterial> {
      * 当前商户素材分页。
      * @param groupId 指定分组；null 且 ungrouped=false 表示全部
      * @param ungrouped true 时只看未分组
+     * @param type image / video；null 表示不过滤（老调用方默认只关心图片时应显式传 image）
      */
-    IPage<DiyMaterial> pageMine(int pageNum, int pageSize, Long groupId, boolean ungrouped, String keyword);
+    IPage<DiyMaterial> pageMine(int pageNum, int pageSize, Long groupId, boolean ungrouped, String keyword, String type);
 
-    DiyMaterial record(StorageService.StoredFile file, Long groupId);
+    DiyMaterial record(StorageService.StoredFile file, Long groupId, String type);
 
     void moveToGroup(Long id, Long groupId);
 

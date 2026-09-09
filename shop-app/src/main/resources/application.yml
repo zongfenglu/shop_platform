@@ -22,8 +22,9 @@ spring:
       password: ${REDIS_PASSWORD:}
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+      # 图片业务层限 5MB，视频 50MB（LocalStorageServiceImpl 各自兜底）；multipart 总闸放到视频上限
+      max-file-size: 50MB
+      max-request-size: 51MB
 
 mybatis-plus:
   configuration:

@@ -111,10 +111,12 @@ function imageGroupList() {
       <span>{{ item.placeholder || '搜索商品' }}</span>
     </div>
 
-    <div v-else-if="item.type === 'banner'" class="pv-banner" @click.stop="emit('pick-image')">
-      <img v-if="item.images?.[0]?.url" :src="item.images[0].url" alt="" />
-      <div v-else class="pv-ph tall">点击选择轮播图</div>
-      <span v-if="(item.images || []).length > 1" class="pv-badge">1/{{ item.images.length }}</span>
+    <div v-else-if="item.type === 'banner'" class="pv-banner-wrap" @click.stop="emit('pick-image')">
+      <div class="pv-banner">
+        <img v-if="item.images?.[0]?.url" :src="item.images[0].url" alt="" />
+        <div v-else class="pv-ph tall">点击选择轮播图</div>
+        <span v-if="(item.images || []).length > 1" class="pv-badge">1/{{ item.images.length }}</span>
+      </div>
     </div>
 
     <div v-else-if="item.type === 'imageGroup'" class="pv-img-stack">
@@ -322,7 +324,8 @@ function imageGroupList() {
   height: 32px; padding: 0 12px; border-radius: 999px;
   background: #f3f2ee; color: #898781;
 }
-.pv-banner { position: relative; height: 110px; overflow: hidden; background: #eef4fc; }
+.pv-banner-wrap { padding: 8px; }
+.pv-banner { position: relative; height: 110px; overflow: hidden; background: #eef4fc; border-radius: 8px; }
 .pv-badge {
   position: absolute; top: 6px; right: 8px;
   background: rgba(0,0,0,.45); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 999px;

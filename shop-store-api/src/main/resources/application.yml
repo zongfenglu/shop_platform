@@ -21,8 +21,9 @@ spring:
     multipart:
       # 与 LocalStorageServiceImpl.MAX_SIZE 保持一致。这里是第一道闸（Tomcat 层直接拒绝，
       # 不占用应用线程），服务里还会再兜一道，防止配置漏改。
-      max-file-size: 5MB
-      max-request-size: 6MB
+      # 图片业务层限 5MB，视频 50MB（LocalStorageServiceImpl 各自兜底）；multipart 总闸放到视频上限
+      max-file-size: 50MB
+      max-request-size: 51MB
 
 mybatis-plus:
   configuration:

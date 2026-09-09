@@ -11,7 +11,7 @@ export function saveDealerSettings(payload) {
 
 // ---- 分销商管理 ----
 export function listDealerUsers(params) {
-  return http.get('/store/dealer/users', params)
+  return http.get('/store/dealer/users', { params })
 }
 
 export function approveDealer(id) {
@@ -28,12 +28,13 @@ export function disableDealer(id) {
 
 // ---- 分销订单 ----
 export function listDealerOrders(status) {
-  return http.get('/store/dealer/orders', status ? { status } : {})
+  // axios.get 第二参是 config，查询参数必须放 params —— 直接传 { status } 会被当 config 丢掉
+  return http.get('/store/dealer/orders', { params: status ? { status } : {} })
 }
 
 // ---- 提现审核 ----
 export function listDealerWithdraws(status) {
-  return http.get('/store/dealer/withdraws', status ? { status } : {})
+  return http.get('/store/dealer/withdraws', { params: status ? { status } : {} })
 }
 
 export function approveDealerWithdraw(id, remark) {

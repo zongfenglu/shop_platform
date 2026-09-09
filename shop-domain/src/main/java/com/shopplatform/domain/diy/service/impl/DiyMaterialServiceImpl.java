@@ -28,7 +28,7 @@ public class DiyMaterialServiceImpl extends ServiceImpl<DiyMaterialMapper, DiyMa
     }
 
     @Override
-    public IPage<DiyMaterial> pageMine(int pageNum, int pageSize, Long groupId, boolean ungrouped, String keyword) {
+    public IPage<DiyMaterial> pageMine(int pageNum, int pageSize, Long groupId, boolean ungrouped, String keyword, String type) {
         var wrapper = Wrappers.<DiyMaterial>lambdaQuery()
                 .eq(DiyMaterial::getShopId, TenantContext.getRequired())
                 .orderByDesc(DiyMaterial::getCreateTime);
@@ -40,14 +40,18 @@ public class DiyMaterialServiceImpl extends ServiceImpl<DiyMaterialMapper, DiyMa
         if (StringUtils.hasText(keyword)) {
             wrapper.like(DiyMaterial::getName, keyword.trim());
         }
+        if (StringUtils.hasText(type)) {
+            wrapper.eq(DiyMaterial::getType, type);
+        }
         return this.page(new Page<>(pageNum, pageSize), wrapper);
     }
 
     @Override
-    public DiyMaterial record(StorageService.StoredFile file, Long groupId) {
+    public DiyMaterial record(StorageService.StoredFile file, Long groupId, String type) {
         DiyMaterial material = new DiyMaterial();
         material.setShopId(TenantContext.getRequired());
         material.setUrl(file.url());
+        material.setType(StringUtils.hasText(type) ? type : "image");
         material.setName(file.name());
         material.setSize(file.size());
         material.setGroupId(resolveGroupId(groupId));

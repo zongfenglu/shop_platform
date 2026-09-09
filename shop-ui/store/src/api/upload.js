@@ -15,6 +15,16 @@ export function uploadImage(file, groupId) {
   return http.post('/store/upload/image', form)
 }
 
+/** 仅支持 MP4（后端按 magic byte 校验），上限 50MB */
+export function uploadVideo(file, groupId) {
+  const form = new FormData()
+  form.append('file', file)
+  if (groupId != null && groupId !== '') {
+    form.append('groupId', groupId)
+  }
+  return http.post('/store/upload/video', form)
+}
+
 export function pageMaterials(params) {
   return http.get('/store/materials', { params })
 }

@@ -38,6 +38,9 @@ public class LocalStorageServiceImpl implements StorageService {
     /** 5MB。与 application.yml 的 spring.servlet.multipart.max-file-size 保持一致。 */
     private static final long MAX_SIZE = 5L * 1024 * 1024;
 
+    /** 视频上限 50MB。application.yml 的 multipart 上限须一并调到 ≥50MB，否则先被 Spring 拒掉。 */
+    private static final long MAX_VIDEO_SIZE = 50L * 1024 * 1024;
+
     private static final DateTimeFormatter MONTH = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final Path root;
@@ -75,6 +78,30 @@ public class LocalStorageServiceImpl implements StorageService {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片保存失败");
         }
 
+        String url = publicPrefix + "/" + shopId + "/" + monthDir + "/" + filename;
+        return new StoredFile(url, safeDisplayName(file.getOriginalFilename(), ext), file.getSize());
+    }
+
+    @Override
+    public StoredFile storeVideo(MultipartFile file, Long shopId) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.UPLOAD_FILE_EMPTY);
+        }
+        if (file.getSize() > MAX_VIDEO_SIZE) {
+            throw new BusinessException(ErrorCode.UPLOAD_FILE_TOO_LARGE);
+        }
+        String ext = sniffVideoExtension(file);
+        String monthDir = LocalDate.now().format(MONTH);
+        String filename = UUID.randomUUID().toString().replace("-", "") + "." + ext;
+        Path dir = root.resolve(String.valueOf(shopId)).resolve(monthDir);
+        try {
+            Files.createDirectories(dir);
+            try (InputStream in = file.getInputStream()) {
+                Files.copy(in, dir.resolve(filename));
+            }
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "视频保存失败");
+        }
         String url = publicPrefix + "/" + shopId + "/" + monthDir + "/" + filename;
         return new StoredFile(url, safeDisplayName(file.getOriginalFilename(), ext), file.getSize());
     }
@@ -142,6 +169,26 @@ public class LocalStorageServiceImpl implements StorageService {
 
     private static int u(byte b) {
         return b & 0xFF;
+    }
+
+    /**
+     * 读文件头判断真实视频类型，与图片同样不信 Content-Type。只放行 MP4 家族
+     * （ftyp box，涵盖 mp4/m4v/mov 的 isom/mp42/qt 等 brand）——H5 video 标签与小程序
+     * video 组件的公共交集就是 MP4/H.264，webm/avi 在小程序端根本放不了，收了也是坏体验。
+     */
+    private String sniffVideoExtension(MultipartFile file) {
+        byte[] head = new byte[12];
+        int read;
+        try (InputStream in = file.getInputStream()) {
+            read = in.readNBytes(head, 0, head.length);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.UPLOAD_FILE_EMPTY);
+        }
+        // MP4: 偏移 4 起为 "ftyp"
+        if (read >= 8 && head[4] == 'f' && head[5] == 't' && head[6] == 'y' && head[7] == 'p') {
+            return "mp4";
+        }
+        throw new BusinessException(ErrorCode.UPLOAD_FILE_TYPE_NOT_ALLOWED, "仅支持 MP4 格式视频");
     }
 
     /**

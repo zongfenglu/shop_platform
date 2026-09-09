@@ -12,6 +12,8 @@ public class DiyMaterial extends BaseEntity {
 
     private Long shopId;
     private String url;
+    /** image / video */
+    private String type;
     private String name;
     private Long size;
     /** 所属分组，空=未分组 */
@@ -21,6 +23,8 @@ public class DiyMaterial extends BaseEntity {
     public void setShopId(Long shopId) { this.shopId = shopId; }
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public Long getSize() { return size; }

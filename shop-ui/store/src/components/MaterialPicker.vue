@@ -9,16 +9,19 @@ import {
   pageMaterials,
   renameMaterialGroup,
   uploadImage,
+  uploadVideo,
 } from '@/api/upload'
 
 /**
  * 商用素材库：左侧分组、搜索、拖拽/多选上传、点选确认。
  * 单选回传 url 字符串，多选回传 url 数组。
+ * mediaType=video 时列表/上传均切到视频（仅 MP4，上限 50MB）。
  */
 const props = defineProps({
   open: { type: Boolean, default: false },
   multiple: { type: Boolean, default: false },
   max: { type: Number, default: 1 },
+  mediaType: { type: String, default: 'image' },
 })
 
 const emit = defineEmits(['update:open', 'select'])
@@ -43,6 +46,9 @@ const renameDraft = ref('')
 
 const currentGroupId = computed(() => (scope.value === 'all' || scope.value === 'none' ? null : scope.value))
 const ungroupedMode = computed(() => scope.value === 'none')
+const isVideo = computed(() => props.mediaType === 'video')
+const unitLabel = computed(() => (isVideo.value ? '个' : '张'))
+const mediaLabel = computed(() => (isVideo.value ? '视频' : '图片'))
 const scopeTitle = computed(() => {
   if (scope.value === 'all') return '全部素材'
   if (scope.value === 'none') return '未分组'
@@ -83,6 +89,7 @@ async function loadMaterials() {
       keyword: keyword.value.trim() || undefined,
       groupId: currentGroupId.value || undefined,
       ungrouped: ungroupedMode.value || undefined,
+      type: props.mediaType,
     })
     records.value = page?.records || []
     total.value = page?.total || 0
@@ -146,7 +153,7 @@ function toggle(item) {
 
 function confirm() {
   if (!selectedUrls.value.length) {
-    message.warning('请先选择图片')
+    message.warning(`请先选择${mediaLabel.value}`)
     return
   }
   emit('select', props.multiple ? [...selectedUrls.value] : selectedUrls.value[0])
@@ -164,9 +171,11 @@ function onTileDblclick(item) {
 }
 
 async function uploadFiles(files) {
-  const list = [...files].filter((f) => f.type.startsWith('image/'))
+  const list = isVideo.value
+    ? [...files].filter((f) => f.type === 'video/mp4' || /\.mp4$/i.test(f.name))
+    : [...files].filter((f) => f.type.startsWith('image/'))
   if (!list.length) {
-    message.warning('请选择图片文件')
+    message.warning(isVideo.value ? '请选择 MP4 视频文件' : '请选择图片文件')
     return
   }
   uploading.value = true
@@ -175,10 +184,10 @@ async function uploadFiles(files) {
   try {
     for (let i = 0; i < list.length; i += 1) {
       uploadProgress.value = `${i + 1}/${list.length}`
-      const material = await uploadImage(list[i], groupId)
+      const material = isVideo.value ? await uploadVideo(list[i], groupId) : await uploadImage(list[i], groupId)
       if (material?.url) uploaded.push(material.url)
     }
-    message.success(uploaded.length > 1 ? `已上传 ${uploaded.length} 张` : '已上传')
+    message.success(uploaded.length > 1 ? `已上传 ${uploaded.length} ${unitLabel.value}` : '已上传')
     pageNum.value = 1
     await reload()
     if (uploaded.length) {
@@ -210,8 +219,8 @@ function onDrop(e) {
 async function onDeleteMaterial(item, e) {
   e.stopPropagation()
   Modal.confirm({
-    title: '删除这张素材？',
-    content: '仅从素材库移除，已用到页面里的图片不会一起删掉。',
+    title: `删除这${unitLabel.value}素材？`,
+    content: `仅从素材库移除，已用到页面里的${mediaLabel.value}不会一起删掉。`,
     okText: '删除',
     cancelText: '取消',
     onOk: async () => {
@@ -362,7 +371,7 @@ function onSearch() {
           @drop.prevent="onDrop"
         >
           <div class="lib-toolbar">
-            <div class="lib-scope">{{ scopeTitle }} · {{ total }} 张</div>
+            <div class="lib-scope">{{ scopeTitle }} · {{ total }} {{ unitLabel }}</div>
             <input
               v-model="keyword"
               class="form-input lib-search"
@@ -372,7 +381,7 @@ function onSearch() {
             <button type="button" class="btn btn-sm" @click="onSearch">搜索</button>
             <label class="btn btn-sm btn-primary" :class="{ disabled: uploading }">
               {{ uploading ? `上传中 ${uploadProgress}` : '上传到此分组' }}
-              <input ref="fileInput" type="file" accept="image/*" multiple hidden :disabled="uploading" @change="onFile" />
+              <input ref="fileInput" type="file" :accept="isVideo ? 'video/mp4' : 'image/*'" multiple hidden :disabled="uploading" @change="onFile" />
             </label>
           </div>
 
@@ -380,8 +389,8 @@ function onSearch() {
 
           <div v-if="loading" class="lib-empty">加载中…</div>
           <div v-else-if="!records.length" class="lib-empty">
-            <div class="lib-empty-title">{{ keyword ? '没有匹配的图片' : '这个分组还是空的' }}</div>
-            <div class="lib-empty-desc">把图片拖进来，或点击右上角上传。支持一次选多张。</div>
+            <div class="lib-empty-title">{{ keyword ? `没有匹配的${mediaLabel}` : '这个分组还是空的' }}</div>
+            <div class="lib-empty-desc">{{ isVideo ? '把 MP4 视频拖进来，或点击右上角上传（单个不超过 50MB）。' : '把图片拖进来，或点击右上角上传。支持一次选多张。' }}</div>
           </div>
           <div v-else class="lib-grid">
             <button
@@ -393,7 +402,9 @@ function onSearch() {
               @click="toggle(item)"
               @dblclick="onTileDblclick(item)"
             >
-              <img :src="item.url" alt="" />
+              <video v-if="isVideo" :src="item.url" class="lib-video" preload="metadata" muted />
+              <img v-else :src="item.url" alt="" />
+              <span v-if="isVideo" class="lib-play">▶</span>
               <div class="lib-card-meta">
                 <div class="lib-card-name" :title="item.name">{{ item.name }}</div>
                 <div class="lib-card-size">{{ fmtSize(item.size) }}</div>
@@ -413,11 +424,11 @@ function onSearch() {
 
       <div class="lib-foot">
         <div class="lib-foot-hint">
-          {{ multiple ? `已选 ${selectedUrls.length} / ${max} 张，双击或点确定完成` : '单击选中，双击直接使用' }}
+          {{ multiple ? `已选 ${selectedUrls.length} / ${max} ${unitLabel}，双击或点确定完成` : '单击选中，双击直接使用' }}
         </div>
         <div class="lib-foot-actions">
           <button class="btn" @click="close">取消</button>
-          <button class="btn btn-primary" :disabled="!selectedUrls.length" @click="confirm">使用已选图片</button>
+          <button class="btn btn-primary" :disabled="!selectedUrls.length" @click="confirm">使用已选{{ mediaLabel }}</button>
         </div>
       </div>
     </div>
@@ -571,6 +582,29 @@ function onSearch() {
   object-fit: cover;
   display: block;
   background: var(--surface-2);
+}
+.lib-video {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+.lib-play {
+  position: absolute;
+  top: calc(50% - 26px);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 .lib-card-meta { padding: 6px 8px 8px; }
 .lib-card-name {

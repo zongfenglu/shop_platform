@@ -52,7 +52,15 @@ public class StoreUploadController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) Long groupId) {
         StorageService.StoredFile stored = storageService.storeImage(file, TenantContext.getRequired());
-        return Result.ok(diyMaterialService.record(stored, groupId));
+        return Result.ok(diyMaterialService.record(stored, groupId, "image"));
+    }
+
+    @PostMapping("/upload/video")
+    public Result<DiyMaterial> uploadVideo(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) Long groupId) {
+        StorageService.StoredFile stored = storageService.storeVideo(file, TenantContext.getRequired());
+        return Result.ok(diyMaterialService.record(stored, groupId, "video"));
     }
 
     @GetMapping("/materials")
@@ -61,8 +69,9 @@ public class StoreUploadController {
             @RequestParam(defaultValue = "24") int pageSize,
             @RequestParam(required = false) Long groupId,
             @RequestParam(defaultValue = "false") boolean ungrouped,
-            @RequestParam(required = false) String keyword) {
-        return Result.ok(diyMaterialService.pageMine(pageNum, Math.min(pageSize, 100), groupId, ungrouped, keyword));
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "image") String type) {
+        return Result.ok(diyMaterialService.pageMine(pageNum, Math.min(pageSize, 100), groupId, ungrouped, keyword, type));
     }
 
     @PutMapping("/materials/{id}/group")

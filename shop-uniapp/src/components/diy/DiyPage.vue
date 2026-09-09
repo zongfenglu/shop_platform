@@ -146,17 +146,19 @@ async function onReceive(id) {
         <text class="search-ph">{{ item.placeholder || '搜索商品' }}</text>
       </view>
 
-      <view v-else-if="item.type === 'banner'" class="banner">
-        <image
-          v-if="item.images && item.images.length && item.images[item._idx || 0]?.url"
-          class="banner-img"
-          :src="item.images[item._idx || 0].url"
-          mode="aspectFill"
-          @click="goLink(item.images[item._idx || 0].link)"
-        />
-        <view v-else class="banner-ph">轮播图</view>
-        <view v-if="(item.images || []).length > 1" class="banner-dots">
-          <text v-for="(_, i) in item.images" :key="i" class="dot" :class="{ on: (item._idx || 0) === i }" @click="item._idx = i" />
+      <view v-else-if="item.type === 'banner'" class="banner-wrap">
+        <view class="banner">
+          <image
+            v-if="item.images && item.images.length && item.images[item._idx || 0]?.url"
+            class="banner-img"
+            :src="item.images[item._idx || 0].url"
+            mode="aspectFill"
+            @click="goLink(item.images[item._idx || 0].link)"
+          />
+          <view v-else class="banner-ph">轮播图</view>
+          <view v-if="(item.images || []).length > 1" class="banner-dots">
+            <text v-for="(_, i) in item.images" :key="i" class="dot" :class="{ on: (item._idx || 0) === i }" @click="item._idx = i" />
+          </view>
         </view>
       </view>
 
@@ -364,7 +366,8 @@ async function onReceive(id) {
   color: #898781; font-size: 26rpx;
 }
 .search-ph { flex: 1; }
-.banner { position: relative; height: 280rpx; overflow: hidden; background: #eef4fc; }
+.banner-wrap { padding: 16rpx; }
+.banner { position: relative; height: 280rpx; overflow: hidden; background: #eef4fc; border-radius: 16rpx; }
 .banner-img, .banner-ph { width: 100%; height: 100%; }
 .banner-ph { display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(135deg,#2a78d6,#1c5cab); }
 .banner-dots { position: absolute; bottom: 12rpx; left: 0; right: 0; display: flex; justify-content: center; gap: 8rpx; }
