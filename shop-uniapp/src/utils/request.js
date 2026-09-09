@@ -106,6 +106,23 @@ function baseUrl() {
   // #endif
 }
 
+/**
+ * 把相对路径 /uploads/... 补全为可访问的完整 URL。
+ * H5 端 nginx 代理了 /uploads/，直接用相对路径即可；
+ * 小程序/APP 端无域名，必须带上 baseUrl。
+ * 已经是 http(s):// 的外链不做处理直接返回。
+ */
+export function mediaUrl(url) {
+  if (!url) return ''
+  if (/^https?:\/\//.test(url)) return url
+  // #ifdef H5
+  return url
+  // #endif
+  // #ifndef H5
+  return (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8083') + url
+  // #endif
+}
+
 export function request(options) {
   const { url, method = 'GET', data, header = {}, showLoading = false } = options
 

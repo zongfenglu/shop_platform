@@ -2,6 +2,7 @@
 import { computed, watch } from 'vue'
 import { receiveCoupon } from '@/api/index'
 import { getToken } from '@/utils/request'
+import { mediaUrl } from '@/utils/request'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -188,13 +189,13 @@ async function onReceive(id) {
         <video
           v-if="item.url"
           class="video"
-          :src="item.url"
-          :poster="item.cover"
+          :src="mediaUrl(item.url)"
+          :poster="item.cover ? mediaUrl(item.cover) : undefined"
           :autoplay="!!item.autoplay"
           :style="{ height: (item.height || 190) + 'px' }"
           controls
         />
-        <image v-else-if="item.cover" class="video" :src="item.cover" mode="aspectFill" :style="{ height: (item.height || 190) + 'px' }" />
+        <image v-else-if="item.cover" class="video" :src="mediaUrl(item.cover)" mode="aspectFill" :style="{ height: (item.height || 190) + 'px' }" />
         <view v-else class="video ph" :style="{ height: (item.height || 190) + 'px' }">视频</view>
       </view>
 

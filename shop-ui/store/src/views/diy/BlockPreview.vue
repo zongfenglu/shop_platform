@@ -140,9 +140,17 @@ function imageGroupList() {
     </div>
 
     <div v-else-if="item.type === 'video'" class="pv-video" :style="{ height: (item.height || 190) + 'px' }">
-      <img v-if="item.cover" :src="item.cover" alt="" />
+      <video
+        v-if="item.url"
+        :src="item.url"
+        :poster="item.cover || undefined"
+        :autoplay="!!item.autoplay"
+        controls
+        preload="metadata"
+        style="width: 100%; height: 100%; object-fit: contain; display: block; background: #111"
+      />
+      <img v-else-if="item.cover" :src="item.cover" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />
       <div v-else class="pv-ph">视频封面</div>
-      <span class="pv-play">▶</span>
     </div>
 
     <div v-else-if="item.type === 'article'" class="pv-article">
