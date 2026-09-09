@@ -1,8 +1,8 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { disableShop, enableShop, getShop, impersonateShop, resetShopOwnerPassword } from '@/api/shop'
+import { disableShop, enableShop, getShop, impersonateShop, resetShopOwnerPassword, updateShop } from '@/api/shop'
 
 /**
  * 商城详情。对照原型 admin/shop-detail.html。
@@ -22,6 +22,54 @@ const disableOpen = ref(false)
 const disableReason = ref('')
 const disableSubmitting = ref(false)
 const enableSubmitting = ref(false)
+
+// ---- 编辑商城信息 ----
+const editOpen = ref(false)
+const editSubmitting = ref(false)
+const editForm = reactive({ name: '', code: '', industry: '', contact: '', mobile: '', remark: '' })
+
+const INDUSTRY_OPTIONS = ['服饰鞋包', '生鲜食品', '美妆个护', '3C数码', '其他']
+
+function openEdit() {
+  if (!shop.value) return
+  editForm.name = shop.value.name || ''
+  editForm.code = shop.value.code || ''
+  editForm.industry = shop.value.industry || ''
+  editForm.contact = shop.value.contact || ''
+  editForm.mobile = shop.value.mobile || ''
+  editForm.remark = shop.value.remark || ''
+  editOpen.value = true
+}
+
+function closeEdit() {
+  editOpen.value = false
+}
+
+async function submitEdit() {
+  if (!editForm.name.trim()) { message.error('商城名称不能为空'); return }
+  if (!/^[a-z0-9-]{3,32}$/.test(editForm.code)) {
+    message.error('域名前缀仅支持小写字母、数字、短横线，长度 3-32')
+    return
+  }
+  editSubmitting.value = true
+  try {
+    await updateShop(shop.value.id, {
+      name: editForm.name.trim() || null,
+      code: editForm.code.trim() || null,
+      industry: editForm.industry || null,
+      contact: editForm.contact.trim() || null,
+      mobile: editForm.mobile.trim() || null,
+      remark: editForm.remark.trim() || null,
+    })
+    message.success('商城信息已更新')
+    closeEdit()
+    await load()
+  } catch (e) {
+    // http 拦截器已提示
+  } finally {
+    editSubmitting.value = false
+  }
+}
 
 const STATUS_META = {
   trial: { text: '试用中', cls: 'tag-good' },
@@ -158,6 +206,7 @@ async function onEnable() {
       <div v-if="shop" class="page-desc">{{ shop.code }} · 创建于 {{ fmtDateTime(shop.createTime) }}</div>
     </div>
     <div style="display: flex; gap: 10px">
+      <button class="btn btn-primary" :disabled="!shop" @click="openEdit">编辑信息</button>
       <button class="btn" :disabled="!shop" @click="openReset">重置密码</button>
       <a-tooltip v-if="isArchived" title="已归档的商城不能停用或启用">
         <button class="btn" disabled>停用商城</button>

@@ -127,6 +127,18 @@ public class ShopDomainBindingService {
     }
 
     @Transactional
+    public ShopDomain updateProtocol(Long shopIdOrNull, Long id, String protocol) {
+        ShopDomain row = requireCustom(id, shopIdOrNull);
+        String value = protocol == null ? "http" : protocol.trim().toLowerCase(Locale.ROOT);
+        if (!value.equals("http") && !value.equals("https")) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "协议仅支持 http 或 https");
+        }
+        row.setProtocol(value);
+        shopDomainService.updateById(row);
+        return row;
+    }
+
+    @Transactional
     public ShopDomain approve(Long id) {
         ShopDomain row = requireCustom(id, null);
         if (!"pending".equals(row.getVerifyStatus())) {

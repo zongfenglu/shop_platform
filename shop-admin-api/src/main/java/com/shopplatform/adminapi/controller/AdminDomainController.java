@@ -21,9 +21,12 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -126,6 +129,22 @@ public class AdminDomainController {
         return Result.ok(toItem(row));
     }
 
+    @PostMapping("/{id}/certificate")
+    public Result<DomainItem> uploadCertificate(@PathVariable Long id,
+                                                @RequestParam("certificate") MultipartFile certificate,
+                                                @RequestParam("privateKey") MultipartFile privateKey,
+                                                HttpServletRequest request) {
+        ShopDomain row = sslCertificateService.upload(id, certificate, privateKey);
+        sysLogService.record(row.getShopId(), "domain-upload-cert", "上传证书 " + row.getDomain(), ClientIp.resolve(request));
+        return Result.ok(toItem(row));
+    }
+
+    @PutMapping("/{id}/protocol")
+    public Result<DomainItem> updateProtocol(@PathVariable Long id, @RequestBody ProtocolRequest body) {
+        ShopDomain row = shopDomainBindingService.updateProtocol(null, id, body == null ? null : body.protocol());
+        return Result.ok(toItem(row));
+    }
+
     private DomainSummary buildSummary() {
         long total = shopDomainService.count();
         long customCount = shopDomainService.count(Wrappers.<ShopDomain>lambdaQuery().eq(ShopDomain::getType, "custom"));
@@ -156,6 +175,7 @@ public class AdminDomainController {
                 domain.getShopId(),
                 shop == null ? "未知商家" : shop.getName(),
                 domain.getDomain(),
+                domain.getProtocol(),
                 domain.getType(),
                 domain.getCertStatus(),
                 domain.getCertExpireTime(),
@@ -170,4 +190,6 @@ public class AdminDomainController {
 
     public record RejectRequest(@Size(max = 255) String reason) {
     }
+
+    public record ProtocolRequest(String protocol) { }
 }

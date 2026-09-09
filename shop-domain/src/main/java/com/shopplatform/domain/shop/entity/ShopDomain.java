@@ -17,6 +17,9 @@ public class ShopDomain extends BaseEntity {
 
     private String domain;
 
+    /** 访问协议：http 或 https。 */
+    private String protocol = "http";
+
     /** sub泛域名 / custom自定义域名 */
     private String type;
 
@@ -58,6 +61,10 @@ public class ShopDomain extends BaseEntity {
     public void setDomain(String domain) {
         this.domain = domain;
     }
+
+    public String getProtocol() { return protocol; }
+
+    public void setProtocol(String protocol) { this.protocol = protocol; }
 
     public String getType() {
         return type;

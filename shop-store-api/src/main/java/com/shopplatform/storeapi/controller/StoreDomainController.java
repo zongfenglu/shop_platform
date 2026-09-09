@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -67,6 +68,12 @@ public class StoreDomainController {
         return Result.ok(shopDomainBindingService.checkCname(TenantContext.getRequired(), id));
     }
 
+    @PutMapping("/{id}/protocol")
+    public Result<ShopDomain> updateProtocol(@PathVariable Long id, @RequestBody ProtocolRequest request) {
+        return Result.ok(shopDomainBindingService.updateProtocol(TenantContext.getRequired(), id,
+                request == null ? null : request.protocol()));
+    }
+
     @DeleteMapping("/{id}")
     public Result<Void> unbind(@PathVariable Long id) {
         shopDomainBindingService.unbind(TenantContext.getRequired(), id);
@@ -75,6 +82,8 @@ public class StoreDomainController {
 
     public record ApplyRequest(@NotBlank @Size(max = 128) String domain) {
     }
+
+    public record ProtocolRequest(String protocol) { }
 
     public record Overview(
             String platformBaseDomain,

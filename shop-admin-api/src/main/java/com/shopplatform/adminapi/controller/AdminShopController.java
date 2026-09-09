@@ -24,12 +24,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.shopplatform.adminapi.dto.UpdateShopRequest;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -128,6 +124,19 @@ public class AdminShopController {
         // 但 shop 表本身不带 shop_id（它是租户的根），走的是忽略表白名单。
         // 仍统一走 getByIdWithTenant：查不到时返回 404 语义而不是"200+null"，与全站其他按主键查询接口保持一致。
         return Result.ok(shopService.getByIdWithTenant(id));
+    }
+
+    @PatchMapping("/{id}")
+    public Result<Void> update(@PathVariable Long id,
+                               @Valid @RequestBody UpdateShopRequest request,
+                               HttpServletRequest httpRequest) {
+        Shop before = shopService.getByIdWithTenant(id);
+        shopService.updateInfo(id, new ShopService.UpdateShopCommand(
+                request.name(), request.code(), request.industry(),
+                request.contact(), request.mobile(), request.remark()));
+        sysLogService.record(before.getId(), "shop-update",
+                "修改商城信息 " + before.getName(), ClientIp.resolve(httpRequest));
+        return Result.ok();
     }
 
     /**

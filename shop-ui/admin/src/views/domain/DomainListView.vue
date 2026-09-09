@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { approveDomain, checkDomainCname, issueDomainCert, pageDomains, rejectDomain, unbindDomain } from '@/api/domain'
+import { approveDomain, checkDomainCname, issueDomainCert, pageDomains, rejectDomain, unbindDomain, updateDomainProtocol, uploadDomainCertificate } from '@/api/domain'
 
 const activeTab = ref('review')
 const loading = ref(false)
@@ -22,6 +22,11 @@ const query = reactive({
   pageNum: 1,
   pageSize: 10,
 })
+const certOpen = ref(false)
+const certRow = ref(null)
+const certFile = ref(null)
+const keyFile = ref(null)
+const certSubmitting = ref(false)
 
 const tabs = computed(() => [
   { key: 'review', label: '自定义域名审核', count: summary.value.pendingCount },
@@ -180,6 +185,16 @@ async function onIssueCert(row) {
   }
 }
 
+function openCert(row) { certRow.value = row; certFile.value = null; keyFile.value = null; certOpen.value = true }
+async function submitCert() {
+  if (!certFile.value || !keyFile.value) { message.error('请选择证书和私钥文件'); return }
+  certSubmitting.value = true
+  try { await uploadDomainCertificate(certRow.value.id, certFile.value, keyFile.value); message.success('证书上传成功'); certOpen.value = false; await load() } finally { certSubmitting.value = false }
+}
+async function changeProtocol(row, event) {
+  try { await updateDomainProtocol(row.id, event.target.value); row.protocol = event.target.value; message.success('协议配置已更新') } catch (e) { event.target.value = row.protocol || 'http' }
+}
+
 function onUnbind(row) {
   Modal.confirm({
     title: '确认解绑？',
@@ -245,6 +260,7 @@ function onUnbind(row) {
           <thead>
             <tr>
               <th>域名</th>
+              <th>协议</th>
               <th>商家</th>
               <th>类型</th>
               <th v-if="activeTab === 'review'">CNAME 目标</th>
@@ -257,10 +273,16 @@ function onUnbind(row) {
           </thead>
           <tbody>
             <tr v-if="!rows.length">
-              <td :colspan="activeTab === 'review' ? 9 : 7" style="text-align: center; color: var(--text-muted)">暂无记录</td>
+              <td :colspan="activeTab === 'review' ? 10 : 8" style="text-align: center; color: var(--text-muted)">暂无记录</td>
             </tr>
             <tr v-for="row in rows" :key="row.id">
               <td>{{ row.domain }}</td>
+              <td>
+                <select v-if="row.type === 'custom'" class="form-select protocol-select" :value="row.protocol || 'http'" @change="changeProtocol(row, $event)">
+                  <option value="http">HTTP</option><option value="https">HTTPS</option>
+                </select>
+                <span v-else>{{ (row.protocol || 'http').toUpperCase() }}</span>
+              </td>
               <td>
                 <div style="font-weight: 600">{{ row.shopName }}</div>
                 <div style="font-size: 12px; color: var(--text-muted)">#{{ row.shopId }}</div>
@@ -284,6 +306,7 @@ function onUnbind(row) {
                 </template>
                 <template v-else-if="row.type === 'custom'">
                   <button v-if="row.verifyStatus === 'verified' && row.certStatus !== 'valid'" class="btn btn-sm btn-primary" @click="onIssueCert(row)">签发证书</button>
+                  <button v-if="row.verifyStatus === 'verified'" class="btn btn-sm" @click="openCert(row)">上传证书</button>
                   <button class="btn btn-sm" @click="onUnbind(row)">解绑</button>
                 </template>
                 <button v-else class="btn btn-sm" disabled>默认</button>
@@ -306,4 +329,20 @@ function onUnbind(row) {
       </div>
     </template>
   </div>
+
+  <div v-if="certOpen" class="modal-mask" @click.self="certOpen = false">
+    <div class="modal">
+      <div class="modal-header"><span>上传域名证书 · {{ certRow?.domain }}</span><button class="modal-close" @click="certOpen = false">×</button></div>
+      <div class="modal-body">
+        <div class="form-item"><label class="form-label">证书 PEM</label><input type="file" accept=".pem,.crt,.cer" @change="certFile = $event.target.files[0]" /></div>
+        <div class="form-item"><label class="form-label">私钥 PEM</label><input type="file" accept=".pem,.key" @change="keyFile = $event.target.files[0]" /></div>
+        <div class="form-hint">仅支持 PEM 格式；证书上传后将加密保存，并按 HTTPS 配置使用。</div>
+      </div>
+      <div class="modal-footer"><button class="btn" @click="certOpen = false">取消</button><button class="btn btn-primary" :disabled="certSubmitting" @click="submitCert">{{ certSubmitting ? '上传中…' : '确认上传' }}</button></div>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.protocol-select { width: 86px; min-width: 86px; padding: 4px 6px; }
+</style>

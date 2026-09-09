@@ -166,7 +166,9 @@ function maskMobile(m) {
             <td>{{ row.packageName || '—' }}</td>
             <td class="num">{{ fmtDate(row.expireTime) }}</td>
             <td class="num">{{ fmtDate(row.createTime) }}</td>
-            <td><button class="btn btn-sm" @click="router.push({ name: 'shop-detail', params: { id: row.id } })">查看</button></td>
+            <td>
+              <button class="btn btn-sm" @click="router.push({ name: 'shop-detail', params: { id: row.id } })">查看 / 编辑</button>
+            </td>
           </tr>
           <tr v-if="!loading && rows.length === 0">
             <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px 0">

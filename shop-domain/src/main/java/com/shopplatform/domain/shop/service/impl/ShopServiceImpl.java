@@ -118,7 +118,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             // 泛域名绑定：{code}.{平台基础域名}，建店即可用，无需额外审核（见文档三 §2.2 消费者端 Host 识别）
             ShopDomain domain = new ShopDomain();
             domain.setShopId(shop.getId());
-            domain.setDomain(cmd.code() + "." + platformBaseDomain);
+        domain.setDomain(cmd.code() + "." + platformBaseDomain);
+        domain.setProtocol("http");
             domain.setType("sub");
             domain.setCertStatus("valid");
             domain.setVerifyStatus("verified");
@@ -183,6 +184,34 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         } finally {
             TenantContext.clear();
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateInfo(Long shopId, UpdateShopCommand cmd) {
+        Shop shop = getByIdWithTenant(shopId);
+        if (StringUtils.hasText(cmd.name())) {
+            shop.setName(cmd.name().trim());
+        }
+        if (cmd.code() != null) {
+            String newCode = cmd.code().trim();
+            if (!newCode.equals(shop.getCode())) {
+                validateCode(newCode);
+                // 新 code 不能被其他商城占用
+                Shop conflict = this.getOne(
+                        com.baomidou.mybatisplus.core.toolkit.Wrappers.<Shop>lambdaQuery()
+                                .eq(Shop::getCode, newCode));
+                if (conflict != null && !conflict.getId().equals(shopId)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "该域名前缀已被其他商城使用");
+                }
+                shop.setCode(newCode);
+            }
+        }
+        if (cmd.industry() != null) shop.setIndustry(cmd.industry().trim());
+        if (cmd.contact() != null) shop.setContact(cmd.contact().trim());
+        if (cmd.mobile() != null) shop.setMobile(cmd.mobile().trim());
+        if (cmd.remark() != null) shop.setRemark(cmd.remark().trim());
+        updateById(shop);
     }
 
     @Override

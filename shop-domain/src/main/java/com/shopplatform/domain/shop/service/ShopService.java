@@ -37,6 +37,9 @@ public interface ShopService extends TenantSafeService<Shop> {
      */
     void enable(Long shopId);
 
+    /** 平台超管修改商城基本信息（名称/域名前缀/行业/联系人/手机/备注）。*/
+    void updateInfo(Long shopId, UpdateShopCommand command);
+
     record CreateShopCommand(
             String name,
             String code,
@@ -46,6 +49,20 @@ public interface ShopService extends TenantSafeService<Shop> {
             String remark,
             Long packageTplId,
             Integer durationMonth
+    ) {
+    }
+
+    /**
+     * 平台超管可修改的字段：名称、域名前缀(code)、行业、联系人、手机、备注。
+     * null 字段表示不修改（保留原值）。
+     */
+    record UpdateShopCommand(
+            String name,
+            String code,
+            String industry,
+            String contact,
+            String mobile,
+            String remark
     ) {
     }
 }

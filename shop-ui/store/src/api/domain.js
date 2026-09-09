@@ -15,3 +15,7 @@ export function checkStoreDomainCname(id) {
 export function unbindStoreDomain(id) {
   return http.delete(`/store/domains/${id}`)
 }
+
+export function updateStoreDomainProtocol(id, protocol) {
+  return http.put(`/store/domains/${id}/protocol`, { protocol })
+}

@@ -10,6 +10,7 @@ public record DomainItem(
         Long shopId,
         String shopName,
         String domain,
+        String protocol,
         String type,
         String certStatus,
         LocalDateTime certExpireTime,

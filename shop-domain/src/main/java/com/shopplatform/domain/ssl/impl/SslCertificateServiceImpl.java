@@ -23,6 +23,10 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class SslCertificateServiceImpl implements SslCertificateService {
@@ -86,6 +90,39 @@ public class SslCertificateServiceImpl implements SslCertificateService {
         } catch (RuntimeException e) {
             persist(row, "failed", null, trim(e.getMessage()));
             throw new BusinessException(ErrorCode.ACME_ISSUE_FAILED, trim(e.getMessage()));
+        }
+    }
+
+    @Override
+    public ShopDomain upload(Long domainId, MultipartFile certificate, MultipartFile privateKey) {
+        ShopDomain row = requireVerifiedCustom(domainId);
+        if (certificate == null || privateKey == null || certificate.isEmpty() || privateKey.isEmpty())
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "证书和私钥不能为空");
+        if (certificate.getSize() > 2_000_000 || privateKey.getSize() > 2_000_000)
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "证书文件不能超过 2MB");
+        try {
+            String certPem = new String(certificate.getBytes(), StandardCharsets.UTF_8);
+            String keyPem = new String(privateKey.getBytes(), StandardCharsets.UTF_8);
+            if (!certPem.contains("BEGIN CERTIFICATE") || !keyPem.contains("BEGIN")) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "请上传 PEM 格式证书和私钥");
+            }
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            X509Certificate x509 = (X509Certificate) factory.generateCertificate(
+                    new ByteArrayInputStream(certPem.getBytes(StandardCharsets.UTF_8)));
+            LocalDateTime expire = x509.getNotAfter().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+            if (expire.isBefore(LocalDateTime.now())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "证书已过期");
+            }
+            row.setCertPemEncrypted(aesGcmEncryptor.encrypt(certPem));
+            row.setKeyPemEncrypted(aesGcmEncryptor.encrypt(keyPem));
+            persist(row, "valid", expire, null);
+            writePemFiles(row.getDomain(), certPem, keyPem);
+            reloadGateway();
+            return row;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "证书解析失败: " + trim(e.getMessage()));
         }
     }
 

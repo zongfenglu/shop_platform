@@ -23,3 +23,14 @@ export function unbindDomain(id) {
 export function issueDomainCert(id) {
   return http.post(`/admin/domains/${id}/issue-cert`)
 }
+
+export function uploadDomainCertificate(id, certificate, privateKey) {
+  const form = new FormData()
+  form.append('certificate', certificate)
+  form.append('privateKey', privateKey)
+  return http.post(`/admin/domains/${id}/certificate`, form)
+}
+
+export function updateDomainProtocol(id, protocol) {
+  return http.put(`/admin/domains/${id}/protocol`, { protocol })
+}

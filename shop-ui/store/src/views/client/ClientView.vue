@@ -5,6 +5,7 @@ import {
   applyStoreDomain,
   checkStoreDomainCname,
   getStoreDomains,
+  updateStoreDomainProtocol,
   unbindStoreDomain,
 } from '@/api/domain'
 import { getStoreMp, getStoreMpAuthUrl, getStoreMpExtJson, saveStoreMpSelf, unbindStoreMp } from '@/api/mp'
@@ -137,6 +138,17 @@ async function onCheck(row) {
   }
 }
 
+async function onProtocolChange(row, event) {
+  const protocol = event.target.value
+  try {
+    await updateStoreDomainProtocol(row.id, protocol)
+    row.protocol = protocol
+    message.success('访问协议已更新')
+  } catch (e) {
+    event.target.value = row.protocol || 'http'
+  }
+}
+
 async function onSaveSelf(appType) {
   const form = appType === 'mini' ? miniForm : officialForm
   if (!form.appId.trim()) {
@@ -256,6 +268,7 @@ function onUnbind(row) {
           <thead>
             <tr>
               <th>域名</th>
+              <th>协议</th>
               <th>CNAME 目标</th>
               <th>解析</th>
               <th>审核</th>
@@ -265,6 +278,7 @@ function onUnbind(row) {
           <tbody>
             <tr v-for="row in customDomains" :key="row.id">
               <td>{{ row.domain }}</td>
+              <td><select class="form-select" style="width: 84px" :value="row.protocol || 'http'" @change="onProtocolChange(row, $event)"><option value="http">HTTP</option><option value="https">HTTPS</option></select></td>
               <td>{{ row.cnameTarget || defaultHost }}</td>
               <td><span class="tag" :class="row.cnameStatus === 'ok' || row.cnameStatus === 'skipped' ? 'tag-good' : row.cnameStatus === 'fail' ? 'tag-critical' : 'tag-warning'">{{ cnameText(row) }}</span></td>
               <td>

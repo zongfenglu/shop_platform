@@ -16,6 +16,10 @@ export function createShop(payload) {
   return http.post('/admin/shops', payload)
 }
 
+export function updateShop(id, payload) {
+  return http.patch(`/admin/shops/${id}`, payload)
+}
+
 export function impersonateShop(id) {
   return http.post(`/admin/shops/${id}/impersonate`)
 }
