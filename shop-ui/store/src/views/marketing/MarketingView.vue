@@ -30,14 +30,11 @@ function asList(res) {
 }
 
 function parseIdArray(value) {
-  if (Array.isArray(value)) return value
+  // time_ids / apply_range_config 在库里是后端 List<Long> 序列化的裸数字 JSON（如 [2097137709666819951]），
+  // 不能 JSON.parse：19 位雪花 id 会被取整成另一个 id，编辑/切状态时还会把坏 id 写回去。只按数字串提取。
+  if (Array.isArray(value)) return value.map(String)
   if (typeof value !== 'string' || !value.trim()) return []
-  try {
-    const parsed = JSON.parse(value)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  return value.match(/\d+/g) || []
 }
 
 function firstGoodsImage(row) {

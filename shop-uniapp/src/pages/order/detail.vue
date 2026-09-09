@@ -122,12 +122,9 @@ function goodsNameOf(id) {
 }
 
 function packageGoodsText(pkg) {
-  let ids = []
-  try {
-    ids = JSON.parse(pkg.orderGoodsIds || '[]')
-  } catch (e) {
-    ids = []
-  }
+  // orderGoodsIds 是后端 List<Long> 序列化的裸数字 JSON，JSON.parse 会把 19 位雪花 id
+  // 取整成另一个 id 导致名称匹配不上，这里只按数字串提取（见 CONTRIBUTING.md）
+  const ids = String(pkg.orderGoodsIds || '').match(/\d+/g) || []
   if (!ids.length) return '整单'
   return ids.map((id) => goodsNameOf(id) || `#${id}`).join('、')
 }
