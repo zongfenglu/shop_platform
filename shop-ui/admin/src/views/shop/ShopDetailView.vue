@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { disableShop, enableShop, getShop, impersonateShop, resetShopOwnerPassword, updateShop } from '@/api/shop'
+import { getH5PublicUrl } from '@/utils/publicUrl'
 
 /**
  * 商城详情。对照原型 admin/shop-detail.html。
@@ -197,19 +198,9 @@ async function onEnable() {
 
 function previewH5() {
   if (!shop.value) return
-  // 生产环境：H5 部署在 :8092，通过 nginx 提供；开发环境：uniapp dev server 在 :5175
-  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  const h5Url = isDev
-    ? 'http://localhost:5175'
-    : `${window.location.protocol}//${window.location.hostname}:8092`
-
+  const h5Url = getH5PublicUrl()
   const previewUrl = `${h5Url}/?_shopId=${shop.value.id}`
-  const preview = window.open(previewUrl, '_blank')
-  if (preview) {
-    preview.addEventListener('load', () => {
-      preview.postMessage({ type: 'setShopId', shopId: shop.value.id }, h5Url)
-    })
-  }
+  window.open(previewUrl, '_blank', 'noopener')
 }
 </script>
 
@@ -258,6 +249,53 @@ function previewH5() {
       商城不存在或已被删除
     </div>
   </a-spin>
+
+  <div v-if="editOpen" class="modal-mask" @click.self="closeEdit">
+    <div class="modal">
+      <div class="modal-header">
+        <span>编辑商城信息</span>
+        <button class="modal-close" type="button" @click="closeEdit">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-item">
+          <label class="form-label"><span class="req">*</span>商城名称</label>
+          <input v-model="editForm.name" class="form-input" maxlength="100" />
+        </div>
+        <div class="form-item">
+          <label class="form-label"><span class="req">*</span>域名前缀</label>
+          <input v-model.trim="editForm.code" class="form-input" maxlength="32" placeholder="小写字母、数字或短横线" />
+          <div class="form-hint">修改后将影响商城的租户域名，请确认相关域名配置已同步。</div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">所属行业</label>
+          <select v-model="editForm.industry" class="form-select">
+            <option value="">请选择</option>
+            <option v-for="industry in INDUSTRY_OPTIONS" :key="industry" :value="industry">{{ industry }}</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">联系人</label>
+            <input v-model="editForm.contact" class="form-input" maxlength="50" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">联系手机</label>
+            <input v-model="editForm.mobile" class="form-input" maxlength="20" />
+          </div>
+        </div>
+        <div class="form-item" style="margin-bottom: 0">
+          <label class="form-label">内部备注</label>
+          <textarea v-model="editForm.remark" class="form-textarea" rows="3" maxlength="500"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" @click="closeEdit">取消</button>
+        <button class="btn btn-primary" type="button" :disabled="editSubmitting" @click="submitEdit">
+          {{ editSubmitting ? '保存中…' : '保存' }}
+        </button>
+      </div>
+    </div>
+  </div>
 
   <div v-if="resetOpen" class="modal-mask" @click.self="closeReset">
     <div class="modal">

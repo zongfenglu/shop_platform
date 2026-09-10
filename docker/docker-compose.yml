@@ -168,6 +168,7 @@ services:
       args:
         APP_DIR: shop-ui/admin
         NGINX_CONF: frontend-nginx/admin.conf
+        VITE_H5_PUBLIC_URL: http://h5.${PLATFORM_BASE_DOMAIN:-2doo.cn}
     image: shop-platform/admin-web:latest
     container_name: shop-admin-web
     restart: unless-stopped

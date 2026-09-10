@@ -363,6 +363,7 @@ services:
         APP_DIR: shop-ui/admin
         NGINX_CONF: frontend-nginx/admin.conf
         BACKEND: admin-api:8081
+        VITE_H5_PUBLIC_URL: ${H5_PUBLIC_URL:?H5_PUBLIC_URL 必须在 .env 中显式设置}
         NODE_IMAGE: ${NODE_IMAGE:-node:18-alpine}
         NGINX_IMAGE: ${NGINX_IMAGE:-nginx:alpine}
     image: shop-platform/admin-web:${IMAGE_TAG:-latest}
