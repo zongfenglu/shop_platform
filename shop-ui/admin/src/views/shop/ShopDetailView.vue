@@ -194,6 +194,18 @@ async function onEnable() {
     enableSubmitting.value = false
   }
 }
+
+function previewH5() {
+  if (!shop.value) return
+  const h5Url = 'http://localhost:5175'
+  const previewUrl = `${h5Url}/?_shopId=${shop.value.id}`
+  const preview = window.open(previewUrl, '_blank')
+  if (preview) {
+    preview.addEventListener('load', () => {
+      preview.postMessage({ type: 'setShopId', shopId: shop.value.id }, h5Url)
+    })
+  }
+}
 </script>
 
 <template>
@@ -220,6 +232,7 @@ async function onEnable() {
           {{ impersonating ? '正在打开…' : '🔑 免密登录商户后台' }}
         </button>
       </a-tooltip>
+      <button class="btn" :disabled="!shop" @click="previewH5">👁️ 预览 H5</button>
     </div>
   </div>
 

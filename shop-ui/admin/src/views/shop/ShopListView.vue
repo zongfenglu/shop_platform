@@ -86,6 +86,17 @@ function maskMobile(m) {
   if (!m || m.length < 7) return m || '—'
   return `${m.slice(0, 3)}****${m.slice(-4)}`
 }
+
+function previewH5(shop) {
+  const h5Url = 'http://localhost:5175'
+  const previewUrl = `${h5Url}/?_shopId=${shop.id}`
+  const preview = window.open(previewUrl, '_blank')
+  if (preview) {
+    preview.addEventListener('load', () => {
+      preview.postMessage({ type: 'setShopId', shopId: shop.id }, h5Url)
+    })
+  }
+}
 </script>
 
 <template>
@@ -168,6 +179,7 @@ function maskMobile(m) {
             <td class="num">{{ fmtDate(row.createTime) }}</td>
             <td>
               <button class="btn btn-sm" @click="router.push({ name: 'shop-detail', params: { id: row.id } })">查看 / 编辑</button>
+              <button class="btn btn-sm" style="margin-left: 8px" @click="previewH5(row)">预览 H5</button>
             </td>
           </tr>
           <tr v-if="!loading && rows.length === 0">
