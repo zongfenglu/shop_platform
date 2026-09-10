@@ -197,7 +197,12 @@ async function onEnable() {
 
 function previewH5() {
   if (!shop.value) return
-  const h5Url = 'http://localhost:5175'
+  // 生产环境：H5 部署在 :8092，通过 nginx 提供；开发环境：uniapp dev server 在 :5175
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const h5Url = isDev
+    ? 'http://localhost:5175'
+    : `${window.location.protocol}//${window.location.hostname}:8092`
+
   const previewUrl = `${h5Url}/?_shopId=${shop.value.id}`
   const preview = window.open(previewUrl, '_blank')
   if (preview) {
