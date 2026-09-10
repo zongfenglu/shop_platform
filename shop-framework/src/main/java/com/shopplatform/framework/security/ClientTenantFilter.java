@@ -9,6 +9,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -53,9 +54,15 @@ public class ClientTenantFilter extends OncePerRequestFilter {
         try {
             Long shopId = resolveShopId(request);
             if (shopId == null) {
-                throw new BusinessException(ErrorCode.TENANT_NOT_FOUND, "无法识别请求所属商城");
+                reject(response, ErrorCode.TENANT_NOT_FOUND.getCode(), "无法识别请求所属商城");
+                return;
             }
-            shopResolver.ensureAccessible(shopId);
+            try {
+                shopResolver.ensureAccessible(shopId);
+            } catch (BusinessException e) {
+                reject(response, e.getCode(), e.getMessage());
+                return;
+            }
             TenantContext.set(shopId);
             resolveLoginUser(request, shopId);
             filterChain.doFilter(request, response);
@@ -63,6 +70,19 @@ public class ClientTenantFilter extends OncePerRequestFilter {
             TenantContext.clear();
             LoginUserContext.clear();
         }
+    }
+
+    /**
+     * Filter 在 DispatcherServlet 之前执行，抛出的业务异常不会进入
+     * GlobalExceptionHandler，必须在这里直接写统一 Result 响应，否则会被容器转成 500。
+     */
+    private void reject(HttpServletResponse response, int code, String message) throws IOException {
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        String safeMessage = message == null ? "" : message
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"");
+        response.getWriter().write("{\"code\":" + code + ",\"msg\":\"" + safeMessage + "\"}");
     }
 
     private Long resolveShopId(HttpServletRequest request) {

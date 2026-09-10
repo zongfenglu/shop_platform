@@ -39,7 +39,7 @@ async function load() {
   loading.value = true
   try {
     const home = await getDiyHome().catch(() => null)
-    if (home && home.exists && (home.items || []).length) {
+    if (home && home.exists) {
       diyPage.value = home
       needShopId.value = false
       categories.value = []
@@ -106,7 +106,7 @@ function fmtPrice(v) {
       </view>
     </view>
 
-    <DiyPage v-if="diyPage" :items="diyPage.items" :page="diyPage.page" />
+    <DiyPage v-else-if="diyPage" :items="diyPage.items" :page="diyPage.page" />
 
     <view v-else-if="loading" class="empty">加载中…</view>
 

@@ -8,13 +8,14 @@
  *
  * 因此各端策略不同：
  *   - 小程序：必须显式带 X-Shop-Id（小程序没有"域名"概念，Host 是我们的 API 域名，②③都不可靠）
- *   - H5/公众号：不带 X-Shop-Id，让后端按 Host 反查 —— 这样同一份 H5 代码能服务所有租户，
- *     换域名即换商城；如果前端写死 shopId，就退化成"一个租户一份构建产物"了。
+ *   - H5/公众号：普通访问不带 X-Shop-Id，让后端按 Host 反查；共享 H5 域名上的
+ *     管理后台预览链接通过 _shopId 指定租户，并在当前标签页内携带 X-Shop-Id。
  * 识别失败后端会返回 20000（商城不存在），不要在前端静默重试。
  */
 
 const TOKEN_KEY = 'shop_client_token'
 const SHOP_ID_KEY = 'shop_client_shop_id'
+const H5_PREVIEW_SHOP_ID_KEY = 'shop_client_preview_shop_id'
 const USER_KEY = 'shop_client_user'
 
 /** 业务错误码，与 shop-common 的 ErrorCode 对齐 */
@@ -82,6 +83,42 @@ export function setShopId(shopId) {
 }
 
 /**
+ * 返回当前 H5 标签页的预览商城。sessionStorage 只在当前标签页生效，避免访问
+ * 正式租户域名时被之前预览过的商城 ID 污染。
+ */
+export function getH5PreviewShopId() {
+  // #ifdef H5
+  try {
+    const fromUrl = new URL(window.location.href).searchParams.get('_shopId')
+    if (fromUrl && /^\d+$/.test(fromUrl)) {
+      window.sessionStorage.setItem(H5_PREVIEW_SHOP_ID_KEY, fromUrl)
+      return fromUrl
+    }
+    const fromSession = window.sessionStorage.getItem(H5_PREVIEW_SHOP_ID_KEY) || ''
+    return /^\d+$/.test(fromSession) ? fromSession : ''
+  } catch (e) {
+    return ''
+  }
+  // #endif
+  // #ifndef H5
+  return ''
+  // #endif
+}
+
+export function setH5PreviewShopId(shopId) {
+  const value = String(shopId || '').trim()
+  if (!/^\d+$/.test(value)) return
+  // #ifdef H5
+  try {
+    window.sessionStorage.setItem(H5_PREVIEW_SHOP_ID_KEY, value)
+  } catch (e) {
+    // sessionStorage 不可用时仍保留普通 shopId，至少保证首屏 URL 请求可识别租户
+  }
+  // #endif
+  setShopId(value)
+}
+
+/**
  * API 基地址。
  * H5 用相对路径（开发走 Vite proxy、生产走 Nginx 反代，同源无跨域）；
  * 小程序必须是完整域名，且要在微信后台配置为 request 合法域名。
@@ -126,6 +163,15 @@ export function mediaUrl(url) {
 export function request(options) {
   const { url, method = 'GET', data, header = {}, showLoading = false } = options
 
+  // #ifdef H5
+  const previewShopId = getH5PreviewShopId()
+  if (previewShopId && previewShopId !== getShopId()) {
+    // h5.2doo.cn 是多商城共享入口，切换预览商城时不能沿用上一商城的用户登录态。
+    clearToken()
+    setShopId(previewShopId)
+  }
+  // #endif
+
   const token = getToken()
   if (token) header.Authorization = `Bearer ${token}`
 
@@ -135,9 +181,11 @@ export function request(options) {
   if (shopId) header['X-Shop-Id'] = shopId
   // #endif
   // #ifdef H5
-  // 正式环境按访问域名反查租户，不带头。本机 / 局域网 IP 没有域名可反查
-  // （测试机访问开发机 http://192.168.x.x:8092），必须带上手动指定的 shopId。
-  if (h5NeedsManualShopId()) {
+  // 管理后台预览使用共享 H5 域名，必须显式传 _shopId 对应的请求头；普通正式访问
+  // 仍按域名反查。本机 / 局域网 IP 没有域名可反查，也使用手动指定的 shopId。
+  if (previewShopId) {
+    header['X-Shop-Id'] = previewShopId
+  } else if (h5NeedsManualShopId()) {
     const manualShopId = getShopId()
     if (manualShopId) header['X-Shop-Id'] = manualShopId
   }
