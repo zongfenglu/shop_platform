@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { getCategoryTree, pageGoods, getDiyHome } from '@/api'
 import { getShopId, setShopId } from '@/utils/request'
+import { openGoodsSearch } from '@/utils/goodsSearch'
 import DiyPage from '@/components/diy/DiyPage.vue'
 
 /**
@@ -75,8 +76,7 @@ function onSaveShopId() {
 }
 
 function onSearch() {
-  const kw = String(keyword.value || '').trim()
-  uni.navigateTo({ url: `/pages/goods/list?keyword=${encodeURIComponent(kw)}` })
+  openGoodsSearch(keyword.value)
 }
 
 function goCategory(cat) {

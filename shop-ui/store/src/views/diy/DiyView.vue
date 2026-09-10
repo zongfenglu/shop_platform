@@ -200,6 +200,11 @@ function pageCanvasStyle() {
 const selectedItem = computed(() => (selectedIndex.value != null ? items.value[selectedIndex.value] : null))
 const blockMeta = computed(() => (selectedItem.value ? BLOCK_META[selectedItem.value.type] : null))
 
+function updateSearchPlaceholder(index, value) {
+  const item = items.value[index]
+  if (item?.type === 'search') item.placeholder = value
+}
+
 let itemSeq = 0
 function nextCid() {
   itemSeq += 1
@@ -874,7 +879,14 @@ function removePage(page) {
               <div class="icon">◎</div>
               <div>从左侧点击组件添加到画布</div>
             </div>
-            <draggable v-model="items" item-key="_cid" :animation="150" ghost-class="dragging-ghost">
+            <draggable
+              v-model="items"
+              item-key="_cid"
+              :animation="150"
+              filter=".pv-search-input"
+              :prevent-on-filter="false"
+              ghost-class="dragging-ghost"
+            >
               <template #item="{ element, index }">
                 <div class="canvas-block" :class="{ active: selectedIndex === index }" @click="selectItem(index)">
                   <BlockPreview
@@ -886,6 +898,8 @@ function removePage(page) {
                     :store-list="storeList"
                     :goods-meta="goodsMeta"
                     @pick-image="onCanvasPickImage(index)"
+                    @focus-search="selectedIndex = index"
+                    @update-placeholder="updateSearchPlaceholder(index, $event)"
                   />
                   <button class="block-remove" title="删除" @click.stop="removeItem(index)">删除</button>
                 </div>

@@ -1,7 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { onLoad, onReachBottom, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
+import { onLoad, onReachBottom, onPullDownRefresh, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import { getCategoryTree, getDiyCategoryPage, pageGoods } from '@/api'
+import { consumeGoodsSearch } from '@/utils/goodsSearch'
 
 /**
  * 商品列表 / 分类页。对应原型 docs/prototype/h5/goods-list.html。
@@ -32,6 +33,7 @@ const loading = ref(false)
 const paginated = computed(() => sort.value !== 'price_asc' && sort.value !== 'price_desc')
 const pageSize = computed(() => (paginated.value ? 10 : 50))
 const hasMore = computed(() => paginated.value && rows.value.length < total.value)
+let initialized = false
 
 const roots = computed(() => categories.value || [])
 const level2Parent = computed(() =>
@@ -39,11 +41,13 @@ const level2Parent = computed(() =>
 const level2Children = computed(() => level2Parent.value?.children || [])
 
 onLoad(async (query) => {
+  const pendingSearch = consumeGoodsSearch()
   if (query?.categoryId) activeCategoryId.value = query.categoryId
-  if (query?.keyword) keyword.value = decodeURIComponent(query.keyword)
+  if (pendingSearch) keyword.value = pendingSearch.keyword
+  else if (query?.keyword) keyword.value = decodeURIComponent(query.keyword)
   if (query?.name) uni.setNavigationBarTitle({ title: decodeURIComponent(query.name) })
 
-  const landedOnGoods = !!(query?.categoryId || query?.keyword)
+  const landedOnGoods = !!(pendingSearch || query?.categoryId || query?.keyword)
   catalogMode.value = !landedOnGoods
   fromCatalog.value = false
 
@@ -60,6 +64,18 @@ onLoad(async (query) => {
   } else {
     await load(true)
   }
+  initialized = true
+})
+
+onShow(() => {
+  if (!initialized) return
+  const pendingSearch = consumeGoodsSearch()
+  if (!pendingSearch) return
+  keyword.value = pendingSearch.keyword
+  activeCategoryId.value = null
+  catalogMode.value = false
+  fromCatalog.value = true
+  load(true)
 })
 
 onShareAppMessage(() => ({

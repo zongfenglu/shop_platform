@@ -1,8 +1,9 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { receiveCoupon } from '@/api/index'
 import { getToken } from '@/utils/request'
 import { mediaUrl } from '@/utils/request'
+import { openGoodsSearch } from '@/utils/goodsSearch'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -10,6 +11,7 @@ const props = defineProps({
 })
 
 const COUPON_TONES = ['#e34948', '#8b6cc9', '#eb6834']
+const searchKeyword = ref('')
 
 const wrapStyle = computed(() => {
   const meta = props.page || {}
@@ -137,14 +139,25 @@ async function onReceive(id) {
     // request.js 已提示
   }
 }
+
+function submitSearch() {
+  openGoodsSearch(searchKeyword.value)
+}
 </script>
 
 <template>
   <view class="diy" :style="wrapStyle">
     <view v-for="(item, idx) in items" :key="item._cid || idx" class="block" :style="blockStyle(item)">
-      <view v-if="item.type === 'search'" class="search" @click="uni.navigateTo({ url: '/pages/goods/list' })">
+      <view v-if="item.type === 'search'" class="search">
         <text>🔍</text>
-        <text class="search-ph">{{ item.placeholder || '搜索商品' }}</text>
+        <input
+          v-model="searchKeyword"
+          class="search-input"
+          :placeholder="item.placeholder || '搜索商品'"
+          confirm-type="search"
+          @confirm="submitSearch"
+        />
+        <text class="search-action" @click="submitSearch">搜索</text>
       </view>
 
       <view v-else-if="item.type === 'banner'" class="banner-wrap">
@@ -366,7 +379,11 @@ async function onReceive(id) {
   background: #fff; border-radius: 36rpx; height: 68rpx; padding: 0 28rpx;
   color: #898781; font-size: 26rpx;
 }
-.search-ph { flex: 1; }
+.search-input {
+  flex: 1; min-width: 0; height: 68rpx; line-height: 68rpx;
+  color: #2b2a27; font-size: 26rpx;
+}
+.search-action { color: #2a78d6; flex-shrink: 0; }
 .banner-wrap { padding: 16rpx; }
 .banner { position: relative; height: 280rpx; overflow: hidden; background: #eef4fc; border-radius: 16rpx; }
 .banner-img, .banner-ph { width: 100%; height: 100%; }

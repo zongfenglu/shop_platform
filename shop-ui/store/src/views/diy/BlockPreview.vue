@@ -9,7 +9,7 @@ const props = defineProps({
   goodsMeta: { type: Object, default: () => ({}) },
 })
 
-const emit = defineEmits(['pick-image'])
+const emit = defineEmits(['pick-image', 'focus-search', 'update-placeholder'])
 
 const COUPON_TONES = ['#e34948', '#8b6cc9', '#eb6834']
 
@@ -108,7 +108,16 @@ function imageGroupList() {
   <div class="pv" :style="wrapBg()">
     <div v-if="item.type === 'search'" class="pv-search">
       <span>🔍</span>
-      <span>{{ item.placeholder || '搜索商品' }}</span>
+      <input
+        class="pv-search-input"
+        :value="item.placeholder"
+        placeholder="搜索商品"
+        @focus="emit('focus-search')"
+        @input="emit('update-placeholder', $event.target.value)"
+        @click.stop
+        @mousedown.stop
+        @touchstart.stop
+      />
     </div>
 
     <div v-else-if="item.type === 'banner'" class="pv-banner-wrap" @click.stop="emit('pick-image')">
@@ -331,6 +340,10 @@ function imageGroupList() {
   display: flex; align-items: center; gap: 6px;
   height: 32px; padding: 0 12px; border-radius: 999px;
   background: #f3f2ee; color: #898781;
+}
+.pv-search-input {
+  flex: 1; min-width: 0; border: 0; outline: 0; padding: 0;
+  background: transparent; color: #2b2a27; font: inherit;
 }
 .pv-banner-wrap { padding: 8px; }
 .pv-banner { position: relative; height: 110px; overflow: hidden; background: #eef4fc; border-radius: 8px; }
