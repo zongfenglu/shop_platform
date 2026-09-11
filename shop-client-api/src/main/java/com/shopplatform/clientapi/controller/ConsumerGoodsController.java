@@ -18,6 +18,7 @@ import com.shopplatform.domain.goods.service.GoodsService;
 import com.shopplatform.domain.goods.service.GoodsSkuService;
 import com.shopplatform.domain.goods.service.GoodsSpecService;
 import com.shopplatform.domain.goods.service.GoodsSpecValueService;
+import com.shopplatform.domain.goods.support.GoodsCategoryQuery;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -114,9 +115,9 @@ public class ConsumerGoodsController {
             wrapper.like(Goods::getName, keyword);
         }
         if (categoryId != null) {
-            // category_ids 是 JSON 数组列，用 JSON_CONTAINS 匹配。参数走 MyBatis 的 #{} 绑定
-            // （apply 的占位符即为预编译参数，不是字符串拼接），categoryId 又是 Long，不存在注入面。
-            wrapper.apply("JSON_CONTAINS(category_ids, {0})", String.valueOf(categoryId));
+            // 点一级/二级分类时应包含其全部下级；兼容 category_ids 中数字和字符串两种存量格式。
+            GoodsCategoryQuery.applyContainsAny(wrapper,
+                    goodsCategoryService.listSelfAndDescendantIds(categoryId));
         }
         if ("sales".equals(sort)) {
             wrapper.orderByDesc(Goods::getSalesActual);

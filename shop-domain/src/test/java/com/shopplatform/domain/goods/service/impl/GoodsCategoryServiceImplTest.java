@@ -10,6 +10,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -81,6 +83,20 @@ class GoodsCategoryServiceImplTest {
         assertEquals(8, existing.getSort());
         assertEquals(Boolean.FALSE, existing.getIsShow());
         assertEquals(0L, existing.getParentId());
+    }
+
+    @Test
+    void listSelfAndDescendantIds_returnsWholeSubtree() {
+        doReturn(List.of(
+                cat(1L, 0L),
+                cat(2L, 1L),
+                cat(3L, 2L),
+                cat(4L, 0L)
+        )).when(service).list();
+
+        assertEquals(List.of(1L, 2L, 3L), service.listSelfAndDescendantIds(1L));
+        assertEquals(List.of(2L, 3L), service.listSelfAndDescendantIds(2L));
+        assertEquals(List.of(), service.listSelfAndDescendantIds(99L));
     }
 
     @Test

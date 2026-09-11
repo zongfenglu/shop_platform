@@ -9,10 +9,20 @@ import com.shopplatform.domain.goods.entity.GoodsCategory;
 import com.shopplatform.domain.goods.mapper.GoodsCategoryMapper;
 import com.shopplatform.domain.goods.service.GoodsCategoryService;
 import com.shopplatform.domain.goods.service.GoodsService;
+import com.shopplatform.domain.goods.support.GoodsCategoryQuery;
 import com.shopplatform.framework.tenant.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class GoodsCategoryServiceImpl extends ServiceImpl<GoodsCategoryMapper, GoodsCategory>
@@ -52,6 +62,33 @@ public class GoodsCategoryServiceImpl extends ServiceImpl<GoodsCategoryMapper, G
     }
 
     @Override
+    public List<Long> listSelfAndDescendantIds(Long id) {
+        if (id == null) {
+            return List.of();
+        }
+        List<GoodsCategory> categories = this.list();
+        if (categories.stream().noneMatch(category -> id.equals(category.getId()))) {
+            return List.of();
+        }
+
+        Map<Long, List<Long>> childrenByParent = categories.stream()
+                .collect(Collectors.groupingBy(
+                        category -> category.getParentId() == null ? 0L : category.getParentId(),
+                        Collectors.mapping(GoodsCategory::getId, Collectors.toList())));
+        Set<Long> result = new LinkedHashSet<>();
+        Queue<Long> pending = new ArrayDeque<>();
+        pending.add(id);
+        while (!pending.isEmpty()) {
+            Long current = pending.remove();
+            if (!result.add(current)) {
+                continue;
+            }
+            pending.addAll(childrenByParent.getOrDefault(current, List.of()));
+        }
+        return new ArrayList<>(result);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteCategory(Long id) {
         getByIdWithTenant(id);
@@ -59,8 +96,9 @@ public class GoodsCategoryServiceImpl extends ServiceImpl<GoodsCategoryMapper, G
         if (children > 0) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "请先删除子分类");
         }
-        long used = goodsService.count(Wrappers.<Goods>lambdaQuery()
-                .apply("JSON_CONTAINS(category_ids, {0})", String.valueOf(id)));
+        var goodsWrapper = Wrappers.<Goods>lambdaQuery();
+        GoodsCategoryQuery.applyContainsAny(goodsWrapper, List.of(id));
+        long used = goodsService.count(goodsWrapper);
         if (used > 0) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "仍有商品使用该分类，不能删除");
         }
