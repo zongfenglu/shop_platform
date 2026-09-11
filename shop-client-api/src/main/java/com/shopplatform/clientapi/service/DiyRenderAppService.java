@@ -217,6 +217,7 @@ public class DiyRenderAppService {
         return switch (type) {
             case "goods" -> resolveGoods(item);
             case "coupon" -> resolveCoupon(item);
+            case "video" -> resolveVideo(item);
             case "seckill" -> resolveSeckill(item);
             case "group" -> resolveGroup(item);
             case "bargain" -> resolveBargain(item);
@@ -271,6 +272,13 @@ public class DiyRenderAppService {
                 .map(this::couponView)
                 .toList();
         base.put("couponList", views);
+        return base;
+    }
+
+    private Map<String, Object> resolveVideo(JsonNode item) {
+        Map<String, Object> base = toMap(item);
+        base.put("margin", clampedInt(item.get("margin"), 0, 0, 80));
+        base.put("height", clampedInt(item.get("height"), 190, 80, 400));
         return base;
     }
 
@@ -457,6 +465,11 @@ public class DiyRenderAppService {
             }
         }
         return null;
+    }
+
+    private int clampedInt(JsonNode node, int fallback, int min, int max) {
+        int value = node == null || node.isNull() ? fallback : node.asInt(fallback);
+        return Math.max(min, Math.min(max, value));
     }
 
     private List<Long> parseLongArray(JsonNode node) {

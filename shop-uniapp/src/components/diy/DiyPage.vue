@@ -29,7 +29,7 @@ const wrapStyle = computed(() => {
 watch(
   () => wrapStyle.value.backgroundColor,
   (color) => {
-    if (!color) return
+    if (!color || typeof uni.setBackgroundColor !== 'function') return
     uni.setBackgroundColor({
       backgroundColor: color,
       backgroundColorTop: color,
@@ -50,11 +50,22 @@ function isIconUrl(icon) {
 function blockStyle(item) {
   const s = {}
   if (item.bgColor) s.backgroundColor = item.bgColor
-  if (item.margin) {
-    s.marginTop = item.margin + 'px'
-    s.marginBottom = item.margin + 'px'
+  const margin = clampNumber(item.margin, 0, 80, 0)
+  if (margin) {
+    s.marginTop = margin + 'px'
+    s.marginBottom = margin + 'px'
   }
   return s
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.max(min, Math.min(max, parsed))
+}
+
+function videoHeight(item) {
+  return clampNumber(item?.height, 80, 400, 190)
 }
 
 function groupList(item) {
@@ -206,14 +217,14 @@ function submitSearch() {
           :poster="item.cover ? mediaUrl(item.cover) : undefined"
           :autoplay="!!item.autoplay"
           :muted="!!item.autoplay"
-          :style="{ height: (item.height || 190) + 'px' }"
+          :style="{ height: videoHeight(item) + 'px' }"
           object-fit="contain"
           playsinline
           webkit-playsinline
           controls
         />
-        <image v-else-if="item.cover" class="video" :src="mediaUrl(item.cover)" mode="aspectFill" :style="{ height: (item.height || 190) + 'px' }" />
-        <view v-else class="video ph" :style="{ height: (item.height || 190) + 'px' }">视频</view>
+        <image v-else-if="item.cover" class="video" :src="mediaUrl(item.cover)" mode="aspectFill" :style="{ height: videoHeight(item) + 'px' }" />
+        <view v-else class="video ph" :style="{ height: videoHeight(item) + 'px' }">视频</view>
       </view>
 
       <view v-else-if="item.type === 'article'">

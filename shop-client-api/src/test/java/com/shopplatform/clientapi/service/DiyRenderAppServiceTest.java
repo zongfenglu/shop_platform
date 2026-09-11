@@ -211,7 +211,7 @@ class DiyRenderAppServiceTest {
 
     @Test
     void resolveVideo_keepsPlaybackConfiguration() {
-        String pageData = "{\"items\":[{\"type\":\"video\",\"url\":\"/uploads/demo.mp4\",\"cover\":\"/uploads/demo.jpg\",\"autoplay\":true,\"height\":260}]}";
+        String pageData = "{\"items\":[{\"type\":\"video\",\"url\":\"/uploads/demo.mp4\",\"cover\":\"/uploads/demo.jpg\",\"autoplay\":true,\"height\":260,\"margin\":3000}]}";
         when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
 
         Map<String, Object> result = service.renderHome(SHOP_ID);
@@ -222,6 +222,7 @@ class DiyRenderAppServiceTest {
         assertEquals("/uploads/demo.jpg", video.get("cover"));
         assertEquals(true, video.get("autoplay"));
         assertEquals(260, video.get("height"));
+        assertEquals(80, video.get("margin"));
     }
 
     @Test

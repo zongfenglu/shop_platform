@@ -18,7 +18,23 @@ function isUrl(v) {
 }
 
 function wrapBg(extra = {}) {
-  return { background: props.item.bgColor || '#fff', ...extra }
+  const margin = clampNumber(props.item.margin, 0, 80, 0)
+  return {
+    background: props.item.bgColor || '#fff',
+    marginTop: margin ? `${margin}px` : undefined,
+    marginBottom: margin ? `${margin}px` : undefined,
+    ...extra,
+  }
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.max(min, Math.min(max, parsed))
+}
+
+function videoHeight() {
+  return clampNumber(props.item.height, 80, 400, 190)
 }
 
 function couponById(id) {
@@ -148,7 +164,7 @@ function imageGroupList() {
       </div>
     </div>
 
-    <div v-else-if="item.type === 'video'" class="pv-video" :style="{ height: (item.height || 190) + 'px' }">
+    <div v-else-if="item.type === 'video'" class="pv-video" :style="{ height: videoHeight() + 'px' }">
       <video
         v-if="item.url"
         :src="item.url"

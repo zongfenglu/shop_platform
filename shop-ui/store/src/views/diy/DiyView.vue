@@ -434,6 +434,12 @@ function addNewsItem(item) {
 
 function stripClientFields(item) {
   const { _cid, ...rest } = item
+  if (rest.type === 'video') {
+    const margin = Number(rest.margin)
+    const height = Number(rest.height)
+    rest.margin = Number.isFinite(margin) ? Math.max(0, Math.min(80, margin)) : 0
+    rest.height = Number.isFinite(height) ? Math.max(80, Math.min(400, height)) : 190
+  }
   return rest
 }
 
