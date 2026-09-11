@@ -2,6 +2,7 @@ package com.shopplatform.domain.file.service.impl;
 
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
+import com.shopplatform.domain.file.service.ObjectStorageUploader;
 import com.shopplatform.domain.file.service.StorageService;
 import com.shopplatform.domain.setting.entity.StoreOperationSetting;
 import com.shopplatform.domain.setting.service.StoreOperationSettingService;
@@ -15,8 +16,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link LocalStorageServiceImpl} 单测。这个类是对外的文件上传入口，
@@ -179,5 +181,31 @@ class LocalStorageServiceImplTest {
                 .storeImage(new MockMultipartFile("file", "a.jpg", "image/jpeg", JPEG_HEAD), 9L);
 
         assertTrue(stored.url().startsWith("https://static.example.com/uploads/9/"));
+    }
+
+    @Test
+    void storeImage_routesConfiguredObjectStorageWithoutWritingLocally(@TempDir Path dir) throws IOException {
+        StoreOperationSetting setting = new StoreOperationSetting();
+        setting.setUploadProvider("aliyun_oss");
+        setting.setImageMaxMb(5);
+        setting.setVideoMaxMb(50);
+        StoreOperationSettingService settingService = mock(StoreOperationSettingService.class);
+        when(settingService.getOrCreate()).thenReturn(setting);
+        ObjectStorageUploader uploader = mock(ObjectStorageUploader.class);
+        when(uploader.provider()).thenReturn("aliyun_oss");
+        when(uploader.upload(eq(setting), any(String.class), any(), eq("image/jpeg")))
+                .thenReturn("https://cdn.example.com/shop/9/202609/demo.jpg");
+        LocalStorageServiceImpl service = new LocalStorageServiceImpl(
+                dir.toString(), "/uploads", settingService, List.of(uploader));
+
+        StorageService.StoredFile stored = service.storeImage(
+                new MockMultipartFile("file", "a.jpg", "image/jpeg", JPEG_HEAD), 9L);
+
+        assertEquals("https://cdn.example.com/shop/9/202609/demo.jpg", stored.url());
+        verify(uploader).upload(eq(setting), argThat(key -> key.matches("shop/9/\\d{6}/[a-f0-9]{32}\\.jpg")),
+                any(), eq("image/jpeg"));
+        try (var walk = Files.walk(dir)) {
+            assertEquals(0, walk.filter(Files::isRegularFile).count());
+        }
     }
 }

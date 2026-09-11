@@ -3,13 +3,12 @@ package com.shopplatform.domain.file.service;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 文件存储抽象。当前只有本地磁盘实现（{@code LocalStorageServiceImpl}），
- * 后续接阿里云 OSS / 腾讯云 COS 时只需新增一个实现类并切换 Bean，调用方无需改动。
+ * 文件存储抽象。实际存储位置由商城上传设置决定，支持本地磁盘、阿里云 OSS 和腾讯云 COS。
  */
 public interface StorageService {
 
     /**
-     * 保存一张图片，返回可直接用于 {@code <img src>} 的相对 URL。
+     * 保存一张图片，返回可直接用于 {@code <img src>} 的相对或绝对 URL。
      *
      * @param file   上传的文件
      * @param shopId 商户ID，仅用于目录分组（不是访问控制，见 UploadResourceConfig 的安全说明）

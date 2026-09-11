@@ -2,6 +2,7 @@ package com.shopplatform.domain.file.service.impl;
 
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
+import com.shopplatform.domain.file.service.ObjectStorageUploader;
 import com.shopplatform.domain.file.service.StorageService;
 import com.shopplatform.domain.setting.entity.StoreOperationSetting;
 import com.shopplatform.domain.setting.service.StoreOperationSettingService;
@@ -17,11 +18,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * 本地磁盘存储。docker 部署时挂共享卷 {@code uploads-data:/data/uploads}，
- * store-api 写、client-api 读，两边通过 {@code UploadResourceConfig} 暴露同一份 {@code /uploads/**}。
+ * 商城文件存储入口。本地模式写磁盘；对象存储模式在完成同样的安全校验后交给对应厂商适配器。
+ * docker 本地模式下挂共享卷 {@code uploads-data:/data/uploads}，store-api 写、client-api 读。
  * <p>
  * <b>这个类里的三处防御都不是可选的</b>，上传接口是典型的攻击入口：
  * <ol>
@@ -49,21 +55,30 @@ public class LocalStorageServiceImpl implements StorageService {
     private final Path root;
     private final String publicPrefix;
     private final StoreOperationSettingService settingService;
+    private final Map<String, ObjectStorageUploader> objectStorageUploaders;
 
     @Autowired
     public LocalStorageServiceImpl(
             @Value("${shop.storage.local-dir:./data/uploads}") String localDir,
             @Value("${shop.storage.public-prefix:/uploads}") String publicPrefix,
-            StoreOperationSettingService settingService) {
+            StoreOperationSettingService settingService,
+            List<ObjectStorageUploader> objectStorageUploaders) {
         this.root = Paths.get(localDir).toAbsolutePath().normalize();
         this.publicPrefix = publicPrefix.endsWith("/") ? publicPrefix.substring(0, publicPrefix.length() - 1) : publicPrefix;
         this.settingService = settingService;
+        this.objectStorageUploaders = objectStorageUploaders.stream()
+                .collect(Collectors.toUnmodifiableMap(ObjectStorageUploader::provider, Function.identity()));
     }
 
     LocalStorageServiceImpl(String localDir, String publicPrefix) {
         this.root = Paths.get(localDir).toAbsolutePath().normalize();
         this.publicPrefix = publicPrefix.endsWith("/") ? publicPrefix.substring(0, publicPrefix.length() - 1) : publicPrefix;
         this.settingService = null;
+        this.objectStorageUploaders = Collections.emptyMap();
+    }
+
+    LocalStorageServiceImpl(String localDir, String publicPrefix, StoreOperationSettingService settingService) {
+        this(localDir, publicPrefix, settingService, List.of());
     }
 
     @Override
@@ -78,23 +93,7 @@ public class LocalStorageServiceImpl implements StorageService {
         }
 
         String ext = sniffImageExtension(file);
-        // 目录与文件名全部由服务端构造：shopId 是 Long，日期是格式化输出，文件名是 UUID，
-        // 没有任何一段来自客户端输入，因此不存在穿越到 root 之外的可能。
-        String monthDir = LocalDate.now().format(MONTH);
-        String filename = UUID.randomUUID().toString().replace("-", "") + "." + ext;
-        Path dir = root.resolve(String.valueOf(shopId)).resolve(monthDir);
-
-        try {
-            Files.createDirectories(dir);
-            try (InputStream in = file.getInputStream()) {
-                Files.copy(in, dir.resolve(filename));
-            }
-        } catch (IOException e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片保存失败");
-        }
-
-        String url = publicPrefix(setting) + "/" + shopId + "/" + monthDir + "/" + filename;
-        return new StoredFile(url, safeDisplayName(file.getOriginalFilename(), ext), file.getSize());
+        return store(file, shopId, ext, imageContentType(ext), setting, "图片");
     }
 
     @Override
@@ -108,19 +107,45 @@ public class LocalStorageServiceImpl implements StorageService {
             throw new BusinessException(ErrorCode.UPLOAD_FILE_TOO_LARGE);
         }
         String ext = sniffVideoExtension(file);
+        return store(file, shopId, ext, "video/mp4", setting, "视频");
+    }
+
+    private StoredFile store(MultipartFile file, Long shopId, String ext, String contentType,
+                             StoreOperationSetting setting, String fileLabel) {
         String monthDir = LocalDate.now().format(MONTH);
         String filename = UUID.randomUUID().toString().replace("-", "") + "." + ext;
-        Path dir = root.resolve(String.valueOf(shopId)).resolve(monthDir);
-        try {
-            Files.createDirectories(dir);
-            try (InputStream in = file.getInputStream()) {
-                Files.copy(in, dir.resolve(filename));
+        String provider = setting.getUploadProvider();
+        if (provider == null || provider.isBlank() || "local".equals(provider)) {
+            Path dir = root.resolve(String.valueOf(shopId)).resolve(monthDir);
+            try {
+                Files.createDirectories(dir);
+                try (InputStream in = file.getInputStream()) {
+                    Files.copy(in, dir.resolve(filename));
+                }
+            } catch (IOException e) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, fileLabel + "保存失败");
             }
-        } catch (IOException e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "视频保存失败");
+            String url = publicPrefix(setting) + "/" + shopId + "/" + monthDir + "/" + filename;
+            return new StoredFile(url, safeDisplayName(file.getOriginalFilename(), ext), file.getSize());
         }
-        String url = publicPrefix(setting) + "/" + shopId + "/" + monthDir + "/" + filename;
+
+        ObjectStorageUploader uploader = objectStorageUploaders.get(provider);
+        if (uploader == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "不支持的存储渠道: " + provider);
+        }
+        String objectKey = "shop/" + shopId + "/" + monthDir + "/" + filename;
+        String url = uploader.upload(setting, objectKey, file, contentType);
         return new StoredFile(url, safeDisplayName(file.getOriginalFilename(), ext), file.getSize());
+    }
+
+    private String imageContentType(String ext) {
+        return switch (ext) {
+            case "jpg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "gif" -> "image/gif";
+            case "webp" -> "image/webp";
+            default -> "application/octet-stream";
+        };
     }
 
     @Override

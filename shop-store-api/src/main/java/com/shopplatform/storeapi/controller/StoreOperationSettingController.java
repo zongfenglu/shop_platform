@@ -38,7 +38,7 @@ import java.util.Set;
 @RequestMapping("/store/settings")
 public class StoreOperationSettingController {
 
-    private static final Set<String> STORAGE_PROVIDERS = Set.of("local");
+    private static final Set<String> STORAGE_PROVIDERS = Set.of("local", "aliyun_oss", "tencent_cos");
     private static final Set<String> PRINTER_PROVIDERS = Set.of("feie", "yilianyun", "cloud", "custom_http");
     private static final Set<String> SMS_PROVIDERS = Set.of("aliyun", "tencent", "huawei", "yunpian", "custom_http");
 
@@ -208,10 +208,11 @@ public class StoreOperationSettingController {
     public Result<OperationSettingView> saveUploadSetting(@Valid @RequestBody UploadSettingRequest request) {
         requireOneOf(request.provider(), STORAGE_PROVIDERS, "不支持的存储渠道");
         StoreOperationSetting item = settingService.getOrCreate();
+        validateStorageConfiguration(request, item);
         item.setUploadProvider(request.provider());
         item.setUploadBucket(trimToNull(request.bucket()));
         item.setUploadRegion(trimToNull(request.region()));
-        item.setUploadEndpoint(trimToNull(request.endpoint()));
+        item.setUploadEndpoint("aliyun_oss".equals(request.provider()) ? normalizeOssEndpoint(request.endpoint()) : null);
         item.setUploadDomain(normalizeDomain(request.domain()));
         item.setImageMaxMb(request.imageMaxMb());
         item.setVideoMaxMb(request.videoMaxMb());
@@ -342,6 +343,36 @@ public class StoreOperationSettingController {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "访问域名必须以 http:// 或 https:// 开头");
         }
         return domain.endsWith("/") ? domain.substring(0, domain.length() - 1) : domain;
+    }
+
+    private static String normalizeOssEndpoint(String value) {
+        String endpoint = trimToNull(value);
+        if (endpoint == null) return null;
+        if (!endpoint.matches("^https://[A-Za-z0-9.-]+\\.aliyuncs\\.com(?:\\.cn)?/?$")) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "OSS Endpoint 必须是阿里云 HTTPS 地址");
+        }
+        return endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
+    }
+
+    private static void validateStorageConfiguration(UploadSettingRequest request, StoreOperationSetting current) {
+        if ("local".equals(request.provider())) return;
+        if (!StringUtils.hasText(request.bucket())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "请填写存储空间 Bucket");
+        }
+        if (!StringUtils.hasText(request.region())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "请填写存储地域 Region");
+        }
+        if ("aliyun_oss".equals(request.provider()) && !StringUtils.hasText(request.endpoint())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "请填写阿里云 OSS Endpoint");
+        }
+        boolean providerChanged = !request.provider().equals(current.getUploadProvider());
+        boolean accessKeyIdMissing = !StringUtils.hasText(request.accessKeyId())
+                && (providerChanged || !StringUtils.hasText(current.getUploadAccessKeyIdEncrypted()));
+        boolean accessKeySecretMissing = !StringUtils.hasText(request.accessKeySecret())
+                && (providerChanged || !StringUtils.hasText(current.getUploadAccessKeySecretEncrypted()));
+        if (accessKeyIdMissing || accessKeySecretMissing) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "请填写当前存储渠道的 AccessKey ID 和 Secret");
+        }
     }
 
     private static void requireOneOf(String value, Set<String> allowed, String message) {

@@ -217,6 +217,22 @@ async function saveUpload() {
     message.warning('访问域名必须以 http:// 或 https:// 开头')
     return
   }
+  if (uploadForm.provider !== 'local') {
+    if (!uploadForm.bucket || !uploadForm.region) {
+      message.warning('请填写存储空间 Bucket 和地域 Region')
+      return
+    }
+    if (uploadForm.provider === 'aliyun_oss' && !uploadForm.endpoint) {
+      message.warning('请填写阿里云 OSS Endpoint')
+      return
+    }
+    const providerChanged = operations.value?.uploadProvider !== uploadForm.provider
+    if ((!uploadForm.accessKeyId && (providerChanged || !operations.value?.uploadAccessKeyIdSet))
+      || (!uploadForm.accessKeySecret && (providerChanged || !operations.value?.uploadAccessKeySecretSet))) {
+      message.warning('请填写当前存储渠道的 AccessKey ID 和 Secret')
+      return
+    }
+  }
   submitting.value = true
   try {
     operations.value = await saveUploadSettings({ ...uploadForm })
@@ -270,10 +286,15 @@ function modalTitle() {
       </div>
 
       <div v-else-if="section === 'upload'" class="card card-pad form-panel">
-        <div class="form-item"><label class="form-label">存储方式</label><select v-model="uploadForm.provider" class="form-select"><option value="local">服务器本地存储</option></select></div>
+        <div class="form-item"><label class="form-label">存储方式</label><select v-model="uploadForm.provider" class="form-select"><option value="local">服务器本地存储</option><option value="aliyun_oss">阿里云 OSS</option><option value="tencent_cos">腾讯云 COS</option></select></div>
+        <template v-if="uploadForm.provider !== 'local'">
+          <div class="form-row form-item"><div><label class="form-label">存储空间 Bucket</label><input v-model.trim="uploadForm.bucket" class="form-input" :placeholder="uploadForm.provider === 'tencent_cos' ? 'example-1250000000' : 'example-bucket'" /></div><div><label class="form-label">地域 Region</label><input v-model.trim="uploadForm.region" class="form-input" :placeholder="uploadForm.provider === 'tencent_cos' ? 'ap-guangzhou' : 'cn-hangzhou'" /></div></div>
+          <div v-if="uploadForm.provider === 'aliyun_oss'" class="form-item"><label class="form-label">OSS Endpoint</label><input v-model.trim="uploadForm.endpoint" class="form-input" placeholder="https://oss-cn-hangzhou.aliyuncs.com" /></div>
+          <div class="form-row form-item"><div><label class="form-label">AccessKey ID</label><input v-model.trim="uploadForm.accessKeyId" type="password" autocomplete="new-password" class="form-input" :placeholder="operations?.uploadAccessKeyIdSet && operations?.uploadProvider === uploadForm.provider ? '已配置，留空不修改' : '请输入 AccessKey ID'" /></div><div><label class="form-label">AccessKey Secret</label><input v-model.trim="uploadForm.accessKeySecret" type="password" autocomplete="new-password" class="form-input" :placeholder="operations?.uploadAccessKeySecretSet && operations?.uploadProvider === uploadForm.provider ? '已配置，留空不修改' : '请输入 AccessKey Secret'" /></div></div>
+        </template>
         <div class="form-item"><label class="form-label">文件访问域名</label><input v-model.trim="uploadForm.domain" class="form-input" placeholder="https://static.example.com/uploads" /></div>
         <div class="form-row form-item"><div><label class="form-label">图片大小上限（MB）</label><input v-model.number="uploadForm.imageMaxMb" type="number" min="1" max="20" class="form-input" /></div><div><label class="form-label">视频大小上限（MB）</label><input v-model.number="uploadForm.videoMaxMb" type="number" min="1" max="50" class="form-input" /></div></div>
-        <div class="secret-state">访问域名留空时使用系统的 <code>/uploads</code> 地址。</div>
+        <div class="secret-state">{{ uploadForm.provider === 'local' ? '访问域名留空时使用系统的 /uploads 地址。' : '访问域名留空时使用存储桶默认域名；存储桶需允许公开读取，生产环境建议配置 CDN 或自定义域名。' }}</div>
         <div class="actions"><button class="btn btn-primary" :disabled="submitting" @click="saveUpload">保存</button></div>
       </div>
 
