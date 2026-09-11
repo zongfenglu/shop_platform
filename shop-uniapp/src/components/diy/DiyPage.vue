@@ -205,7 +205,11 @@ function submitSearch() {
           :src="mediaUrl(item.url)"
           :poster="item.cover ? mediaUrl(item.cover) : undefined"
           :autoplay="!!item.autoplay"
+          :muted="!!item.autoplay"
           :style="{ height: (item.height || 190) + 'px' }"
+          object-fit="contain"
+          playsinline
+          webkit-playsinline
           controls
         />
         <image v-else-if="item.cover" class="video" :src="mediaUrl(item.cover)" mode="aspectFill" :style="{ height: (item.height || 190) + 'px' }" />

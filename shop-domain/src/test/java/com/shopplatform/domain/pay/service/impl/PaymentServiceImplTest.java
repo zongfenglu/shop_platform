@@ -50,7 +50,9 @@ class PaymentServiceImplTest {
     void simulatePayment_marksOrderPaidAndRunsPostPaymentBenefits() {
         Order order = unpaidOrder();
         when(orderService.getByIdWithTenant(10L)).thenReturn(order);
-        when(orderService.markPaid("ORDER123", "MOCK-ORDER123", "mock")).thenReturn(true);
+        when(payNotifyLogService.tryMarkProcessed("wechat", "MOCK-ORDER123", "ORDER123")).thenReturn(true);
+        when(orderService.markPaid("ORDER123", "MOCK-ORDER123", "wechat")).thenReturn(true);
+        when(orderService.findByOrderNo("ORDER123")).thenReturn(order);
 
         PaymentService.PrepayResult result = paymentService.simulatePayment(10L);
 
@@ -59,7 +61,8 @@ class PaymentServiceImplTest {
         assertEquals(new BigDecimal("99.00"), result.payPrice());
         verify(memberService).recordPayment(20L, new BigDecimal("99.00"));
         verify(dealerOrderService).createPending(10L, 20L, new BigDecimal("99.00"));
-        verifyNoInteractions(shopPayConfigService, wxPayGateway, payNotifyLogService);
+        verify(payNotifyLogService).tryMarkProcessed("wechat", "MOCK-ORDER123", "ORDER123");
+        verifyNoInteractions(shopPayConfigService, wxPayGateway);
     }
 
     @Test

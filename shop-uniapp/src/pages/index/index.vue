@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { getCategoryTree, pageGoods, getDiyHome } from '@/api'
 import { getShopId, setShopId } from '@/utils/request'
@@ -9,8 +9,8 @@ import DiyPage from '@/components/diy/DiyPage.vue'
 /**
  * 首页。有已发布装修页时渲染 DIY 组件；否则走分类 + 商品瀑布流兜底。
  */
-const shopId = ref('')
-const inputShopId = ref('')
+const shopId = ref(getShopId())
+const inputShopId = ref(shopId.value)
 const needShopId = ref(false)
 const diyPage = ref(null)
 
@@ -19,16 +19,11 @@ const goodsList = ref([])
 const loading = ref(false)
 const keyword = ref('')
 
-onMounted(() => {
+// 每次回到首页都重新读取已发布快照，确保商户刚发布的装修立即生效。
+onShow(() => {
   shopId.value = getShopId()
   inputShopId.value = shopId.value
-  load()
-})
-
-// 从别的页面返回时刷新，比如在分类页改了筛选再回来
-onShow(() => {
-  if (needShopId.value || diyPage.value || loading.value) return
-  if (goodsList.value.length === 0) load()
+  if (!loading.value) load()
 })
 
 onPullDownRefresh(async () => {
@@ -42,12 +37,14 @@ async function load() {
     const home = await getDiyHome().catch(() => null)
     if (home && home.exists) {
       diyPage.value = home
+      uni.setNavigationBarTitle({ title: home.name || '首页' })
       needShopId.value = false
       categories.value = []
       goodsList.value = []
       return
     }
     diyPage.value = null
+    uni.setNavigationBarTitle({ title: '首页' })
     const [cats, page] = await Promise.all([
       getCategoryTree(),
       pageGoods({ pageNum: 1, pageSize: 20, sort: 'default' }),

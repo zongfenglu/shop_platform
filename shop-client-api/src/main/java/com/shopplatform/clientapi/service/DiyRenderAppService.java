@@ -262,9 +262,12 @@ public class DiyRenderAppService {
 
     private Map<String, Object> resolveCoupon(JsonNode item) {
         Map<String, Object> base = toMap(item);
-        Set<Long> ids = new HashSet<>(parseLongArray(item.get("couponIds")));
-        List<Map<String, Object>> views = couponService.listReceivable().stream()
-                .filter(c -> ids.contains(c.getId()))
+        List<Long> ids = parseLongArray(item.get("couponIds"));
+        Map<Long, Coupon> couponsById = couponService.listReceivable().stream()
+                .collect(Collectors.toMap(Coupon::getId, coupon -> coupon));
+        List<Map<String, Object>> views = ids.stream()
+                .map(couponsById::get)
+                .filter(java.util.Objects::nonNull)
                 .map(this::couponView)
                 .toList();
         base.put("couponList", views);

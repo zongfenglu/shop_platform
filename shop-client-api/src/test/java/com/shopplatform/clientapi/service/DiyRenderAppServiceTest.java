@@ -191,6 +191,40 @@ class DiyRenderAppServiceTest {
     }
 
     @Test
+    void resolveCoupon_preservesConfiguredOrder() {
+        String pageData = "{\"items\":[{\"type\":\"coupon\",\"couponIds\":[6,5]}]}";
+        when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
+
+        Coupon firstFromDatabase = new Coupon();
+        firstFromDatabase.setId(5L);
+        Coupon secondFromDatabase = new Coupon();
+        secondFromDatabase.setId(6L);
+        when(couponService.listReceivable()).thenReturn(List.of(firstFromDatabase, secondFromDatabase));
+
+        Map<String, Object> result = service.renderHome(SHOP_ID);
+        Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
+        List<?> couponList = (List<?>) item.get("couponList");
+
+        assertEquals(6L, ((Map<?, ?>) couponList.get(0)).get("id"));
+        assertEquals(5L, ((Map<?, ?>) couponList.get(1)).get("id"));
+    }
+
+    @Test
+    void resolveVideo_keepsPlaybackConfiguration() {
+        String pageData = "{\"items\":[{\"type\":\"video\",\"url\":\"/uploads/demo.mp4\",\"cover\":\"/uploads/demo.jpg\",\"autoplay\":true,\"height\":260}]}";
+        when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
+
+        Map<String, Object> result = service.renderHome(SHOP_ID);
+        Map<?, ?> video = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
+
+        assertEquals("video", video.get("type"));
+        assertEquals("/uploads/demo.mp4", video.get("url"));
+        assertEquals("/uploads/demo.jpg", video.get("cover"));
+        assertEquals(true, video.get("autoplay"));
+        assertEquals(260, video.get("height"));
+    }
+
+    @Test
     void resolveSeckill_activeOnSale_returnsGoodsWithRemainingStock() {
         String pageData = "{\"items\":[{\"type\":\"seckill\",\"activeId\":1}]}";
         when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));

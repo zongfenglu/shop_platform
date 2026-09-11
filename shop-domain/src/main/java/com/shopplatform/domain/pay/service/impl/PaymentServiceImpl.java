@@ -59,11 +59,10 @@ public class PaymentServiceImpl implements PaymentService {
     public PrepayResult simulatePayment(Long orderId) {
         Order order = requireUnpaidOrder(orderId);
         String transactionId = "MOCK-" + order.getOrderNo();
-        boolean newlyPaid = orderService.markPaid(order.getOrderNo(), transactionId, "mock");
+        boolean newlyPaid = completeSuccessfulPayment(CHANNEL, transactionId, order.getOrderNo());
         if (!newlyPaid) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单状态不支持发起支付");
         }
-        recordPaymentBenefits(order);
         return new PrepayResult(null, order.getOrderNo(), order.getPayPrice());
     }
 
@@ -102,20 +101,25 @@ public class PaymentServiceImpl implements PaymentService {
             log.info("交易未完成，暂不处理 outTradeNo={} state={}", transaction.getOutTradeNo(), transaction.getTradeState());
             return;
         }
-        boolean firstTime = payNotifyLogService.tryMarkProcessed(
-                CHANNEL, transaction.getTransactionId(), transaction.getOutTradeNo());
+        completeSuccessfulPayment(CHANNEL, transaction.getTransactionId(), transaction.getOutTradeNo());
+    }
+
+    /** 模拟支付与真实渠道回调共用成功落地链路，区别仅在于模拟流程不请求外部支付渠道。 */
+    private boolean completeSuccessfulPayment(String channel, String transactionId, String orderNo) {
+        boolean firstTime = payNotifyLogService.tryMarkProcessed(channel, transactionId, orderNo);
         if (!firstTime) {
-            log.info("交易已处理过，本次为重复投递/重复查单 transactionId={}", transaction.getTransactionId());
-            return;
+            log.info("交易已处理过，本次为重复投递/重复查单 transactionId={}", transactionId);
+            return false;
         }
         // 会员消费统计 + 成长值累计（文档三 §3.4 user 表 pay_money/pay_count/growth_value）。
         // 放在 markPaid 成功之后：markPaid 用乐观锁保证只有首次 unpaid→paid 返回 true，
         // 因此这里不会重复累计；同时把异常吞掉只记日志，避免会员统计失败影响支付回调返回 SUCCESS，
         // 统计偏差可由对账任务兜底——支付成功是资金链路，绝不能被会员域异常拖垮。
-        boolean newlyPaid = orderService.markPaid(transaction.getOutTradeNo(), transaction.getTransactionId(), CHANNEL);
+        boolean newlyPaid = orderService.markPaid(orderNo, transactionId, channel);
         if (newlyPaid) {
-            recordPaymentBenefits(orderService.findByOrderNo(transaction.getOutTradeNo()));
+            recordPaymentBenefits(orderService.findByOrderNo(orderNo));
         }
+        return newlyPaid;
     }
 
     private Order requireUnpaidOrder(Long orderId) {

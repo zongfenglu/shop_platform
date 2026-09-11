@@ -40,6 +40,8 @@ x-backend-common: &backend-common
     ACME_EMAIL: ${ACME_EMAIL:-}
     ACME_CERT_DIR: /data/certs
     ACME_RELOAD_COMMAND: ${ACME_RELOAD_COMMAND:-}
+    # 门店上传、H5 读取必须指向同一命名卷，否则装修视频只在门店预览可见。
+    STORAGE_DIR: /data/uploads
     LOG_LEVEL: ${LOG_LEVEL:-INFO}
     TZ: Asia/Shanghai
   logging: &default-logging
@@ -248,6 +250,8 @@ services:
       DOMAIN_SKIP_CNAME: ${DOMAIN_SKIP_CNAME:-false}
       H5_PUBLIC_URL: ${H5_PUBLIC_URL:-}
       JAVA_OPTS: ${STORE_JAVA_OPTS:--Xms512m -Xmx1g}
+    volumes:
+      - uploads-data:/data/uploads
     depends_on:
       admin-api:
         condition: service_healthy
@@ -283,6 +287,7 @@ services:
       JAVA_OPTS: ${CLIENT_JAVA_OPTS:--Xms1g -Xmx2g}
     volumes:
       - certs-data:/data/certs
+      - uploads-data:/data/uploads
     depends_on:
       admin-api:
         condition: service_healthy
@@ -434,6 +439,7 @@ networks:
 volumes:
   mysql-data:
   certs-data:
+  uploads-data:
   redis-data:
   rocketmq-namesrv-logs:
   rocketmq-broker-store:

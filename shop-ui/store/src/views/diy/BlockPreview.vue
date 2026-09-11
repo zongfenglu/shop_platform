@@ -154,8 +154,10 @@ function imageGroupList() {
         :src="item.url"
         :poster="item.cover || undefined"
         :autoplay="!!item.autoplay"
+        :muted="!!item.autoplay"
         controls
         preload="metadata"
+        playsinline
         style="width: 100%; height: 100%; object-fit: contain; display: block; background: #111"
       />
       <img v-else-if="item.cover" :src="item.cover" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />

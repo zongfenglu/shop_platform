@@ -112,7 +112,7 @@ async function onPay() {
   try {
     const result = await prepayOrder(orderId.value)
     if (result?.simulated) {
-      uni.showToast({ title: '模拟支付成功' })
+      uni.showToast({ title: '支付成功' })
       goOrderList()
       return
     }
