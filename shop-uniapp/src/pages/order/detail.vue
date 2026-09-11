@@ -1,7 +1,7 @@
 <script setup>
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import { cancelOrder, confirmReceipt, getOrder, getOrderTracks } from '@/api'
+import { cancelOrder, confirmReceipt, getOrder, getOrderTracks, prepayOrder } from '@/api'
 
 /**
  * 订单详情。对应原型 docs/prototype/h5/order-detail.html。
@@ -13,6 +13,7 @@ const data = ref(null)
 const tracks = ref([])
 const tracksLoading = ref(false)
 const activePackageId = ref('')
+const paying = ref(false)
 
 onLoad((query) => {
   orderId.value = query.id
@@ -87,12 +88,47 @@ function onCancel() {
       try {
         await cancelOrder(orderId.value)
         uni.showToast({ title: '已取消' })
-        await load()
+        const pages = getCurrentPages()
+        const previous = pages[pages.length - 2]
+        if (previous?.route === 'pages/order/list') {
+          uni.navigateBack()
+        } else {
+          uni.redirectTo({ url: '/pages/order/list' })
+        }
       } catch (e) {
         // 已由 request.js 提示
       }
     },
   })
+}
+
+async function onPay() {
+  if (paying.value) return
+  paying.value = true
+  try {
+    const result = await prepayOrder(orderId.value)
+    if (result?.simulated) {
+      uni.showToast({ title: '模拟支付成功' })
+      await load()
+      return
+    }
+    if (!result?.h5Url) {
+      uni.showToast({ title: '未获取到支付地址', icon: 'none' })
+      return
+    }
+    // #ifdef H5
+    const separator = result.h5Url.includes('?') ? '&' : '?'
+    const returnUrl = encodeURIComponent(window.location.href)
+    window.location.assign(`${result.h5Url}${separator}redirect_url=${returnUrl}`)
+    // #endif
+    // #ifndef H5
+    uni.showToast({ title: '当前客户端暂不支持该支付方式', icon: 'none' })
+    // #endif
+  } catch (e) {
+    // 已由 request.js 提示
+  } finally {
+    paying.value = false
+  }
 }
 
 function onAfterSale() {
@@ -202,7 +238,12 @@ function packageGoodsText(pkg) {
 
     <view v-if="data" class="bottom-bar">
       <button v-if="data.order.payStatus === 'unpaid'" class="m-btn" @click="onCancel">取消订单</button>
-      <button v-if="data.order.payStatus === 'unpaid'" class="m-btn m-btn-warm">去支付</button>
+      <button
+        v-if="data.order.payStatus === 'unpaid'"
+        class="m-btn m-btn-warm"
+        :disabled="paying"
+        @click="onPay"
+      >{{ paying ? '支付中…' : '去支付' }}</button>
       <button v-if="data.order.deliveryStatus === 'shipped'" class="m-btn" @click="onAfterSale">申请售后</button>
       <button v-if="data.order.deliveryStatus === 'shipped'" class="m-btn m-btn-warm" @click="onConfirm">确认收货</button>
       <button v-if="data.order.orderStatus === 'finished'" class="m-btn m-btn-warm" @click="onComment">评价</button>

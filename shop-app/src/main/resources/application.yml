@@ -56,6 +56,8 @@ shop:
     aes-key: ${AES_KEY:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_aes_key}
   pay:
     notify-base-url: ${PAY_NOTIFY_BASE_URL:http://localhost:8083}
+    # all-in-one 用于本地和测试，默认直接模拟支付。
+    mock-enabled: ${PAY_MOCK_ENABLED:true}
   order:
     pay-timeout-minutes: ${PAY_TIMEOUT_MINUTES:30}
   acme:

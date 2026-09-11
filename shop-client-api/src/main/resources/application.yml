@@ -37,6 +37,8 @@ shop:
     expire-hours: 12
   pay:
     notify-base-url: ${PAY_NOTIFY_BASE_URL:http://localhost:8083}
+    # 本地/测试默认直接模拟支付；生产 compose 会显式关闭并走微信 H5 支付。
+    mock-enabled: ${PAY_MOCK_ENABLED:true}
   crypto:
     aes-key: ${AES_KEY:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_aes_key}
   order:

@@ -16,6 +16,7 @@ import com.wechat.pay.java.service.payments.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
@@ -46,14 +47,24 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PrepayResult createPayment(Long orderId, String clientIp, String notifyUrl) {
-        Order order = orderService.getByIdWithTenant(orderId);
-        if (!"unpaid".equals(order.getPayStatus())) {
-            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单状态不支持发起支付");
-        }
+        Order order = requireUnpaidOrder(orderId);
         DecryptedPayConfig config = requireConfig();
         String h5Url = wxPayGateway.createH5Prepay(config, order.getOrderNo(), order.getPayPrice(),
                 "订单" + order.getOrderNo(), notifyUrl, clientIp);
         return new PrepayResult(h5Url, order.getOrderNo(), order.getPayPrice());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PrepayResult simulatePayment(Long orderId) {
+        Order order = requireUnpaidOrder(orderId);
+        String transactionId = "MOCK-" + order.getOrderNo();
+        boolean newlyPaid = orderService.markPaid(order.getOrderNo(), transactionId, "mock");
+        if (!newlyPaid) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单状态不支持发起支付");
+        }
+        recordPaymentBenefits(order);
+        return new PrepayResult(null, order.getOrderNo(), order.getPayPrice());
     }
 
     @Override
@@ -103,16 +114,28 @@ public class PaymentServiceImpl implements PaymentService {
         // 统计偏差可由对账任务兜底——支付成功是资金链路，绝不能被会员域异常拖垮。
         boolean newlyPaid = orderService.markPaid(transaction.getOutTradeNo(), transaction.getTransactionId(), CHANNEL);
         if (newlyPaid) {
-            try {
-                Order paid = orderService.findByOrderNo(transaction.getOutTradeNo());
-                if (paid != null) {
-                    memberService.recordPayment(paid.getUserId(), paid.getPayPrice());
-                    // 分销佣金：支付成功后生成待结算佣金记录（Sprint 11）
-                    dealerOrderService.createPending(paid.getId(), paid.getUserId(), paid.getPayPrice());
-                }
-            } catch (Exception e) {
-                log.error("会员消费统计/成长值累计失败 outTradeNo={}", transaction.getOutTradeNo(), e);
-            }
+            recordPaymentBenefits(orderService.findByOrderNo(transaction.getOutTradeNo()));
+        }
+    }
+
+    private Order requireUnpaidOrder(Long orderId) {
+        Order order = orderService.getByIdWithTenant(orderId);
+        if (!"unpaid".equals(order.getPayStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单状态不支持发起支付");
+        }
+        return order;
+    }
+
+    private void recordPaymentBenefits(Order paid) {
+        if (paid == null) {
+            return;
+        }
+        try {
+            memberService.recordPayment(paid.getUserId(), paid.getPayPrice());
+            // 分销佣金：支付成功后生成待结算佣金记录（Sprint 11）
+            dealerOrderService.createPending(paid.getId(), paid.getUserId(), paid.getPayPrice());
+        } catch (Exception e) {
+            log.error("会员消费统计/成长值累计失败 outTradeNo={}", paid.getOrderNo(), e);
         }
     }
 

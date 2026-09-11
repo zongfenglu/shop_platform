@@ -11,6 +11,9 @@ public interface PaymentService {
     /** 发起支付，{@code notifyUrl} 由调用方（shop-client-api）拼出自己的公网回调地址传入——领域层不关心部署域名。 */
     PrepayResult createPayment(Long orderId, String clientIp, String notifyUrl);
 
+    /** 仅供开发/测试环境使用：直接完成支付状态流转，不请求外部支付渠道。 */
+    PrepayResult simulatePayment(Long orderId);
+
     /** 处理微信支付回调：验签、AEAD解密、幂等登记、订单状态流转，调用前 TenantContext 必须已按 URL 中的 shopId 设好。 */
     void handleWechatNotify(String serialNumber, String nonce, String timestamp, String signature, String body);
 

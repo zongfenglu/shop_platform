@@ -104,6 +104,11 @@ export function cancelOrder(id) {
   return post(`/api/order/${id}/cancel`)
 }
 
+/** 发起订单支付；测试环境直接模拟成功，正式环境返回微信 H5 支付地址。 */
+export function prepayOrder(id) {
+  return post(`/api/pay/${id}/prepay`)
+}
+
 /** 下单前预览（算价：优惠分摊、运费） */
 export function previewCheckout(payload) {
   return post('/api/checkout/preview', payload)

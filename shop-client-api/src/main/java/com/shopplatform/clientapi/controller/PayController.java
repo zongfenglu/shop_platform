@@ -1,8 +1,14 @@
 package com.shopplatform.clientapi.controller;
 
 import com.shopplatform.clientapi.dto.PrepayResponse;
+import com.shopplatform.common.exception.BusinessException;
+import com.shopplatform.common.exception.TenantAccessDeniedException;
+import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.common.result.Result;
+import com.shopplatform.domain.order.entity.Order;
+import com.shopplatform.domain.order.service.OrderService;
 import com.shopplatform.domain.pay.service.PaymentService;
+import com.shopplatform.framework.security.LoginUserContext;
 import com.shopplatform.framework.tenant.TenantContext;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -13,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 消费者端支付：发起支付（H5支付，返回微信 h5_url 供跳转）+ 支付回调。
@@ -27,21 +34,44 @@ public class PayController {
     private static final Logger log = LoggerFactory.getLogger(PayController.class);
 
     private final PaymentService paymentService;
+    private final OrderService orderService;
 
     @Value("${shop.pay.notify-base-url:http://localhost:8083}")
     private String notifyBaseUrl;
 
-    public PayController(PaymentService paymentService) {
+    @Value("${shop.pay.mock-enabled:false}")
+    private boolean mockEnabled;
+
+    public PayController(PaymentService paymentService, OrderService orderService) {
         this.paymentService = paymentService;
+        this.orderService = orderService;
     }
 
     @PostMapping("/{orderId}/prepay")
     public Result<PrepayResponse> prepay(@PathVariable Long orderId, HttpServletRequest request) {
+        requireOwnOrder(orderId);
+        if (mockEnabled) {
+            PaymentService.PrepayResult result = paymentService.simulatePayment(orderId);
+            return Result.ok(new PrepayResponse(
+                    result.h5Url(), result.orderNo(), result.payPrice(), true));
+        }
         Long shopId = TenantContext.getRequired();
         String notifyUrl = notifyBaseUrl + "/api/pay/notify/wechat/" + shopId;
         PaymentService.PrepayResult result = paymentService.createPayment(
                 orderId, request.getRemoteAddr(), notifyUrl);
-        return Result.ok(new PrepayResponse(result.h5Url(), result.orderNo(), result.payPrice()));
+        return Result.ok(new PrepayResponse(
+                result.h5Url(), result.orderNo(), result.payPrice(), false));
+    }
+
+    private void requireOwnOrder(Long orderId) {
+        LoginUserContext.LoginUser loginUser = LoginUserContext.get();
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "请先登录");
+        }
+        Order order = orderService.getByIdWithTenant(orderId);
+        if (!Objects.equals(order.getUserId(), loginUser.userId())) {
+            throw new TenantAccessDeniedException("该订单不属于当前用户");
+        }
     }
 
     /**

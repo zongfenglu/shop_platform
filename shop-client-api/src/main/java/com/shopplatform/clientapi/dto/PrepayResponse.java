@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record PrepayResponse(
         String h5Url,
         String orderNo,
-        BigDecimal payPrice
+        BigDecimal payPrice,
+        boolean simulated
 ) {
 }

@@ -275,6 +275,8 @@ services:
       <<: *backend-env
       # 微信支付回调地址必须是公网可达的 https，填错则支付成功但订单永远不变已支付
       PAY_NOTIFY_BASE_URL: ${PAY_NOTIFY_BASE_URL:?PAY_NOTIFY_BASE_URL 必须在 .env 中显式设置（微信支付回调用，需公网 https）}
+      # 正式环境必须关闭模拟支付；预发联调如需模拟，可在 .env 中显式设为 true。
+      PAY_MOCK_ENABLED: "${PAY_MOCK_ENABLED:-false}"
       PAY_TIMEOUT_MINUTES: ${PAY_TIMEOUT_MINUTES:-30}
       # 消费者端是流量入口，连接池按压测结论给到 50（见 client-api application.yml 注释）
       DB_POOL_SIZE: ${CLIENT_DB_POOL_SIZE:-50}

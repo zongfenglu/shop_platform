@@ -1,5 +1,6 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { cancelOrder, pageOrders } from '@/api'
 
 /**
@@ -35,7 +36,8 @@ async function load() {
   }
 }
 
-onMounted(load)
+// 从详情页取消订单或支付后返回时，重新拉取最新状态。
+onShow(load)
 
 function onTabChange(key) {
   activeTab.value = key
