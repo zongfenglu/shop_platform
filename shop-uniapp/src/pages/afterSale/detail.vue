@@ -49,6 +49,14 @@ function fmtDateTime(v) {
   return v ? String(v).replace('T', ' ').slice(0, 19) : '—'
 }
 
+function returnAddress() {
+  try {
+    return JSON.parse(data.value?.returnAddressSnapshot || 'null')
+  } catch (e) {
+    return null
+  }
+}
+
 function canClose() {
   return data.value?.status === 'applying'
 }
@@ -129,6 +137,12 @@ async function onSubmitShip() {
       <view class="kv-row"><text>快递单号</text><text>{{ data.returnExpressNo }}</text></view>
     </view>
 
+    <view v-if="data && returnAddress() && needsReturnShip()" class="card">
+      <view class="card-title">寄回地址</view>
+      <view class="address-name">{{ returnAddress().contactName }} {{ returnAddress().phone }}</view>
+      <view class="address-detail">{{ returnAddress().province }}{{ returnAddress().city }}{{ returnAddress().district }}{{ returnAddress().detail }}</view>
+    </view>
+
     <view v-if="data" class="bottom-bar">
       <button v-if="canClose()" class="m-btn" @click="onClose">撤销申请</button>
       <button v-if="needsReturnShip()" class="m-btn m-btn-warm" @click="openShipModal">填写寄回物流</button>
@@ -180,6 +194,8 @@ async function onSubmitShip() {
   font-weight: 600;
   margin-bottom: 12rpx;
 }
+.address-name { font-size: 26rpx; font-weight: 600; margin-bottom: 8rpx; }
+.address-detail { font-size: 24rpx; color: #52514e; line-height: 1.55; }
 .kv-row {
   display: flex;
   justify-content: space-between;

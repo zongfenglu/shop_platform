@@ -3,7 +3,10 @@ package com.shopplatform.domain.file.service.impl;
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.domain.file.service.StorageService;
+import com.shopplatform.domain.setting.entity.StoreOperationSetting;
+import com.shopplatform.domain.setting.service.StoreOperationSettingService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,12 +48,22 @@ public class LocalStorageServiceImpl implements StorageService {
 
     private final Path root;
     private final String publicPrefix;
+    private final StoreOperationSettingService settingService;
 
+    @Autowired
     public LocalStorageServiceImpl(
             @Value("${shop.storage.local-dir:./data/uploads}") String localDir,
-            @Value("${shop.storage.public-prefix:/uploads}") String publicPrefix) {
+            @Value("${shop.storage.public-prefix:/uploads}") String publicPrefix,
+            StoreOperationSettingService settingService) {
         this.root = Paths.get(localDir).toAbsolutePath().normalize();
         this.publicPrefix = publicPrefix.endsWith("/") ? publicPrefix.substring(0, publicPrefix.length() - 1) : publicPrefix;
+        this.settingService = settingService;
+    }
+
+    LocalStorageServiceImpl(String localDir, String publicPrefix) {
+        this.root = Paths.get(localDir).toAbsolutePath().normalize();
+        this.publicPrefix = publicPrefix.endsWith("/") ? publicPrefix.substring(0, publicPrefix.length() - 1) : publicPrefix;
+        this.settingService = null;
     }
 
     @Override
@@ -58,7 +71,9 @@ public class LocalStorageServiceImpl implements StorageService {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.UPLOAD_FILE_EMPTY);
         }
-        if (file.getSize() > MAX_SIZE) {
+        StoreOperationSetting setting = currentSetting();
+        long maxSize = megabytes(setting.getImageMaxMb(), MAX_SIZE);
+        if (file.getSize() > maxSize) {
             throw new BusinessException(ErrorCode.UPLOAD_FILE_TOO_LARGE);
         }
 
@@ -78,7 +93,7 @@ public class LocalStorageServiceImpl implements StorageService {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片保存失败");
         }
 
-        String url = publicPrefix + "/" + shopId + "/" + monthDir + "/" + filename;
+        String url = publicPrefix(setting) + "/" + shopId + "/" + monthDir + "/" + filename;
         return new StoredFile(url, safeDisplayName(file.getOriginalFilename(), ext), file.getSize());
     }
 
@@ -87,7 +102,9 @@ public class LocalStorageServiceImpl implements StorageService {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.UPLOAD_FILE_EMPTY);
         }
-        if (file.getSize() > MAX_VIDEO_SIZE) {
+        StoreOperationSetting setting = currentSetting();
+        long maxSize = megabytes(setting.getVideoMaxMb(), MAX_VIDEO_SIZE);
+        if (file.getSize() > maxSize) {
             throw new BusinessException(ErrorCode.UPLOAD_FILE_TOO_LARGE);
         }
         String ext = sniffVideoExtension(file);
@@ -102,7 +119,7 @@ public class LocalStorageServiceImpl implements StorageService {
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "视频保存失败");
         }
-        String url = publicPrefix + "/" + shopId + "/" + monthDir + "/" + filename;
+        String url = publicPrefix(setting) + "/" + shopId + "/" + monthDir + "/" + filename;
         return new StoredFile(url, safeDisplayName(file.getOriginalFilename(), ext), file.getSize());
     }
 
@@ -169,6 +186,23 @@ public class LocalStorageServiceImpl implements StorageService {
 
     private static int u(byte b) {
         return b & 0xFF;
+    }
+
+    private long megabytes(Integer configured, long fallback) {
+        return configured == null || configured <= 0 ? fallback : configured.longValue() * 1024 * 1024;
+    }
+
+    private StoreOperationSetting currentSetting() {
+        if (settingService != null) return settingService.getOrCreate();
+        StoreOperationSetting defaults = new StoreOperationSetting();
+        defaults.setImageMaxMb(5);
+        defaults.setVideoMaxMb(50);
+        return defaults;
+    }
+
+    private String publicPrefix(StoreOperationSetting setting) {
+        String domain = setting.getUploadDomain();
+        return domain == null || domain.isBlank() ? publicPrefix : domain;
     }
 
     /**

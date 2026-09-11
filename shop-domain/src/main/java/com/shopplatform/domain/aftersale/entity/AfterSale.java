@@ -45,6 +45,9 @@ public class AfterSale extends BaseEntity {
 
     private String auditRemark;
 
+    /** 商户同意退货时选定的退货地址 JSON 快照。 */
+    private String returnAddressSnapshot;
+
     private String returnExpressCompany;
 
     private String returnExpressNo;
@@ -157,6 +160,14 @@ public class AfterSale extends BaseEntity {
 
     public void setAuditRemark(String auditRemark) {
         this.auditRemark = auditRemark;
+    }
+
+    public String getReturnAddressSnapshot() {
+        return returnAddressSnapshot;
+    }
+
+    public void setReturnAddressSnapshot(String returnAddressSnapshot) {
+        this.returnAddressSnapshot = returnAddressSnapshot;
     }
 
     public String getReturnExpressCompany() {

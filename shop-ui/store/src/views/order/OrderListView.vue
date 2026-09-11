@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { pageOrders, shipOrder } from '@/api/order'
+import { listExpressCompanies } from '@/api/operationSettings'
 
 /**
  * 订单列表。对应原型 docs/prototype/store/order-list.html。
@@ -27,6 +28,7 @@ const router = useRouter()
 const loading = ref(false)
 const rows = ref([])
 const total = ref(0)
+const expressCompanies = ref([])
 const activeTab = ref('all')
 const query = reactive({ orderNo: '', pageNum: 1, pageSize: 20 })
 
@@ -50,7 +52,12 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await Promise.all([
+    load(),
+    listExpressCompanies(true).then((items) => { expressCompanies.value = items || [] }).catch(() => {}),
+  ])
+})
 
 function onTabChange(key) {
   activeTab.value = key
@@ -258,7 +265,10 @@ async function onBatchShip() {
     <div class="form-hint" style="margin-bottom: 12px">将对勾选的 {{ selectedIds.length }} 笔待发货订单整单发出（同一快递公司与单号）。部分发货请进入订单详情。</div>
     <div class="form-item">
       <label class="form-label"><span class="req">*</span>快递公司</label>
-      <input v-model="batchForm.expressCompany" class="form-input" placeholder="如 顺丰速运" />
+      <select v-model="batchForm.expressCompany" class="form-select">
+        <option value="">请选择快递公司</option>
+        <option v-for="company in expressCompanies" :key="company.id" :value="company.name">{{ company.name }}</option>
+      </select>
     </div>
     <div class="form-item">
       <label class="form-label"><span class="req">*</span>快递单号</label>

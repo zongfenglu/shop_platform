@@ -9,8 +9,8 @@ export function getAfterSale(id) {
   return http.get(`/store/after-sale/${id}`)
 }
 
-export function approveAfterSale(id, auditRemark) {
-  return http.post(`/store/after-sale/${id}/approve`, auditRemark ? { auditRemark } : null)
+export function approveAfterSale(id, auditRemark, returnAddressId) {
+  return http.post(`/store/after-sale/${id}/approve`, { auditRemark: auditRemark || null, returnAddressId: returnAddressId || null })
 }
 
 export function rejectAfterSale(id, auditRemark) {

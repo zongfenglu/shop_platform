@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { cancelOrder, getOrder, shipOrder } from '@/api/order'
+import { listExpressCompanies } from '@/api/operationSettings'
 
 /**
  * 订单详情。对应原型 docs/prototype/store/order-detail.html。
@@ -12,6 +13,7 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const data = ref(null)
+const expressCompanies = ref([])
 
 async function load() {
   loading.value = true
@@ -24,7 +26,12 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await Promise.all([
+    load(),
+    listExpressCompanies(true).then((items) => { expressCompanies.value = items || [] }).catch(() => {}),
+  ])
+})
 
 function fmtPrice(v) {
   if (v === null || v === undefined) return '—'
@@ -108,7 +115,7 @@ function openShipModal() {
 }
 
 async function onShip() {
-  shipErrors.expressCompany = shipForm.expressCompany.trim() ? '' : '请输入快递公司'
+  shipErrors.expressCompany = shipForm.expressCompany.trim() ? '' : '请选择快递公司'
   shipErrors.expressNo = shipForm.expressNo.trim() ? '' : '请输入快递单号'
   if (shipErrors.expressCompany || shipErrors.expressNo) return
   if (!selectedGoodsIds.value.length) {
@@ -253,7 +260,10 @@ function onCancel() {
   >
     <div class="form-item">
       <label class="form-label"><span class="req">*</span>快递公司</label>
-      <input v-model="shipForm.expressCompany" class="form-input" placeholder="如 顺丰速运" />
+      <select v-model="shipForm.expressCompany" class="form-select">
+        <option value="">请选择快递公司</option>
+        <option v-for="company in expressCompanies" :key="company.id" :value="company.name">{{ company.name }}</option>
+      </select>
       <div v-if="shipErrors.expressCompany" class="field-error">{{ shipErrors.expressCompany }}</div>
     </div>
     <div class="form-item">

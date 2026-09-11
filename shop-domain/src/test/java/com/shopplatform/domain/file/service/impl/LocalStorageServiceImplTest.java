@@ -3,6 +3,8 @@ package com.shopplatform.domain.file.service.impl;
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.domain.file.service.StorageService;
+import com.shopplatform.domain.setting.entity.StoreOperationSetting;
+import com.shopplatform.domain.setting.service.StoreOperationSettingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
@@ -13,6 +15,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link LocalStorageServiceImpl} 单测。这个类是对外的文件上传入口，
@@ -28,6 +32,12 @@ class LocalStorageServiceImplTest {
 
     private LocalStorageServiceImpl service(Path dir) {
         return new LocalStorageServiceImpl(dir.toString(), "/uploads");
+    }
+
+    private LocalStorageServiceImpl service(Path dir, StoreOperationSetting setting) {
+        StoreOperationSettingService settingService = mock(StoreOperationSettingService.class);
+        when(settingService.getOrCreate()).thenReturn(setting);
+        return new LocalStorageServiceImpl(dir.toString(), "/uploads", settingService);
     }
 
     @Test
@@ -142,5 +152,32 @@ class LocalStorageServiceImplTest {
         svc.storeImage(new MockMultipartFile("file", "a.jpg", "image/jpeg", JPEG_HEAD), 7L);
         assertEquals(JPEG_HEAD.length, svc.directorySize(7L));
         assertEquals(0L, svc.directorySize(null));
+    }
+
+    @Test
+    void storeImage_usesMerchantLimit(@TempDir Path dir) {
+        StoreOperationSetting setting = new StoreOperationSetting();
+        setting.setImageMaxMb(1);
+        setting.setVideoMaxMb(50);
+        byte[] big = new byte[1024 * 1024 + 1];
+        System.arraycopy(JPEG_HEAD, 0, big, 0, JPEG_HEAD.length);
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service(dir, setting)
+                .storeImage(new MockMultipartFile("file", "big.jpg", "image/jpeg", big), 9L));
+
+        assertEquals(ErrorCode.UPLOAD_FILE_TOO_LARGE.getCode(), e.getCode());
+    }
+
+    @Test
+    void storeImage_usesMerchantPublicDomain(@TempDir Path dir) {
+        StoreOperationSetting setting = new StoreOperationSetting();
+        setting.setImageMaxMb(5);
+        setting.setVideoMaxMb(50);
+        setting.setUploadDomain("https://static.example.com/uploads");
+
+        StorageService.StoredFile stored = service(dir, setting)
+                .storeImage(new MockMultipartFile("file", "a.jpg", "image/jpeg", JPEG_HEAD), 9L);
+
+        assertTrue(stored.url().startsWith("https://static.example.com/uploads/9/"));
     }
 }

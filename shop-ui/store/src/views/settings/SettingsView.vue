@@ -3,16 +3,9 @@ import { onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
 import { getPayConfig, savePayConfig } from '@/api/payConfig'
 import { createFreightTemplate, deleteFreightTemplate, listFreightTemplates, updateFreightTemplate } from '@/api/goods'
+import OperationSettingsPanel from './OperationSettingsPanel.vue'
 
-/**
- * 设置页。对照 docs/prototype/store/settings.html，支付设置和运费模板接真实接口。
- *
- * 原型还有「基本信息」「交易设置」「客服设置」等 tab，这些字段在后端 Shop/相关实体上都不存在
- * （Shop 只有 name/logo/industry/contact/mobile，没有经营地址/自动确认收货天数这些字段），
- * 画出来保存了也没有地方落库，是假交互。支付设置是唯一有真实后端支撑的部分——
- * 而且这个页面直接关系到售后退款能否执行（StoreAfterSaleController#refund 依赖这里配置的
- * 微信支付商户号，没配置会在执行退款时报"商户尚未配置微信支付"）。
- */
+/** 商户设置：支付、配送、上传、退货、打印和短信均接入租户级接口。 */
 const loading = ref(false)
 const config = ref(null)
 const submitting = ref(false)
@@ -235,9 +228,15 @@ function maskMchId(id) {
   <a-spin :spinning="loading">
     <div class="settings-shell">
       <div class="settings-nav">
-        <div class="group-title">基础</div>
+        <div class="group-title">配送</div>
+        <button class="settings-item" :class="{ active: activeTab === 'express' }" @click="activeTab = 'express'">物流公司</button>
         <button class="settings-item" :class="{ active: activeTab === 'freight' }" @click="activeTab = 'freight'">运费模板</button>
-        <div class="group-title">收款与配送</div>
+        <button class="settings-item" :class="{ active: activeTab === 'returns' }" @click="activeTab = 'returns'">退货地址</button>
+        <div class="group-title">基础能力</div>
+        <button class="settings-item" :class="{ active: activeTab === 'upload' }" @click="activeTab = 'upload'">文件上传</button>
+        <button class="settings-item" :class="{ active: activeTab === 'printers' }" @click="activeTab = 'printers'">小票打印</button>
+        <button class="settings-item" :class="{ active: activeTab === 'sms' }" @click="activeTab = 'sms'">短信通知</button>
+        <div class="group-title">收款</div>
         <button class="settings-item" :class="{ active: activeTab === 'pay' }" @click="activeTab = 'pay'">支付设置</button>
       </div>
 
@@ -268,7 +267,12 @@ function maskMchId(id) {
         </a-spin>
       </div>
 
-      <div v-else class="card card-pad payment-panel">
+      <OperationSettingsPanel
+        v-else-if="['express', 'returns', 'upload', 'printers', 'sms'].includes(activeTab)"
+        :section="activeTab"
+      />
+
+      <div v-else-if="activeTab === 'pay'" class="card card-pad payment-panel">
       <p class="card-title">微信支付</p>
       <p class="card-sub">配置租户自有商户号，用于收款和售后退款；密钥全程加密存储，保存后不可回显明文</p>
 
@@ -386,5 +390,13 @@ function maskMchId(id) {
   font-size: 12px;
   color: var(--status-critical);
   margin-top: 4px;
+}
+@media (max-width: 760px) {
+  .settings-shell { display: block; }
+  .settings-nav { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .group-title { width: 100%; margin: 10px 0 2px; }
+  .settings-item { width: auto; flex: 1 1 96px; text-align: center; }
+  .settings-panel { overflow-x: auto; }
+  .payment-panel { max-width: none; }
 }
 </style>

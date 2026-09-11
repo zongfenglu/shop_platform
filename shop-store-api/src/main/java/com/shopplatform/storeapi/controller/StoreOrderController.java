@@ -12,6 +12,9 @@ import com.shopplatform.domain.order.service.OrderAddressService;
 import com.shopplatform.domain.order.service.OrderGoodsService;
 import com.shopplatform.domain.order.service.OrderPackageService;
 import com.shopplatform.domain.order.service.OrderService;
+import com.shopplatform.domain.setting.service.ExpressCompanyService;
+import com.shopplatform.common.exception.BusinessException;
+import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.storeapi.dto.OrderListQuery;
 import com.shopplatform.storeapi.dto.ShipOrderRequest;
 import jakarta.validation.Valid;
@@ -32,15 +35,18 @@ public class StoreOrderController {
     private final OrderGoodsService orderGoodsService;
     private final OrderAddressService orderAddressService;
     private final OrderPackageService orderPackageService;
+    private final ExpressCompanyService expressCompanyService;
 
     public StoreOrderController(OrderService orderService,
                                  OrderGoodsService orderGoodsService,
                                  OrderAddressService orderAddressService,
-                                 OrderPackageService orderPackageService) {
+                                 OrderPackageService orderPackageService,
+                                 ExpressCompanyService expressCompanyService) {
         this.orderService = orderService;
         this.orderGoodsService = orderGoodsService;
         this.orderAddressService = orderAddressService;
         this.orderPackageService = orderPackageService;
+        this.expressCompanyService = expressCompanyService;
     }
 
     @GetMapping
@@ -76,6 +82,11 @@ public class StoreOrderController {
 
     @PostMapping("/{id}/ship")
     public Result<Void> ship(@PathVariable Long id, @Valid @RequestBody ShipOrderRequest request) {
+        boolean supported = expressCompanyService.listEnabled().stream()
+                .anyMatch(company -> company.getName().equals(request.expressCompany()));
+        if (!supported) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "请选择已启用的物流公司");
+        }
         orderService.ship(id, new OrderService.ShipCommand(
                 request.expressCompany(), request.expressNo(), request.orderGoodsIds()));
         return Result.ok();

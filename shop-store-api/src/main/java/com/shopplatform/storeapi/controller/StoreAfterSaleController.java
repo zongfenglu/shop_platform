@@ -6,9 +6,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shopplatform.common.result.Result;
 import com.shopplatform.domain.aftersale.entity.AfterSale;
 import com.shopplatform.domain.aftersale.service.AfterSaleService;
+import com.shopplatform.domain.setting.entity.ReturnAddress;
+import com.shopplatform.domain.setting.service.ReturnAddressService;
+import com.shopplatform.common.exception.BusinessException;
+import com.shopplatform.common.result.ErrorCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shopplatform.storeapi.dto.AfterSaleListQuery;
 import com.shopplatform.storeapi.dto.AuditAfterSaleRequest;
 import org.springframework.util.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -21,9 +28,15 @@ import org.springframework.web.bind.annotation.*;
 public class StoreAfterSaleController {
 
     private final AfterSaleService afterSaleService;
+    private final ReturnAddressService returnAddressService;
+    private final ObjectMapper objectMapper;
 
-    public StoreAfterSaleController(AfterSaleService afterSaleService) {
+    public StoreAfterSaleController(AfterSaleService afterSaleService,
+                                    ReturnAddressService returnAddressService,
+                                    ObjectMapper objectMapper) {
         this.afterSaleService = afterSaleService;
+        this.returnAddressService = returnAddressService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping
@@ -43,9 +56,36 @@ public class StoreAfterSaleController {
     }
 
     @PostMapping("/{id}/approve")
+    @Transactional(rollbackFor = Exception.class)
     public Result<Void> approve(@PathVariable Long id, @RequestBody(required = false) AuditAfterSaleRequest request) {
+        AfterSale afterSale = afterSaleService.getByIdWithTenant(id);
+        if ("return_refund".equals(afterSale.getType())) {
+            Long addressId = request == null ? null : request.returnAddressId();
+            ReturnAddress address = addressId == null
+                    ? returnAddressService.listAll().stream()
+                        .filter(a -> Boolean.TRUE.equals(a.getIsDefault()) && "enabled".equals(a.getStatus()))
+                        .findFirst().orElse(null)
+                    : returnAddressService.getByIdWithTenant(addressId);
+            if (address == null || !"enabled".equals(address.getStatus())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "同意退货前请先选择启用的退货地址");
+            }
+            afterSale.setReturnAddressSnapshot(toAddressSnapshot(address));
+            afterSaleService.updateById(afterSale);
+        }
         afterSaleService.approve(id, request == null ? null : request.auditRemark());
         return Result.ok();
+    }
+
+    private String toAddressSnapshot(ReturnAddress address) {
+        try {
+            return objectMapper.writeValueAsString(java.util.Map.of(
+                    "contactName", address.getContactName(), "phone", address.getPhone(),
+                    "province", address.getProvince(), "city", address.getCity(),
+                    "district", address.getDistrict(), "detail", address.getDetail(),
+                    "postalCode", address.getPostalCode() == null ? "" : address.getPostalCode()));
+        } catch (JsonProcessingException e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "退货地址快照保存失败");
+        }
     }
 
     @PostMapping("/{id}/reject")

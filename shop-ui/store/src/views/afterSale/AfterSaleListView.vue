@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { approveAfterSale, pageAfterSales, refundAfterSale, rejectAfterSale } from '@/api/afterSale'
+import { listReturnAddresses } from '@/api/operationSettings'
 
 /**
  * 售后管理。对应原型 docs/prototype/store/after-sale-list.html。
@@ -33,6 +34,7 @@ const STATUS_META = {
 const loading = ref(false)
 const rows = ref([])
 const total = ref(0)
+const returnAddresses = ref([])
 const activeTab = ref('applying')
 const query = reactive({ pageNum: 1, pageSize: 20 })
 
@@ -55,7 +57,12 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await Promise.all([
+    load(),
+    listReturnAddresses().then((items) => { returnAddresses.value = (items || []).filter((item) => item.status === 'enabled') }).catch(() => {}),
+  ])
+})
 
 function onTabChange(key) {
   activeTab.value = key
@@ -94,18 +101,24 @@ function canRefund(row) {
 const modalOpen = ref(false)
 const modalTarget = ref(null)
 const auditRemark = ref('')
+const returnAddressId = ref(null)
 const submitting = ref(false)
 
 function openReview(row) {
   modalTarget.value = row
   auditRemark.value = ''
+  returnAddressId.value = returnAddresses.value.find((item) => item.isDefault)?.id || returnAddresses.value[0]?.id || null
   modalOpen.value = true
 }
 
 async function onApprove() {
+  if (modalTarget.value.type === 'return_refund' && !returnAddressId.value) {
+    message.error('同意退货前请先在设置中维护退货地址')
+    return
+  }
   submitting.value = true
   try {
-    await approveAfterSale(modalTarget.value.id, auditRemark.value.trim() || undefined)
+    await approveAfterSale(modalTarget.value.id, auditRemark.value.trim() || undefined, returnAddressId.value)
     message.success('已同意')
     modalOpen.value = false
     await load()
@@ -220,6 +233,16 @@ async function onRefund(row) {
       <div class="form-item" style="margin-top: 16px">
         <label class="form-label">审核备注（选填，拒绝时必填，将展示给买家）</label>
         <textarea v-model="auditRemark" class="form-textarea" rows="2"></textarea>
+      </div>
+
+      <div v-if="modalTarget.type === 'return_refund'" class="form-item">
+        <label class="form-label">退货地址</label>
+        <select v-model="returnAddressId" class="form-select">
+          <option :value="null">请选择退货地址</option>
+          <option v-for="address in returnAddresses" :key="address.id" :value="address.id">
+            {{ address.contactName }} · {{ address.province }}{{ address.city }}{{ address.district }}{{ address.detail }}
+          </option>
+        </select>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px">
