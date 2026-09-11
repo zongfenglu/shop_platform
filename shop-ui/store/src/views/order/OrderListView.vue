@@ -234,6 +234,7 @@ async function onBatchShip() {
             <td>{{ fmtDateTime(row.createTime) }}</td>
             <td>
               <button class="btn btn-sm" @click="router.push({ name: 'order-detail', params: { id: row.id } })">查看</button>
+              <button v-if="canBatchShip(row)" class="btn btn-sm btn-primary row-action" @click="router.push({ name: 'order-ship', params: { id: row.id } })">发货</button>
             </td>
           </tr>
           <tr v-if="!loading && rows.length === 0">
@@ -276,3 +277,7 @@ async function onBatchShip() {
     </div>
   </a-modal>
 </template>
+
+<style scoped>
+.row-action { margin-left: 6px; }
+</style>

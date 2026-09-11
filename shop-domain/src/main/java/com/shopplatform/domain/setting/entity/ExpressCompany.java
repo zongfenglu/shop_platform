@@ -3,7 +3,7 @@ package com.shopplatform.domain.setting.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shopplatform.framework.mybatis.BaseEntity;
 
-@TableName("express_company")
+@TableName("store_express_company")
 public class ExpressCompany extends BaseEntity {
     private Long shopId;
     private String name;

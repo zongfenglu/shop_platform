@@ -1,9 +1,8 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { message, Modal } from 'ant-design-vue'
-import { cancelOrder, getOrder, shipOrder } from '@/api/order'
-import { listExpressCompanies } from '@/api/operationSettings'
+import { Modal } from 'ant-design-vue'
+import { cancelOrder, getOrder } from '@/api/order'
 
 /**
  * 订单详情。对应原型 docs/prototype/store/order-detail.html。
@@ -13,7 +12,6 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const data = ref(null)
-const expressCompanies = ref([])
 
 async function load() {
   loading.value = true
@@ -26,12 +24,7 @@ async function load() {
   }
 }
 
-onMounted(async () => {
-  await Promise.all([
-    load(),
-    listExpressCompanies(true).then((items) => { expressCompanies.value = items || [] }).catch(() => {}),
-  ])
-})
+onMounted(load)
 
 function fmtPrice(v) {
   if (v === null || v === undefined) return '—'
@@ -98,48 +91,6 @@ function canCancel() {
   return o && o.payStatus === 'unpaid'
 }
 
-// ---------- 发货弹窗 ----------
-const shipModalOpen = ref(false)
-const shipping = ref(false)
-const shipForm = reactive({ expressCompany: '', expressNo: '' })
-const shipErrors = reactive({ expressCompany: '', expressNo: '' })
-const selectedGoodsIds = ref([])
-
-function openShipModal() {
-  shipForm.expressCompany = ''
-  shipForm.expressNo = ''
-  shipErrors.expressCompany = ''
-  shipErrors.expressNo = ''
-  selectedGoodsIds.value = unshippedGoods().map((g) => String(g.id))
-  shipModalOpen.value = true
-}
-
-async function onShip() {
-  shipErrors.expressCompany = shipForm.expressCompany.trim() ? '' : '请选择快递公司'
-  shipErrors.expressNo = shipForm.expressNo.trim() ? '' : '请输入快递单号'
-  if (shipErrors.expressCompany || shipErrors.expressNo) return
-  if (!selectedGoodsIds.value.length) {
-    message.warning('请选择要发出的商品')
-    return
-  }
-
-  shipping.value = true
-  try {
-    await shipOrder(route.params.id, {
-      expressCompany: shipForm.expressCompany.trim(),
-      expressNo: shipForm.expressNo.trim(),
-      orderGoodsIds: selectedGoodsIds.value,
-    })
-    message.success('发货成功')
-    shipModalOpen.value = false
-    await load()
-  } catch (e) {
-    // 已由拦截器提示
-  } finally {
-    shipping.value = false
-  }
-}
-
 function onCancel() {
   Modal.confirm({
     title: '确认关闭该订单？',
@@ -170,7 +121,7 @@ function onCancel() {
     </div>
     <div v-if="data" style="display: flex; gap: 10px">
       <button v-if="canCancel()" class="btn" @click="onCancel">关闭订单</button>
-      <button v-if="canShip()" class="btn btn-primary" @click="openShipModal">
+      <button v-if="canShip()" class="btn btn-primary" @click="router.push({ name: 'order-ship', params: { id: route.params.id } })">
         {{ data.packages?.length ? '继续发货' : '发货' }}
       </button>
     </div>
@@ -250,36 +201,6 @@ function onCancel() {
     </div>
   </a-spin>
 
-  <a-modal
-    v-model:open="shipModalOpen"
-    title="订单发货"
-    :confirm-loading="shipping"
-    ok-text="确认发货"
-    cancel-text="取消"
-    @ok="onShip"
-  >
-    <div class="form-item">
-      <label class="form-label"><span class="req">*</span>快递公司</label>
-      <select v-model="shipForm.expressCompany" class="form-select">
-        <option value="">请选择快递公司</option>
-        <option v-for="company in expressCompanies" :key="company.id" :value="company.name">{{ company.name }}</option>
-      </select>
-      <div v-if="shipErrors.expressCompany" class="field-error">{{ shipErrors.expressCompany }}</div>
-    </div>
-    <div class="form-item">
-      <label class="form-label"><span class="req">*</span>快递单号</label>
-      <input v-model="shipForm.expressNo" class="form-input" />
-      <div v-if="shipErrors.expressNo" class="field-error">{{ shipErrors.expressNo }}</div>
-    </div>
-    <div class="form-item">
-      <label class="form-label"><span class="req">*</span>本次发出</label>
-      <label v-for="g in unshippedGoods()" :key="g.id" class="ship-line">
-        <input type="checkbox" :value="String(g.id)" v-model="selectedGoodsIds" />
-        <span>{{ g.goodsName }} {{ g.specText || '默认规格' }} ×{{ g.totalNum }}</span>
-      </label>
-      <div class="form-hint">不勾选的商品留在本单，可之后继续发货，每次生成一个包裹。</div>
-    </div>
-  </a-modal>
 </template>
 
 <style scoped>
@@ -300,17 +221,5 @@ function onCancel() {
 .kv-row .v {
   font-weight: 500;
   flex: 1;
-}
-.field-error {
-  font-size: 12px;
-  color: var(--status-critical);
-  margin-top: 4px;
-}
-.ship-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  font-size: 13px;
 }
 </style>

@@ -62,6 +62,16 @@ function statusText() {
   return '处理中'
 }
 
+function goOrderList() {
+  const pages = getCurrentPages()
+  const previous = pages[pages.length - 2]
+  if (previous?.route === 'pages/order/list') {
+    uni.navigateBack()
+  } else {
+    uni.redirectTo({ url: '/pages/order/list' })
+  }
+}
+
 function onConfirm() {
   uni.showModal({
     title: '确认收货',
@@ -88,13 +98,7 @@ function onCancel() {
       try {
         await cancelOrder(orderId.value)
         uni.showToast({ title: '已取消' })
-        const pages = getCurrentPages()
-        const previous = pages[pages.length - 2]
-        if (previous?.route === 'pages/order/list') {
-          uni.navigateBack()
-        } else {
-          uni.redirectTo({ url: '/pages/order/list' })
-        }
+        goOrderList()
       } catch (e) {
         // 已由 request.js 提示
       }
@@ -109,7 +113,7 @@ async function onPay() {
     const result = await prepayOrder(orderId.value)
     if (result?.simulated) {
       uni.showToast({ title: '模拟支付成功' })
-      await load()
+      goOrderList()
       return
     }
     if (!result?.h5Url) {
@@ -118,7 +122,11 @@ async function onPay() {
     }
     // #ifdef H5
     const separator = result.h5Url.includes('?') ? '&' : '?'
-    const returnUrl = encodeURIComponent(window.location.href)
+    const currentUrl = new URL(window.location.href)
+    const listUrl = new URL('/pages/order/list', window.location.origin)
+    const shopId = currentUrl.searchParams.get('_shopId')
+    if (shopId) listUrl.searchParams.set('_shopId', shopId)
+    const returnUrl = encodeURIComponent(listUrl.toString())
     window.location.assign(`${result.h5Url}${separator}redirect_url=${returnUrl}`)
     // #endif
     // #ifndef H5

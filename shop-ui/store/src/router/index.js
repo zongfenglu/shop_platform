@@ -26,6 +26,7 @@ const routes = [
       { path: 'goods/categories', name: 'goods-categories', component: () => import('@/views/goods/CategoryManageView.vue'), meta: { title: '分类管理', group: '交易', icon: '☰' } },
       { path: 'goods/:id/edit', name: 'goods-edit', component: () => import('@/views/goods/GoodsPublishView.vue'), meta: { title: '编辑商品' } },
       { path: 'orders', name: 'orders', component: () => import('@/views/order/OrderListView.vue'), meta: { title: '订单', group: '交易', icon: '▦' } },
+      { path: 'orders/:id/ship', name: 'order-ship', component: () => import('@/views/order/OrderShipView.vue'), meta: { title: '订单发货' } },
       { path: 'orders/:id', name: 'order-detail', component: () => import('@/views/order/OrderDetailView.vue'), meta: { title: '订单详情' } },
       { path: 'after-sales', name: 'after-sales', component: () => import('@/views/afterSale/AfterSaleListView.vue'), meta: { title: '售后管理', group: '交易', icon: '↺' } },
 
