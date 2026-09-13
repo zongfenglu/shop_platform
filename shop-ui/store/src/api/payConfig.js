@@ -12,3 +12,15 @@ export function getPayConfig() {
 export function savePayConfig(payload) {
   return http.post('/store/pay-config', payload)
 }
+
+export function getAlipayConfig() {
+  return http.get('/store/pay-config/alipay')
+}
+
+export function saveAlipayConfig(payload) {
+  return http.post('/store/pay-config/alipay', payload)
+}
+
+export function setPayChannelEnabled(channel, enabled) {
+  return http.put(`/store/pay-config/${channel}/status`, { enabled })
+}

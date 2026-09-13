@@ -1,6 +1,8 @@
 package com.shopplatform.domain.pay.service;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 支付编排服务：发起支付、处理回调、主动查单补偿三个入口共用同一套"验证交易 -> 幂等登记 -> 订单状态流转"逻辑，
@@ -9,17 +11,26 @@ import java.math.BigDecimal;
 public interface PaymentService {
 
     /** 发起支付，{@code notifyUrl} 由调用方（shop-client-api）拼出自己的公网回调地址传入——领域层不关心部署域名。 */
-    PrepayResult createPayment(Long orderId, String clientIp, String notifyUrl);
+    PrepayResult createPayment(String channel, Long orderId, String clientIp, String notifyUrl, String returnUrl);
 
     /** 仅供开发/测试环境使用：直接完成支付状态流转，不请求外部支付渠道。 */
-    PrepayResult simulatePayment(Long orderId);
+    PrepayResult simulatePayment(String channel, Long orderId);
+
+    /** H5 收银台仅展示已配置且已启用的渠道。 */
+    List<PayChannel> availableChannels();
 
     /** 处理微信支付回调：验签、AEAD解密、幂等登记、订单状态流转，调用前 TenantContext 必须已按 URL 中的 shopId 设好。 */
     void handleWechatNotify(String serialNumber, String nonce, String timestamp, String signature, String body);
+
+    /** 支付宝异步通知：验签、金额校验、幂等登记、订单状态流转。 */
+    void handleAlipayNotify(Map<String, String> parameters);
 
     /** 主动查单补偿（回调丢失兜底），定时任务/手工触发均可调用。 */
     void reconcileByOrderNo(String orderNo);
 
     record PrepayResult(String h5Url, String orderNo, BigDecimal payPrice) {
+    }
+
+    record PayChannel(String channel, String name) {
     }
 }

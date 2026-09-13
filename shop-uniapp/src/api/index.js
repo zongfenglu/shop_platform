@@ -104,9 +104,14 @@ export function cancelOrder(id) {
   return post(`/api/order/${id}/cancel`)
 }
 
-/** 发起订单支付；测试环境直接模拟成功，正式环境返回微信 H5 支付地址。 */
-export function prepayOrder(id) {
-  return post(`/api/pay/${id}/prepay`)
+/** 当前商城已配置并启用的支付方式。 */
+export function getPayChannels() {
+  return get('/api/pay/channels')
+}
+
+/** 发起订单支付；测试环境只跳过渠道请求，其余订单流程保持一致。 */
+export function prepayOrder(id, channel) {
+  return post(`/api/pay/${id}/prepay?channel=${encodeURIComponent(channel)}`)
 }
 
 /** 下单前预览（算价：优惠分摊、运费） */

@@ -17,6 +17,7 @@ import com.shopplatform.domain.order.entity.OrderGoods;
 import com.shopplatform.domain.order.service.OrderGoodsService;
 import com.shopplatform.domain.order.service.OrderService;
 import com.shopplatform.domain.pay.gateway.WxPayGateway;
+import com.shopplatform.domain.pay.gateway.AlipayGateway;
 import com.shopplatform.domain.pay.service.ShopPayConfigService;
 import com.shopplatform.domain.pay.service.ShopPayConfigService.DecryptedPayConfig;
 import com.wechat.pay.java.service.refund.model.Refund;
@@ -39,7 +40,8 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
 
     private static final Logger log = LoggerFactory.getLogger(AfterSaleServiceImpl.class);
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final String CHANNEL = "wechat";
+    private static final String WECHAT = "wechat";
+    private static final String ALIPAY = "alipay";
 
     private final OrderService orderService;
     private final OrderGoodsService orderGoodsService;
@@ -48,6 +50,7 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
     private final RefundLogService refundLogService;
     private final ShopPayConfigService shopPayConfigService;
     private final WxPayGateway wxPayGateway;
+    private final AlipayGateway alipayGateway;
     private final ObjectMapper objectMapper;
 
     public AfterSaleServiceImpl(OrderService orderService,
@@ -57,6 +60,7 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
                                 RefundLogService refundLogService,
                                 ShopPayConfigService shopPayConfigService,
                                 WxPayGateway wxPayGateway,
+                                AlipayGateway alipayGateway,
                                 ObjectMapper objectMapper) {
         this.orderService = orderService;
         this.orderGoodsService = orderGoodsService;
@@ -65,6 +69,7 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
         this.refundLogService = refundLogService;
         this.shopPayConfigService = shopPayConfigService;
         this.wxPayGateway = wxPayGateway;
+        this.alipayGateway = alipayGateway;
         this.objectMapper = objectMapper;
     }
 
@@ -170,19 +175,9 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
         }
 
         Order order = orderService.getByIdWithTenant(afterSale.getOrderId());
-        DecryptedPayConfig payConfig;
+        ChannelRefundResult channelRefund;
         try {
-            payConfig = shopPayConfigService.findDecryptedConfig(CHANNEL)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.PAY_CHANNEL_ERROR, "商户尚未配置微信支付"));
-        } catch (BusinessException e) {
-            logFailureIndependently(afterSale, e.getMessage());
-            throw e;
-        }
-
-        Refund refund;
-        try {
-            refund = wxPayGateway.createRefund(payConfig, order.getOrderNo(), afterSale.getRefundNo(),
-                    yuanToFen(afterSale.getRefundAmount()), yuanToFen(order.getPayPrice()), afterSale.getApplyReason());
+            channelRefund = executeChannelRefund(order, afterSale);
         } catch (Exception e) {
             logFailureIndependently(afterSale, e.getMessage());
             throw e;
@@ -192,20 +187,36 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
         refundLog.setAfterSaleId(afterSaleId);
         refundLog.setRefundNo(afterSale.getRefundNo());
         refundLog.setAmount(afterSale.getRefundAmount());
-        refundLog.setStatus(mapRefundStatus(refund.getStatus()));
-        refundLog.setRawResponse(refund.toString());
+        refundLog.setStatus(channelRefund.status());
+        refundLog.setRawResponse(channelRefund.rawResponse());
         refundLogService.save(refundLog);
 
         this.update(Wrappers.<AfterSale>lambdaUpdate()
                 .eq(AfterSale::getId, afterSaleId)
                 .set(AfterSale::getStatus, "refunded")
-                .set(AfterSale::getWxRefundId, refund.getRefundId())
+                .set(AfterSale::getWxRefundId, channelRefund.externalId())
                 .set(AfterSale::getRefundTime, LocalDateTime.now()));
 
         OrderGoods orderGoods = orderGoodsService.getByIdWithTenant(afterSale.getOrderGoodsId());
         orderGoods.setRefundStatus("refunded");
         orderGoodsService.updateById(orderGoods);
         goodsSkuService.restoreStock(orderGoods.getSkuId(), afterSale.getRefundNum());
+    }
+
+    private ChannelRefundResult executeChannelRefund(Order order, AfterSale afterSale) {
+        if (ALIPAY.equals(order.getPayMethod())) {
+            var config = shopPayConfigService.findDecryptedAlipayConfig()
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PAY_CHANNEL_ERROR, "商户尚未启用支付宝"));
+            AlipayGateway.RefundResult refund = alipayGateway.createRefund(
+                    config, order.getOrderNo(), afterSale.getRefundNo(),
+                    afterSale.getRefundAmount(), afterSale.getApplyReason());
+            return new ChannelRefundResult("success", refund.transactionId(), refund.rawResponse());
+        }
+        DecryptedPayConfig config = shopPayConfigService.findDecryptedConfig(WECHAT)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAY_CHANNEL_ERROR, "商户尚未配置微信支付"));
+        Refund refund = wxPayGateway.createRefund(config, order.getOrderNo(), afterSale.getRefundNo(),
+                yuanToFen(afterSale.getRefundAmount()), yuanToFen(order.getPayPrice()), afterSale.getApplyReason());
+        return new ChannelRefundResult(mapRefundStatus(refund.getStatus()), refund.getRefundId(), refund.toString());
     }
 
     /**
@@ -270,5 +281,8 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "序列化失败");
         }
+    }
+
+    private record ChannelRefundResult(String status, String externalId, String rawResponse) {
     }
 }

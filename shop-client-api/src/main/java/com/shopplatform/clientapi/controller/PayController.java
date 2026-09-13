@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.List;
+import java.util.LinkedHashMap;
 
 /**
- * 消费者端支付：发起支付（H5支付，返回微信 h5_url 供跳转）+ 支付回调。
+ * 消费者端支付：列出可用渠道、发起 H5 支付并处理微信/支付宝异步通知。
  * <p>
  * 回调地址 {@code /api/pay/notify/wechat/{shopId}} 不走 {@link com.shopplatform.framework.security.ClientTenantFilter}
  * 的常规租户识别（见该类 {@code shouldNotFilter} 注释），shopId 直接来自路径，本类自行管理 TenantContext。
@@ -42,25 +44,40 @@ public class PayController {
     @Value("${shop.pay.mock-enabled:false}")
     private boolean mockEnabled;
 
+    @Value("${shop.pay.return-base-url:http://localhost:5175}")
+    private String returnBaseUrl;
+
     public PayController(PaymentService paymentService, OrderService orderService) {
         this.paymentService = paymentService;
         this.orderService = orderService;
     }
 
     @PostMapping("/{orderId}/prepay")
-    public Result<PrepayResponse> prepay(@PathVariable Long orderId, HttpServletRequest request) {
+    public Result<PrepayResponse> prepay(@PathVariable Long orderId,
+                                         @RequestParam(defaultValue = "wechat") String channel,
+                                         HttpServletRequest request) {
         requireOwnOrder(orderId);
         if (mockEnabled) {
-            PaymentService.PrepayResult result = paymentService.simulatePayment(orderId);
+            PaymentService.PrepayResult result = paymentService.simulatePayment(channel, orderId);
             return Result.ok(new PrepayResponse(
                     result.h5Url(), result.orderNo(), result.payPrice(), true));
         }
         Long shopId = TenantContext.getRequired();
-        String notifyUrl = notifyBaseUrl + "/api/pay/notify/wechat/" + shopId;
+        String notifyUrl = stripTrailingSlash(notifyBaseUrl) + "/api/pay/notify/" + channel + "/" + shopId;
+        String returnUrl = stripTrailingSlash(returnBaseUrl) + "/pages/order/list?_shopId=" + shopId;
         PaymentService.PrepayResult result = paymentService.createPayment(
-                orderId, request.getRemoteAddr(), notifyUrl);
+                channel, orderId, request.getRemoteAddr(), notifyUrl, returnUrl);
         return Result.ok(new PrepayResponse(
                 result.h5Url(), result.orderNo(), result.payPrice(), false));
+    }
+
+    @GetMapping("/channels")
+    public Result<List<PaymentService.PayChannel>> channels() {
+        List<PaymentService.PayChannel> channels = paymentService.availableChannels();
+        if (mockEnabled && channels.isEmpty()) {
+            channels = List.of(new PaymentService.PayChannel("wechat", "模拟支付"));
+        }
+        return Result.ok(channels);
     }
 
     private void requireOwnOrder(Long orderId) {
@@ -97,5 +114,30 @@ public class PayController {
         } finally {
             TenantContext.clear();
         }
+    }
+
+    /** 支付宝要求成功时返回纯文本 success，否则会按其重试策略再次通知。 */
+    @PostMapping(value = "/notify/alipay/{shopId}", produces = "text/plain;charset=UTF-8")
+    public ResponseEntity<String> alipayNotify(@PathVariable Long shopId, HttpServletRequest request) {
+        TenantContext.set(shopId);
+        try {
+            Map<String, String> parameters = new LinkedHashMap<>();
+            request.getParameterMap().forEach((key, values) ->
+                    parameters.put(key, values == null ? "" : String.join(",", values)));
+            paymentService.handleAlipayNotify(parameters);
+            return ResponseEntity.ok("success");
+        } catch (Exception e) {
+            log.error("支付宝回调处理失败 shopId={}", shopId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failure");
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private String stripTrailingSlash(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }

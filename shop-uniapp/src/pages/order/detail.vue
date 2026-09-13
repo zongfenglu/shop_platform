@@ -1,7 +1,7 @@
 <script setup>
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import { cancelOrder, confirmReceipt, getOrder, getOrderTracks, prepayOrder } from '@/api'
+import { cancelOrder, confirmReceipt, getOrder, getOrderTracks, getPayChannels, prepayOrder } from '@/api'
 
 /**
  * 订单详情。对应原型 docs/prototype/h5/order-detail.html。
@@ -110,7 +110,14 @@ async function onPay() {
   if (paying.value) return
   paying.value = true
   try {
-    const result = await prepayOrder(orderId.value)
+    const channels = await getPayChannels()
+    if (!channels?.length) {
+      uni.showToast({ title: '商家暂未开通在线支付', icon: 'none' })
+      return
+    }
+    const selected = channels.length === 1 ? channels[0] : await choosePayChannel(channels)
+    if (!selected) return
+    const result = await prepayOrder(orderId.value, selected.channel)
     if (result?.simulated) {
       uni.showToast({ title: '支付成功' })
       goOrderList()
@@ -121,13 +128,17 @@ async function onPay() {
       return
     }
     // #ifdef H5
-    const separator = result.h5Url.includes('?') ? '&' : '?'
-    const currentUrl = new URL(window.location.href)
-    const listUrl = new URL('/pages/order/list', window.location.origin)
-    const shopId = currentUrl.searchParams.get('_shopId')
-    if (shopId) listUrl.searchParams.set('_shopId', shopId)
-    const returnUrl = encodeURIComponent(listUrl.toString())
-    window.location.assign(`${result.h5Url}${separator}redirect_url=${returnUrl}`)
+    if (selected.channel === 'wechat') {
+      const separator = result.h5Url.includes('?') ? '&' : '?'
+      const currentUrl = new URL(window.location.href)
+      const listUrl = new URL('/pages/order/list', window.location.origin)
+      const shopId = currentUrl.searchParams.get('_shopId')
+      if (shopId) listUrl.searchParams.set('_shopId', shopId)
+      const returnUrl = encodeURIComponent(listUrl.toString())
+      window.location.assign(`${result.h5Url}${separator}redirect_url=${returnUrl}`)
+    } else {
+      window.location.assign(result.h5Url)
+    }
     // #endif
     // #ifndef H5
     uni.showToast({ title: '当前客户端暂不支持该支付方式', icon: 'none' })
@@ -137,6 +148,16 @@ async function onPay() {
   } finally {
     paying.value = false
   }
+}
+
+function choosePayChannel(channels) {
+  return new Promise((resolve) => {
+    uni.showActionSheet({
+      itemList: channels.map((item) => item.name),
+      success: ({ tapIndex }) => resolve(channels[tapIndex]),
+      fail: () => resolve(null),
+    })
+  })
 }
 
 function onAfterSale() {

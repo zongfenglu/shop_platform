@@ -41,6 +41,21 @@
       <artifactId>wechatpay-java</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.github.javen205</groupId>
+      <artifactId>IJPay-AliPay</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- IJPay 2.9.x 的 AliPayApi 方法签名仍引用 javax.servlet；Spring Boot 3 的 jakarta 包不能满足类加载。 -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.rocketmq</groupId>
       <artifactId>rocketmq-spring-boot-starter</artifactId>
     </dependency>

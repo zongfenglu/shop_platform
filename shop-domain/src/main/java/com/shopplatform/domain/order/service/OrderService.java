@@ -23,6 +23,9 @@ public interface OrderService extends TenantSafeService<Order> {
     /** 按订单号查询，支付回调/主动查单场景专用——这两个场景只有商户侧的 out_trade_no，没有雪花主键。 */
     Order findByOrderNo(String orderNo);
 
+    /** 记录未支付订单本次选择的渠道，供回调丢失时主动查单使用。 */
+    boolean recordPayMethod(String orderNo, String payMethod);
+
     /**
      * 支付成功状态流转：{@code pay_status='unpaid' -> 'paid'}，用 WHERE pay_status='unpaid' 做乐观锁条件，
      * 防止同一笔支付被并发处理两次（正常情况下 {@link com.shopplatform.domain.pay.service.PayNotifyLogService}

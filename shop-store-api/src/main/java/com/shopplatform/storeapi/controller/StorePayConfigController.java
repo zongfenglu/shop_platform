@@ -4,6 +4,8 @@ import com.shopplatform.common.result.Result;
 import com.shopplatform.domain.pay.service.ShopPayConfigService;
 import com.shopplatform.domain.pay.service.ShopPayConfigService.MaskedPayConfig;
 import com.shopplatform.storeapi.dto.SavePayConfigRequest;
+import com.shopplatform.storeapi.dto.SaveAlipayConfigRequest;
+import com.shopplatform.storeapi.dto.SetPayChannelStatusRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +36,25 @@ public class StorePayConfigController {
         shopPayConfigService.saveConfig(new ShopPayConfigService.SaveConfigCommand(
                 CHANNEL, request.appId(), request.mchId(), request.mchCertSerialNo(),
                 request.apiV3Key(), request.mchPrivateKeyPem()));
+        return Result.ok();
+    }
+
+    @GetMapping("/alipay")
+    public Result<ShopPayConfigService.MaskedAlipayPayConfig> getAlipay() {
+        return Result.ok(shopPayConfigService.findMaskedAlipay().orElse(null));
+    }
+
+    @PostMapping("/alipay")
+    public Result<Void> saveAlipay(@Valid @RequestBody SaveAlipayConfigRequest request) {
+        shopPayConfigService.saveAlipayConfig(new ShopPayConfigService.SaveAlipayConfigCommand(
+                request.appId(), request.privateKey(), request.alipayPublicKey(), request.gatewayUrl()));
+        return Result.ok();
+    }
+
+    @PutMapping("/{channel}/status")
+    public Result<Void> setStatus(@PathVariable String channel,
+                                  @Valid @RequestBody SetPayChannelStatusRequest request) {
+        shopPayConfigService.setChannelEnabled(channel, request.enabled());
         return Result.ok();
     }
 }

@@ -10,7 +10,7 @@ public record SavePayConfigRequest(
         @NotBlank(message = "APPID不能为空") String appId,
         @NotBlank(message = "商户号不能为空") String mchId,
         @NotBlank(message = "证书序列号不能为空") String mchCertSerialNo,
-        @NotBlank(message = "APIv3密钥不能为空") String apiV3Key,
-        @NotBlank(message = "商户私钥不能为空") String mchPrivateKeyPem
+        String apiV3Key,
+        String mchPrivateKeyPem
 ) {
 }

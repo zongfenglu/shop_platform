@@ -1,13 +1,15 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
-import { getPayConfig, savePayConfig } from '@/api/payConfig'
+import { getAlipayConfig, getPayConfig, saveAlipayConfig, savePayConfig, setPayChannelEnabled } from '@/api/payConfig'
 import { createFreightTemplate, deleteFreightTemplate, listFreightTemplates, updateFreightTemplate } from '@/api/goods'
 import OperationSettingsPanel from './OperationSettingsPanel.vue'
 
 /** 商户设置：支付、配送、上传、退货、打印和短信均接入租户级接口。 */
 const loading = ref(false)
 const config = ref(null)
+const alipayConfig = ref(null)
+const payChannel = ref('wechat')
 const submitting = ref(false)
 const activeTab = ref('pay')
 const freightTemplates = ref([])
@@ -29,9 +31,21 @@ const freightForm = reactive({
 async function load() {
   loading.value = true
   try {
-    config.value = await getPayConfig()
+    const [wechat, alipay] = await Promise.all([getPayConfig(), getAlipayConfig()])
+    config.value = wechat
+    alipayConfig.value = alipay
+    if (wechat) {
+      form.appId = wechat.appId || ''
+      form.mchId = wechat.mchId || ''
+      form.mchCertSerialNo = wechat.mchCertSerialNo || ''
+    }
+    if (alipay) {
+      alipayForm.appId = alipay.appId || ''
+      alipayForm.gatewayUrl = alipay.gatewayUrl || 'https://openapi.alipay.com/gateway.do'
+    }
   } catch (e) {
     config.value = null
+    alipayConfig.value = null
   } finally {
     loading.value = false
   }
@@ -62,13 +76,30 @@ const form = reactive({
 
 const errors = reactive({})
 
+const alipayForm = reactive({
+  appId: '',
+  privateKey: '',
+  alipayPublicKey: '',
+  gatewayUrl: 'https://openapi.alipay.com/gateway.do',
+})
+
+const alipayErrors = reactive({})
+
 function validate() {
   errors.appId = form.appId.trim() ? '' : '请输入APPID'
   errors.mchId = form.mchId.trim() ? '' : '请输入商户号'
   errors.mchCertSerialNo = form.mchCertSerialNo.trim() ? '' : '请输入证书序列号'
-  errors.apiV3Key = form.apiV3Key.trim() ? '' : '请输入APIv3密钥'
-  errors.mchPrivateKeyPem = form.mchPrivateKeyPem.trim() ? '' : '请输入商户私钥'
+  errors.apiV3Key = (config.value?.apiV3KeySet || form.apiV3Key.trim()) ? '' : '请输入APIv3密钥'
+  errors.mchPrivateKeyPem = (config.value?.mchPrivateKeySet || form.mchPrivateKeyPem.trim()) ? '' : '请输入商户私钥'
   return !errors.appId && !errors.mchId && !errors.mchCertSerialNo && !errors.apiV3Key && !errors.mchPrivateKeyPem
+}
+
+function validateAlipay() {
+  alipayErrors.appId = alipayForm.appId.trim() ? '' : '请输入支付宝应用ID'
+  alipayErrors.privateKey = (alipayConfig.value?.privateKeySet || alipayForm.privateKey.trim()) ? '' : '请输入应用私钥'
+  alipayErrors.alipayPublicKey = (alipayConfig.value?.alipayPublicKeySet || alipayForm.alipayPublicKey.trim()) ? '' : '请输入支付宝公钥'
+  alipayErrors.gatewayUrl = alipayForm.gatewayUrl.trim() ? '' : '请输入支付宝网关地址'
+  return !Object.values(alipayErrors).some(Boolean)
 }
 
 async function onSave() {
@@ -88,6 +119,35 @@ async function onSave() {
     // 已由拦截器提示
   } finally {
     submitting.value = false
+  }
+}
+
+async function onSaveAlipay() {
+  if (!validateAlipay()) {
+    message.error('请检查表单中标红的必填项')
+    return
+  }
+  submitting.value = true
+  try {
+    await saveAlipayConfig({ ...alipayForm })
+    message.success('支付宝配置已保存并启用')
+    alipayForm.privateKey = ''
+    alipayForm.alipayPublicKey = ''
+    await load()
+  } catch (e) {
+    // 已由拦截器提示
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function togglePayChannel(channel, enabled) {
+  try {
+    await setPayChannelEnabled(channel, enabled)
+    message.success(enabled ? '支付方式已启用' : '支付方式已停用')
+    await load()
+  } catch (e) {
+    // 已由拦截器提示
   }
 }
 
@@ -273,11 +333,17 @@ function maskMchId(id) {
       />
 
       <div v-else-if="activeTab === 'pay'" class="card card-pad payment-panel">
-      <p class="card-title">微信支付</p>
-      <p class="card-sub">配置租户自有商户号，用于收款和售后退款；密钥全程加密存储，保存后不可回显明文</p>
+      <div class="pay-tabs" role="tablist" aria-label="支付渠道">
+        <button :class="{ active: payChannel === 'wechat' }" @click="payChannel = 'wechat'">微信支付</button>
+        <button :class="{ active: payChannel === 'alipay' }" @click="payChannel = 'alipay'">支付宝</button>
+      </div>
+
+      <template v-if="payChannel === 'wechat'">
+      <p class="card-title">微信 H5 支付</p>
+      <p class="card-sub">用于微信商户直连收款与售后退款；密钥保存后不可回显明文</p>
 
       <template v-if="config">
-        <div class="kv-row"><div class="k">当前状态</div><div class="v"><span class="tag" :class="config.status === 'enabled' ? 'tag-good' : 'tag-muted'">{{ config.status === 'enabled' ? '已启用' : '未启用' }}</span></div></div>
+        <div class="kv-row"><div class="k">当前状态</div><div class="v channel-status"><span class="tag" :class="config.status === 'enabled' ? 'tag-good' : 'tag-muted'">{{ config.status === 'enabled' ? '已启用' : '未启用' }}</span><button class="btn btn-sm" @click="togglePayChannel('wechat', config.status !== 'enabled')">{{ config.status === 'enabled' ? '停用' : '启用' }}</button></div></div>
         <div class="kv-row"><div class="k">APPID</div><div class="v">{{ config.appId || '—' }}</div></div>
         <div class="kv-row"><div class="k">商户号</div><div class="v">{{ maskMchId(config.mchId) }}</div></div>
         <div class="kv-row"><div class="k">证书序列号</div><div class="v">{{ config.mchCertSerialNo || '—' }}</div></div>
@@ -304,12 +370,12 @@ function maskMchId(id) {
       </div>
       <div class="form-item">
         <label class="form-label"><span class="req">*</span>APIv3 密钥</label>
-        <input v-model="form.apiV3Key" type="password" class="form-input" autocomplete="new-password" />
+        <input v-model="form.apiV3Key" type="password" class="form-input" autocomplete="new-password" :placeholder="config?.apiV3KeySet ? '留空则保留原密钥' : ''" />
         <div v-if="errors.apiV3Key" class="field-error">{{ errors.apiV3Key }}</div>
       </div>
       <div class="form-item">
         <label class="form-label"><span class="req">*</span>商户私钥（PEM格式）</label>
-        <textarea v-model="form.mchPrivateKeyPem" class="form-textarea" rows="4" autocomplete="new-password" placeholder="-----BEGIN PRIVATE KEY-----..."></textarea>
+        <textarea v-model="form.mchPrivateKeyPem" class="form-textarea" rows="4" autocomplete="new-password" :placeholder="config?.mchPrivateKeySet ? '留空则保留原私钥' : '-----BEGIN PRIVATE KEY-----...'"></textarea>
         <div v-if="errors.mchPrivateKeyPem" class="field-error">{{ errors.mchPrivateKeyPem }}</div>
       </div>
 
@@ -318,6 +384,26 @@ function maskMchId(id) {
           {{ submitting ? '保存中…' : '保存' }}
         </button>
       </div>
+      </template>
+
+      <template v-else>
+      <p class="card-title">支付宝 WAP 支付</p>
+      <p class="card-sub">通过 IJPay 对接支付宝手机网站支付；应用私钥和支付宝公钥均加密保存</p>
+      <template v-if="alipayConfig">
+        <div class="kv-row"><div class="k">当前状态</div><div class="v channel-status"><span class="tag" :class="alipayConfig.status === 'enabled' ? 'tag-good' : 'tag-muted'">{{ alipayConfig.status === 'enabled' ? '已启用' : '未启用' }}</span><button class="btn btn-sm" @click="togglePayChannel('alipay', alipayConfig.status !== 'enabled')">{{ alipayConfig.status === 'enabled' ? '停用' : '启用' }}</button></div></div>
+        <div class="kv-row"><div class="k">应用ID</div><div class="v">{{ alipayConfig.appId || '—' }}</div></div>
+        <div class="kv-row"><div class="k">应用私钥</div><div class="v">{{ alipayConfig.privateKeySet ? '●●●●●●●● 已设置' : '未设置' }}</div></div>
+        <div class="kv-row"><div class="k">支付宝公钥</div><div class="v">{{ alipayConfig.alipayPublicKeySet ? '●●●●●●●● 已设置' : '未设置' }}</div></div>
+      </template>
+      <div v-else class="pay-empty">尚未配置支付宝</div>
+
+      <p class="card-title" style="margin-top: 24px">{{ alipayConfig ? '更新配置' : '新增配置' }}</p>
+      <div class="form-item"><label class="form-label"><span class="req">*</span>支付宝应用ID</label><input v-model="alipayForm.appId" class="form-input" /><div v-if="alipayErrors.appId" class="field-error">{{ alipayErrors.appId }}</div></div>
+      <div class="form-item"><label class="form-label"><span class="req">*</span>应用私钥</label><textarea v-model="alipayForm.privateKey" class="form-textarea" rows="4" autocomplete="new-password" :placeholder="alipayConfig?.privateKeySet ? '留空则保留原私钥' : '支付宝开放平台生成的 RSA2 应用私钥'"></textarea><div v-if="alipayErrors.privateKey" class="field-error">{{ alipayErrors.privateKey }}</div></div>
+      <div class="form-item"><label class="form-label"><span class="req">*</span>支付宝公钥</label><textarea v-model="alipayForm.alipayPublicKey" class="form-textarea" rows="4" autocomplete="new-password" :placeholder="alipayConfig?.alipayPublicKeySet ? '留空则保留原公钥' : '支付宝开放平台提供的 RSA2 公钥'"></textarea><div v-if="alipayErrors.alipayPublicKey" class="field-error">{{ alipayErrors.alipayPublicKey }}</div></div>
+      <div class="form-item"><label class="form-label"><span class="req">*</span>网关地址</label><input v-model="alipayForm.gatewayUrl" class="form-input" /><div v-if="alipayErrors.gatewayUrl" class="field-error">{{ alipayErrors.gatewayUrl }}</div></div>
+      <div class="pay-actions"><button class="btn btn-primary" :disabled="submitting" @click="onSaveAlipay">{{ submitting ? '保存中…' : '保存并启用' }}</button></div>
+      </template>
       </div>
     </div>
   </a-spin>
@@ -352,6 +438,12 @@ function maskMchId(id) {
 .kv-row .v {
   font-weight: 500;
 }
+.channel-status { display: flex; align-items: center; gap: 10px; }
+.pay-tabs { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 20px; background: #f1f3f5; border-radius: 6px; }
+.pay-tabs button { min-width: 100px; padding: 7px 14px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.pay-tabs button.active { background: #fff; color: var(--primary); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.pay-empty { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+.pay-actions { display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--gridline); }
 .settings-shell {
   display: flex;
   gap: 20px;

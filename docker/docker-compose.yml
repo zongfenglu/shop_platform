@@ -136,7 +136,8 @@ services:
       PLATFORM_BASE_DOMAIN: ${PLATFORM_BASE_DOMAIN:-2doo.cn}
       STORE_CONSOLE_URL: http://store.${PLATFORM_BASE_DOMAIN:-2doo.cn}
       H5_PUBLIC_URL: http://h5.${PLATFORM_BASE_DOMAIN:-2doo.cn}
-      PAY_NOTIFY_BASE_URL: http://h5.${PLATFORM_BASE_DOMAIN:-2doo.cn}
+      PAY_NOTIFY_BASE_URL: ${PAY_NOTIFY_BASE_URL:-http://h5.${PLATFORM_BASE_DOMAIN:-2doo.cn}}
+      PAY_RETURN_BASE_URL: ${PAY_RETURN_BASE_URL:-http://h5.${PLATFORM_BASE_DOMAIN:-2doo.cn}}
       PAY_TIMEOUT_MINUTES: 30
     volumes:
       - uploads-data:/data/uploads

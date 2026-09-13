@@ -198,6 +198,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
+    public boolean recordPayMethod(String orderNo, String payMethod) {
+        return this.update(Wrappers.<Order>lambdaUpdate()
+                .eq(Order::getOrderNo, orderNo)
+                .eq(Order::getPayStatus, "unpaid")
+                .set(Order::getPayMethod, payMethod));
+    }
+
+    @Override
     public boolean markPaid(String orderNo, String transactionId, String payMethod) {
         return this.update(Wrappers.<Order>lambdaUpdate()
                 .eq(Order::getOrderNo, orderNo)

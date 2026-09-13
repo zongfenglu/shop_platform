@@ -4,6 +4,7 @@ import com.shopplatform.domain.pay.entity.ShopPayConfig;
 import com.shopplatform.framework.mybatis.TenantSafeService;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface ShopPayConfigService extends TenantSafeService<ShopPayConfig> {
 
@@ -15,6 +16,16 @@ public interface ShopPayConfigService extends TenantSafeService<ShopPayConfig> {
 
     /** 商户设置页回显用：只暴露非敏感字段 + 两个敏感字段"是否已配置"的布尔值，绝不回显明文/密文本身。 */
     Optional<MaskedPayConfig> findMasked(String channel);
+
+    ShopPayConfig saveAlipayConfig(SaveAlipayConfigCommand command);
+
+    Optional<DecryptedAlipayPayConfig> findDecryptedAlipayConfig();
+
+    Optional<MaskedAlipayPayConfig> findMaskedAlipay();
+
+    void setChannelEnabled(String channel, boolean enabled);
+
+    List<EnabledChannel> listEnabledChannels();
 
     record SaveConfigCommand(
             String channel,
@@ -34,6 +45,36 @@ public interface ShopPayConfigService extends TenantSafeService<ShopPayConfig> {
             String apiV3Key,
             String mchPrivateKeyPem
     ) {
+    }
+
+    record SaveAlipayConfigCommand(
+            String appId,
+            String privateKey,
+            String alipayPublicKey,
+            String gatewayUrl
+    ) {
+    }
+
+    record DecryptedAlipayPayConfig(
+            Long shopId,
+            String appId,
+            String privateKey,
+            String alipayPublicKey,
+            String gatewayUrl
+    ) {
+    }
+
+    record MaskedAlipayPayConfig(
+            String channel,
+            String appId,
+            String gatewayUrl,
+            boolean privateKeySet,
+            boolean alipayPublicKeySet,
+            String status
+    ) {
+    }
+
+    record EnabledChannel(String channel, String name) {
     }
 
     record MaskedPayConfig(

@@ -49,29 +49,32 @@ class PayControllerTest {
     @Test
     void prepay_usesSimulationWhenEnabled() {
         ReflectionTestUtils.setField(controller, "mockEnabled", true);
-        when(paymentService.simulatePayment(10L)).thenReturn(
+        when(paymentService.simulatePayment("wechat", 10L)).thenReturn(
                 new PaymentService.PrepayResult(null, "ORDER123", new BigDecimal("99.00")));
 
-        PrepayResponse response = controller.prepay(10L, mock(HttpServletRequest.class)).getData();
+        PrepayResponse response = controller.prepay(10L, "wechat", mock(HttpServletRequest.class)).getData();
 
         assertTrue(response.simulated());
-        verify(paymentService).simulatePayment(10L);
+        verify(paymentService).simulatePayment("wechat", 10L);
     }
 
     @Test
     void prepay_usesWechatGatewayWhenSimulationIsDisabled() {
         ReflectionTestUtils.setField(controller, "mockEnabled", false);
         ReflectionTestUtils.setField(controller, "notifyBaseUrl", "https://h5.example.com");
+        ReflectionTestUtils.setField(controller, "returnBaseUrl", "https://store.example.com");
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        when(paymentService.createPayment(10L, "127.0.0.1",
-                "https://h5.example.com/api/pay/notify/wechat/1001")).thenReturn(
+        when(paymentService.createPayment("wechat", 10L, "127.0.0.1",
+                "https://h5.example.com/api/pay/notify/wechat/1001",
+                "https://store.example.com/pages/order/list?_shopId=1001")).thenReturn(
                 new PaymentService.PrepayResult("https://wx.example/pay", "ORDER123", new BigDecimal("99.00")));
 
-        PrepayResponse response = controller.prepay(10L, request).getData();
+        PrepayResponse response = controller.prepay(10L, "wechat", request).getData();
 
         assertFalse(response.simulated());
-        verify(paymentService).createPayment(10L, "127.0.0.1",
-                "https://h5.example.com/api/pay/notify/wechat/1001");
+        verify(paymentService).createPayment("wechat", 10L, "127.0.0.1",
+                "https://h5.example.com/api/pay/notify/wechat/1001",
+                "https://store.example.com/pages/order/list?_shopId=1001");
     }
 }

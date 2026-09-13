@@ -42,7 +42,7 @@
     <ttl.version>2.14.5</ttl.version>
     <archunit.version>1.3.0</archunit.version>
     <lombok.version>1.18.34</lombok.version>
-    <hutool.version>5.8.29</hutool.version>
+    <hutool.version>5.8.37</hutool.version>
     <jjwt.version>0.12.6</jjwt.version>
     <testcontainers.version>1.20.2</testcontainers.version>
     <wechatpay.version>0.2.17</wechatpay.version>
@@ -50,6 +50,8 @@
     <acme4j.version>3.5.1</acme4j.version>
     <aliyun-oss.version>3.18.5</aliyun-oss.version>
     <tencent-cos.version>5.6.246</tencent-cos.version>
+    <ijpay.version>2.9.12.1</ijpay.version>
+    <javax-servlet.version>4.0.1</javax-servlet.version>
   </properties>
 
   <dependencyManagement>
@@ -153,6 +155,16 @@
         <groupId>com.qcloud</groupId>
         <artifactId>cos_api</artifactId>
         <version>${tencent-cos.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.javen205</groupId>
+        <artifactId>IJPay-AliPay</artifactId>
+        <version>${ijpay.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>javax.servlet-api</artifactId>
+        <version>${javax-servlet.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

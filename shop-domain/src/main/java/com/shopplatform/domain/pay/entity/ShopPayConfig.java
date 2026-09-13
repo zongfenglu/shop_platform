@@ -3,11 +3,7 @@ package com.shopplatform.domain.pay.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shopplatform.framework.mybatis.BaseEntity;
 
-/**
- * 商户支付配置（租户自有微信商户号）。见文档三 §9：
- * {@code apiV3KeyEncrypted}/{@code mchPrivateKeyEncrypted} 落库前必须经 AesGcmEncryptor 加密，
- * 本类只保存密文字段名——任何读出这两个字段直接展示给前端的代码都是 bug。
- */
+/** 商户支付渠道配置。所有渠道私钥与验签公钥都必须加密落库，禁止经 Controller 返回。 */
 @TableName("shop_pay_config")
 public class ShopPayConfig extends BaseEntity {
 
@@ -24,6 +20,12 @@ public class ShopPayConfig extends BaseEntity {
     private String apiV3KeyEncrypted;
 
     private String mchPrivateKeyEncrypted;
+
+    private String alipayPublicKeyEncrypted;
+
+    private String gatewayUrl;
+
+    private Integer sortNo;
 
     /** enabled/disabled */
     private String status;
@@ -82,6 +84,30 @@ public class ShopPayConfig extends BaseEntity {
 
     public void setMchPrivateKeyEncrypted(String mchPrivateKeyEncrypted) {
         this.mchPrivateKeyEncrypted = mchPrivateKeyEncrypted;
+    }
+
+    public String getAlipayPublicKeyEncrypted() {
+        return alipayPublicKeyEncrypted;
+    }
+
+    public void setAlipayPublicKeyEncrypted(String alipayPublicKeyEncrypted) {
+        this.alipayPublicKeyEncrypted = alipayPublicKeyEncrypted;
+    }
+
+    public String getGatewayUrl() {
+        return gatewayUrl;
+    }
+
+    public void setGatewayUrl(String gatewayUrl) {
+        this.gatewayUrl = gatewayUrl;
+    }
+
+    public Integer getSortNo() {
+        return sortNo;
+    }
+
+    public void setSortNo(Integer sortNo) {
+        this.sortNo = sortNo;
     }
 
     public String getStatus() {
