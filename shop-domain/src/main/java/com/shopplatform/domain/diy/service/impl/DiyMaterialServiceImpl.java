@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 
 @Service
 public class DiyMaterialServiceImpl extends ServiceImpl<DiyMaterialMapper, DiyMaterial> implements DiyMaterialService {
@@ -28,9 +29,10 @@ public class DiyMaterialServiceImpl extends ServiceImpl<DiyMaterialMapper, DiyMa
     }
 
     @Override
-    public IPage<DiyMaterial> pageMine(int pageNum, int pageSize, Long groupId, boolean ungrouped, String keyword, String type) {
+    public IPage<DiyMaterial> pageMine(int pageNum, int pageSize, Long groupId, boolean ungrouped, String keyword, String type, boolean recycled) {
         var wrapper = Wrappers.<DiyMaterial>lambdaQuery()
                 .eq(DiyMaterial::getShopId, TenantContext.getRequired())
+                .eq(DiyMaterial::getRecycled, recycled)
                 .orderByDesc(DiyMaterial::getCreateTime);
         if (ungrouped) {
             wrapper.isNull(DiyMaterial::getGroupId);
@@ -55,6 +57,7 @@ public class DiyMaterialServiceImpl extends ServiceImpl<DiyMaterialMapper, DiyMa
         material.setName(file.name());
         material.setSize(file.size());
         material.setGroupId(resolveGroupId(groupId));
+        material.setRecycled(false);
         this.save(material);
         return material;
     }
@@ -78,6 +81,7 @@ public class DiyMaterialServiceImpl extends ServiceImpl<DiyMaterialMapper, DiyMa
     public Map<Long, Long> countByGroup() {
         List<DiyMaterial> rows = this.list(Wrappers.<DiyMaterial>lambdaQuery()
                 .eq(DiyMaterial::getShopId, TenantContext.getRequired())
+                .eq(DiyMaterial::getRecycled, false)
                 .select(DiyMaterial::getId, DiyMaterial::getGroupId));
         Map<Long, Long> map = new HashMap<>();
         for (DiyMaterial row : rows) {
@@ -89,6 +93,26 @@ public class DiyMaterialServiceImpl extends ServiceImpl<DiyMaterialMapper, DiyMa
     @Override
     public void remove(Long id) {
         DiyMaterial material = this.getByIdWithTenant(id);
+        material.setRecycled(true);
+        material.setRecycleTime(LocalDateTime.now());
+        this.updateById(material);
+    }
+
+    @Override
+    public void restore(Long id) {
+        DiyMaterial material = this.getByIdWithTenant(id);
+        material.setRecycled(false);
+        material.setRecycleTime(null);
+        this.updateById(material);
+    }
+
+    @Override
+    public void permanentlyRemove(Long id) {
+        DiyMaterial material = this.getByIdWithTenant(id);
+        if (!Boolean.TRUE.equals(material.getRecycled())) {
+            throw new com.shopplatform.common.exception.BusinessException(
+                    com.shopplatform.common.result.ErrorCode.PARAM_INVALID, "请先将文件移入回收站");
+        }
         this.removeById(material.getId());
     }
 

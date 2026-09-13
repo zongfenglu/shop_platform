@@ -21,6 +21,12 @@
       }
     },
     {
+      "path": "pages/article/detail",
+      "style": {
+        "navigationBarTitleText": "文章详情"
+      }
+    },
+    {
       "path": "pages/cart/index",
       "style": {
         "navigationBarTitleText": "购物车"

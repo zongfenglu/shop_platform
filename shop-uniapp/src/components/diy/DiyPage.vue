@@ -228,7 +228,7 @@ function submitSearch() {
       </view>
 
       <view v-else-if="item.type === 'article'">
-        <view v-for="(art, i) in (item.items || [])" :key="i" class="article-row" @click="goLink(art.link)">
+        <view v-for="(art, i) in (item.items || [])" :key="i" class="article-row" :class="{ large: art.displayMode === 'large' }" @click="goLink(art.link)">
           <view class="article-txt">
             <text class="article-title">{{ art.title || '文章标题' }}</text>
             <text class="muted">{{ art.views || 0 }}次浏览</text>
@@ -417,6 +417,8 @@ function submitSearch() {
 .ph { display: flex; align-items: center; justify-content: center; background: #dceeff; color: #7aa4d4; }
 
 .article-row { display: flex; gap: 20rpx; padding: 20rpx 0; border-bottom: 1rpx solid #f0efec; }
+.article-row.large { flex-direction: column-reverse; }
+.article-row.large .article-cover { width: 100%; height: auto; aspect-ratio: 750 / 455; }
 .article-txt { flex: 1; display: flex; flex-direction: column; gap: 10rpx; }
 .article-title { font-size: 28rpx; font-weight: 650; }
 .article-cover { width: 160rpx; height: 112rpx; background: #dceeff; flex-shrink: 0; }

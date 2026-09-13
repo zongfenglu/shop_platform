@@ -44,6 +44,14 @@ export function deleteMaterial(id) {
   return http.delete(`/store/materials/${id}`)
 }
 
+export function restoreMaterial(id) {
+  return http.put(`/store/materials/${id}/restore`)
+}
+
+export function permanentlyDeleteMaterial(id) {
+  return http.delete(`/store/materials/${id}/permanent`)
+}
+
 export function moveMaterial(id, groupId) {
   return http.put(`/store/materials/${id}/group`, { groupId: groupId ?? null })
 }

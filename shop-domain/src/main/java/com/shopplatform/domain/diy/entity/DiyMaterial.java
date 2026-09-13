@@ -3,6 +3,8 @@ package com.shopplatform.domain.diy.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shopplatform.framework.mybatis.BaseEntity;
 
+import java.time.LocalDateTime;
+
 /**
  * 商户素材库条目。记录一次成功的图片上传，装修编辑器可从素材库复用已上传的图。
  * 删除只软删这条记录，不删物理文件——已发布的页面可能还在引用同一个 URL。
@@ -18,6 +20,9 @@ public class DiyMaterial extends BaseEntity {
     private Long size;
     /** 所属分组，空=未分组 */
     private Long groupId;
+    /** 0=文件库，1=回收站。与 is_delete 区分，便于恢复。 */
+    private Boolean recycled;
+    private LocalDateTime recycleTime;
 
     public Long getShopId() { return shopId; }
     public void setShopId(Long shopId) { this.shopId = shopId; }
@@ -31,4 +36,8 @@ public class DiyMaterial extends BaseEntity {
     public void setSize(Long size) { this.size = size; }
     public Long getGroupId() { return groupId; }
     public void setGroupId(Long groupId) { this.groupId = groupId; }
+    public Boolean getRecycled() { return recycled; }
+    public void setRecycled(Boolean recycled) { this.recycled = recycled; }
+    public LocalDateTime getRecycleTime() { return recycleTime; }
+    public void setRecycleTime(LocalDateTime recycleTime) { this.recycleTime = recycleTime; }
 }

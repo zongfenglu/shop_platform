@@ -38,6 +38,7 @@ const routes = [
       { path: 'offline-stores', name: 'offline-stores', component: () => import('@/views/offlineStore/OfflineStoreView.vue'), meta: { title: '门店', group: '运营', icon: '⌂' } },
 
       { path: 'diy', name: 'diy', component: () => import('@/views/diy/DiyView.vue'), meta: { title: '装修', group: '店铺', icon: '▧' } },
+      { path: 'content', name: 'content', component: () => import('@/views/content/ContentView.vue'), meta: { title: '内容管理', group: '店铺', icon: '▤' } },
       { path: 'finance', name: 'finance', component: () => import('@/views/finance/FinanceView.vue'), meta: { title: '财务', group: '店铺', icon: '￥' } },
       { path: 'settings', name: 'settings', component: () => import('@/views/settings/SettingsView.vue'), meta: { title: '设置', group: '店铺', icon: '⚙' } },
       { path: 'client', name: 'client', component: () => import('@/views/client/ClientView.vue'), meta: { title: '客户端', group: '店铺', icon: '▣' } },

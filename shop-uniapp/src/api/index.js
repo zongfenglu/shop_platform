@@ -365,3 +365,13 @@ export function getDiyTabbar() {
 export function getDiyCategoryPage() {
   return get('/api/diy/category-page')
 }
+
+// ---- 内容文章 ----
+
+export function pageArticles(params) {
+  return get('/api/articles', params)
+}
+
+export function getArticle(id) {
+  return get(`/api/articles/${id}`)
+}

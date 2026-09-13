@@ -181,7 +181,7 @@ function imageGroupList() {
     </div>
 
     <div v-else-if="item.type === 'article'" class="pv-article">
-      <div v-for="(art, i) in articleItems()" :key="i" class="pv-article-row">
+      <div v-for="(art, i) in articleItems()" :key="i" class="pv-article-row" :class="{ large: art.displayMode === 'large' }">
         <div class="pv-article-txt">
           <div class="pv-article-title">{{ art.title || '此处显示文章标题' }}</div>
           <div class="pv-muted">{{ art.views || 0 }}次浏览</div>
@@ -386,6 +386,8 @@ function imageGroupList() {
   display: flex; gap: 10px; padding: 10px 0;
   border-bottom: 1px solid #f0efec;
 }
+.pv-article-row.large { flex-direction: column-reverse; }
+.pv-article-row.large .pv-article-cover { width: 100%; height: auto; aspect-ratio: 750 / 455; }
 .pv-article-row:last-child { border-bottom: none; }
 .pv-article-txt { flex: 1; min-width: 0; }
 .pv-article-title { font-weight: 650; line-height: 1.4; margin-bottom: 6px; }

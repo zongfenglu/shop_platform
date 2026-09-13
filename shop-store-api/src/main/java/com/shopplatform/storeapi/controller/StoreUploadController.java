@@ -70,8 +70,9 @@ public class StoreUploadController {
             @RequestParam(required = false) Long groupId,
             @RequestParam(defaultValue = "false") boolean ungrouped,
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "image") String type) {
-        return Result.ok(diyMaterialService.pageMine(pageNum, Math.min(pageSize, 100), groupId, ungrouped, keyword, type));
+            @RequestParam(required = false) String type,
+            @RequestParam(defaultValue = "false") boolean recycled) {
+        return Result.ok(diyMaterialService.pageMine(pageNum, Math.min(pageSize, 100), groupId, ungrouped, keyword, type, recycled));
     }
 
     @PutMapping("/materials/{id}/group")
@@ -83,6 +84,18 @@ public class StoreUploadController {
     @DeleteMapping("/materials/{id}")
     public Result<Void> deleteMaterial(@PathVariable Long id) {
         diyMaterialService.remove(id);
+        return Result.ok();
+    }
+
+    @PutMapping("/materials/{id}/restore")
+    public Result<Void> restoreMaterial(@PathVariable Long id) {
+        diyMaterialService.restore(id);
+        return Result.ok();
+    }
+
+    @DeleteMapping("/materials/{id}/permanent")
+    public Result<Void> permanentlyDeleteMaterial(@PathVariable Long id) {
+        diyMaterialService.permanentlyRemove(id);
         return Result.ok();
     }
 

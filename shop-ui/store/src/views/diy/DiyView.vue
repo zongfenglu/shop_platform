@@ -24,6 +24,7 @@ import { listSeckillActives } from '@/api/seckill'
 import { listGroupActives, listBargainActives } from '@/api/group-bargain'
 import { getGoods } from '@/api/goods'
 import { listOfflineStores } from '@/api/offlineStore'
+import { pageArticles } from '@/api/content'
 import GoodsPicker from '@/components/GoodsPicker.vue'
 import ImageField from '@/components/ImageField.vue'
 import MaterialPicker from '@/components/MaterialPicker.vue'
@@ -93,20 +94,23 @@ const seckillActives = ref([])
 const groupActives = ref([])
 const bargainActives = ref([])
 const storeList = ref([])
+const articleOptions = ref([])
 
 async function loadMarketingLists() {
-  const [coupons, seckills, groups, bargains, stores] = await Promise.all([
+  const [coupons, seckills, groups, bargains, stores, articles] = await Promise.all([
     listCoupons().catch(() => []),
     listSeckillActives().catch(() => []),
     listGroupActives().catch(() => []),
     listBargainActives().catch(() => []),
     listOfflineStores().catch(() => []),
+    pageArticles({ pageNum: 1, pageSize: 100, status: 'visible' }).catch(() => ({ records: [] })),
   ])
   couponList.value = coupons || []
   seckillActives.value = seckills || []
   groupActives.value = groups || []
   bargainActives.value = bargains || []
   storeList.value = stores || []
+  articleOptions.value = articles?.records || []
 }
 
 const blockList = [
@@ -425,6 +429,22 @@ function resetBlockBg(item) {
 function addArticleItem(item) {
   if (!item.items) item.items = []
   item.items.push({ title: '', cover: '', views: 0, link: '' })
+}
+
+function bindArticle(art) {
+  const found = articleOptions.value.find((row) => String(row.id) === String(art.articleId))
+  if (!found) {
+    Object.assign(art, { articleId: '', title: '', cover: '', views: 0, link: '' })
+    return
+  }
+  Object.assign(art, {
+    articleId: found.id,
+    title: found.title,
+    cover: found.coverUrl,
+    displayMode: found.displayMode || 'small',
+    views: (found.virtualViews || 0) + (found.actualViews || 0),
+    link: `/pages/article/detail?id=${found.id}`,
+  })
 }
 
 function addNewsItem(item) {
@@ -1020,10 +1040,12 @@ function removePage(page) {
           <template v-else-if="selectedItem.type === 'article'">
             <div class="form-item" v-for="(art, i) in selectedItem.items" :key="i">
               <label class="form-label">文章 {{ i + 1 }}</label>
-              <input class="form-input" v-model="art.title" placeholder="标题" />
-              <ImageField v-model="art.cover" />
-              <input class="form-input" style="margin-top: 6px" type="number" v-model.number="art.views" placeholder="浏览次数" />
-              <input class="form-input" style="margin-top: 6px" v-model="art.link" placeholder="跳转链接" />
+              <select class="form-select" v-model="art.articleId" @change="bindArticle(art)">
+                <option value="">请选择文章</option>
+                <option v-for="row in articleOptions" :key="row.id" :value="row.id">{{ row.title }}</option>
+              </select>
+              <div v-if="art.articleId" class="form-hint" style="margin-top: 6px">跳转：{{ art.link }}</div>
+              <div v-else class="form-hint" style="margin-top: 6px">请先在内容管理中创建并显示文章</div>
               <button class="btn btn-sm" style="margin-top: 6px" @click="selectedItem.items.splice(i, 1)">删除</button>
             </div>
             <button class="btn btn-sm" @click="addArticleItem(selectedItem)">＋ 添加文章</button>
