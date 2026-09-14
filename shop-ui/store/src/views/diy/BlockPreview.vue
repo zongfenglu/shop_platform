@@ -335,7 +335,10 @@ function imageGroupList() {
       <i :style="{ borderTopStyle: item.style || 'solid', borderTopColor: item.color || '#e1e0d9' }" />
     </div>
 
-    <div v-else-if="item.type === 'customerService'" class="pv-cs">🎧 在线客服</div>
+    <div v-else-if="item.type === 'customerService'" class="pv-cs" title="在线客服">
+      <img v-if="item.icon" :src="item.icon" alt="客服" />
+      <span v-else>🎧</span>
+    </div>
 
     <div v-else class="pv-muted">{{ item.type }}</div>
   </div>
@@ -472,5 +475,10 @@ function imageGroupList() {
 .pv-blank { display: flex; align-items: center; justify-content: center; color: #b5b3ad; font-size: 11px; }
 .pv-divider { padding: 8px 0; }
 .pv-divider i { display: block; border-top-width: 1px; }
-.pv-cs { text-align: center; padding: 10px; color: #2a78d6; }
+.pv-cs {
+  width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; border: 1px solid rgba(32, 38, 46, .1); border-radius: 50%;
+  background: #fff; color: #2a78d6; box-shadow: 0 5px 16px rgba(32, 38, 46, .18); font-size: 22px;
+}
+.pv-cs img { width: 100%; height: 100%; object-fit: cover; }
 </style>

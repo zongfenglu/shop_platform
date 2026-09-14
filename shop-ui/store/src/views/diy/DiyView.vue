@@ -28,6 +28,7 @@ import { pageArticles } from '@/api/content'
 import GoodsPicker from '@/components/GoodsPicker.vue'
 import ImageField from '@/components/ImageField.vue'
 import MaterialPicker from '@/components/MaterialPicker.vue'
+import PageLinkField from '@/components/PageLinkField.vue'
 
 const loading = ref(false)
 const activeTab = ref('pages')
@@ -236,6 +237,8 @@ function defaultItemData(type) {
       return { ...base, text: '欢迎光临本店', bgColor: '#fff7e8' }
     case 'navBar':
       return { ...base, items: [{ icon: '', text: '', link: '' }], bgColor: '#ffffff' }
+    case 'customerService':
+      return { ...base, serviceType: 'chat', icon: '', bottom: 10, right: 3, opacity: 100, phone: '', chatUrl: '' }
     case 'goods':
       return { ...base, style: 'grid', goodsIds: [], limit: 6, bgColor: '#ffffff', showName: true, showPrice: true, showLinePrice: true }
     case 'richText':
@@ -289,6 +292,14 @@ function blockDesc(item) {
 }
 
 function addBlock(type) {
+  if (type === 'customerService') {
+    const existingIndex = items.value.findIndex((item) => item.type === 'customerService')
+    if (existingIndex >= 0) {
+      selectedIndex.value = existingIndex
+      message.info('每个页面只需要一个在线客服入口')
+      return
+    }
+  }
   if (isLocked(type)) {
     message.warning('当前套餐未开通该组件所需功能，可继续编辑草稿，发布时将被拦截')
   }
@@ -460,7 +471,33 @@ function stripClientFields(item) {
     rest.margin = Number.isFinite(margin) ? Math.max(0, Math.min(80, margin)) : 0
     rest.height = Number.isFinite(height) ? Math.max(80, Math.min(400, height)) : 190
   }
+  if (rest.type === 'customerService') {
+    rest.bottom = clampNumber(rest.bottom, 0, 40, 10)
+    rest.right = clampNumber(rest.right, 0, 20, 3)
+    rest.opacity = clampNumber(rest.opacity, 20, 100, 100)
+  }
   return rest
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.max(min, Math.min(max, parsed))
+}
+
+function customerServicePreviewStyle(item) {
+  return {
+    bottom: `${clampNumber(item.bottom, 0, 40, 10)}%`,
+    right: `${clampNumber(item.right, 0, 20, 3)}%`,
+    opacity: clampNumber(item.opacity, 20, 100, 100) / 100,
+  }
+}
+
+function restoreEditorItem(item) {
+  const defaults = item?.type === 'customerService'
+    ? { serviceType: 'chat', icon: '', bottom: 10, right: 3, opacity: 100, phone: '', chatUrl: '' }
+    : {}
+  return { _cid: nextCid(), ...defaults, ...item }
 }
 
 function editPage(page) {
@@ -475,7 +512,7 @@ function editPage(page) {
       draft = { page: {}, items: [] }
     }
   }
-  items.value = (draft.items || []).map((it) => ({ _cid: nextCid(), ...it }))
+  items.value = (draft.items || []).map(restoreEditorItem)
   applyPageMeta(draft.page)
   selectedIndex.value = items.value.length ? 0 : null
   activeTab.value = 'editor'
@@ -589,7 +626,7 @@ function applyTemplateToCanvas(template) {
         message.error('模板内容解析失败')
         return
       }
-      items.value = (parsed.items || []).map((it) => ({ _cid: nextCid(), ...it }))
+      items.value = (parsed.items || []).map(restoreEditorItem)
       applyPageMeta(parsed.page)
       selectedIndex.value = items.value.length ? 0 : null
       rememberGoods(collectGoodsIds(items.value))
@@ -914,7 +951,12 @@ function removePage(page) {
               ghost-class="dragging-ghost"
             >
               <template #item="{ element, index }">
-                <div class="canvas-block" :class="{ active: selectedIndex === index }" @click="selectItem(index)">
+                <div
+                  class="canvas-block"
+                  :class="{ active: selectedIndex === index, 'customer-service-block': element.type === 'customerService' }"
+                  :style="element.type === 'customerService' ? customerServicePreviewStyle(element) : undefined"
+                  @click="selectItem(index)"
+                >
                   <BlockPreview
                     :item="element"
                     :coupon-list="couponList"
@@ -992,7 +1034,7 @@ function removePage(page) {
             <div class="form-item" v-for="(img, i) in selectedItem.images" :key="i">
               <label class="form-label">{{ selectedItem.type === 'imageWindow' ? ['主图', '右上', '右下'][i] || ('图片 ' + (i + 1)) : ('图片 ' + (i + 1)) }}</label>
               <ImageField v-model="img.url" />
-              <input class="form-input" style="margin-top: 8px" v-model="img.link" placeholder="点击跳转链接" />
+              <PageLinkField v-model="img.link" :pages="allPages" placeholder="点击跳转链接" />
               <button v-if="selectedItem.type !== 'imageWindow'" class="btn btn-sm" style="margin-top: 6px" @click="removeBannerImage(selectedItem, i)">删除此图</button>
             </div>
             <button v-if="selectedItem.type !== 'imageWindow'" class="btn btn-sm" @click="addBannerImage(selectedItem)">＋ 添加图片</button>
@@ -1059,7 +1101,7 @@ function removePage(page) {
             <div class="form-item" v-for="(row, i) in selectedItem.items" :key="i">
               <label class="form-label">头条 {{ i + 1 }}</label>
               <input class="form-input" v-model="row.title" placeholder="标题" />
-              <input class="form-input" style="margin-top: 6px" v-model="row.link" placeholder="跳转链接" />
+              <PageLinkField v-model="row.link" :pages="allPages" placeholder="跳转链接" />
             </div>
             <button class="btn btn-sm" @click="addNewsItem(selectedItem)">＋ 添加一条</button>
           </template>
@@ -1106,7 +1148,7 @@ function removePage(page) {
               <input class="form-input" style="margin-bottom: 6px" v-model="nav.text" placeholder="文字" />
               <ImageField v-model="nav.icon" size="sm" />
               <input class="form-input" style="margin-top: 6px" v-model="nav.icon" placeholder="也可填写 emoji，如 ◎" />
-              <input class="form-input" style="margin-top: 6px" v-model="nav.link" placeholder="如 /pages/diy/custom?id=页面ID 或 store" />
+              <PageLinkField v-model="nav.link" :pages="allPages" placeholder="请选择入口页面" />
               <button class="btn btn-sm" style="margin-top: 6px" @click="removeNavItem(selectedItem, i)">删除此项</button>
             </div>
             <button class="btn btn-sm" @click="addNavItem(selectedItem)">＋ 添加入口</button>
@@ -1239,7 +1281,31 @@ function removePage(page) {
           </template>
 
           <template v-else-if="selectedItem.type === 'customerService'">
-            <div class="form-hint">点击后跳转至客服会话，无需额外配置。</div>
+            <div class="form-item">
+              <label class="form-label">悬浮位置</label>
+              <div class="range-row"><span>底边距</span><input v-model.number="selectedItem.bottom" type="range" min="0" max="40" /><strong>{{ selectedItem.bottom ?? 10 }}%</strong></div>
+              <div class="range-row"><span>右边距</span><input v-model.number="selectedItem.right" type="range" min="0" max="20" /><strong>{{ selectedItem.right ?? 3 }}%</strong></div>
+              <div class="range-row"><span>不透明度</span><input v-model.number="selectedItem.opacity" type="range" min="20" max="100" /><strong>{{ selectedItem.opacity ?? 100 }}%</strong></div>
+            </div>
+            <div class="form-item">
+              <label class="form-label">客服类型</label>
+              <label class="form-check"><input v-model="selectedItem.serviceType" type="radio" value="chat" /> 在线聊天</label>
+              <label class="form-check"><input v-model="selectedItem.serviceType" type="radio" value="phone" /> 拨打电话</label>
+            </div>
+            <div class="form-item">
+              <label class="form-label">客服图标</label>
+              <ImageField v-model="selectedItem.icon" size="sm" />
+              <div class="form-hint" style="margin-top: 6px">建议使用 90 × 90 像素的正方形图片</div>
+            </div>
+            <div v-if="selectedItem.serviceType === 'phone'" class="form-item">
+              <label class="form-label">客服电话</label>
+              <input v-model="selectedItem.phone" class="form-input" inputmode="tel" placeholder="用户点击后直接拨打" />
+            </div>
+            <div v-else class="form-item">
+              <label class="form-label">H5 客服链接（选填）</label>
+              <input v-model="selectedItem.chatUrl" class="form-input" placeholder="https://..." />
+              <div class="form-hint" style="margin-top: 6px">微信小程序将直接唤起小程序客服；H5 配置后打开此链接。</div>
+            </div>
           </template>
         </template>
       </aside>
@@ -1267,7 +1333,7 @@ function removePage(page) {
                   <span class="nav-icon" style="cursor: pointer" @click="iconPickerIndex = iconPickerIndex === index ? null : index">{{ element.icon || '⭐' }}</span>
                   <div style="flex: 1">
                     <input class="form-input" style="margin-bottom: 6px" v-model="element.text" placeholder="菜单名称" />
-                    <input class="form-input" v-model="element.path" placeholder="页面路径，如 /pages/index/index" />
+                    <PageLinkField v-model="element.path" :pages="allPages" placeholder="页面路径，如 /pages/index/index" />
                     <div v-if="iconPickerIndex === index" class="icon-picker-grid">
                       <span
                         v-for="ic in ICON_OPTIONS"
@@ -1358,7 +1424,13 @@ function removePage(page) {
                 <div class="icon">◎</div>
                 <div>暂无内容</div>
               </div>
-              <div v-for="element in items" :key="element._cid" class="preview-block">
+              <div
+                v-for="element in items"
+                :key="element._cid"
+                class="preview-block"
+                :class="{ 'customer-service-block': element.type === 'customerService' }"
+                :style="element.type === 'customerService' ? customerServicePreviewStyle(element) : undefined"
+              >
                 <BlockPreview
                   :item="element"
                   :coupon-list="couponList"
@@ -1636,6 +1708,7 @@ function removePage(page) {
 }
 
 .phone-screen {
+  position: relative;
   width: 360px;
   min-height: 640px;
   border: 8px solid #222;
@@ -1666,6 +1739,16 @@ function removePage(page) {
   padding: 8px 12px;
   background: transparent;
   cursor: pointer;
+}
+.customer-service-block {
+  position: absolute;
+  z-index: 20;
+  width: 48px;
+  padding: 0;
+  border-radius: 50%;
+}
+.canvas-block.customer-service-block.active {
+  border-radius: 50%;
 }
 
 .canvas-block:hover {
@@ -2020,6 +2103,7 @@ function removePage(page) {
   border-radius: 0 0 14px 14px;
 }
 .preview-screen {
+  position: relative;
   min-height: 550px;
   border-radius: 0 0 34px 34px;
   overflow: hidden;
@@ -2042,6 +2126,12 @@ function removePage(page) {
 .preview-block {
   pointer-events: none;
 }
+.preview-block.customer-service-block {
+  pointer-events: none;
+}
+.range-row { display: grid; grid-template-columns: 58px 1fr 42px; align-items: center; gap: 8px; min-height: 36px; color: var(--text-secondary); font-size: 12px; }
+.range-row input { width: 100%; accent-color: var(--primary); }
+.range-row strong { color: var(--text); font-size: 12px; text-align: right; }
 /* 视频控件需要可点击才能播放 */
 .preview-block :deep(video) {
   pointer-events: auto;

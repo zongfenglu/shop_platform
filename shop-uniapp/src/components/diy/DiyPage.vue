@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { Headphones } from '@lucide/vue'
 import { receiveCoupon } from '@/api/index'
 import { getToken } from '@/utils/request'
 import { mediaUrl } from '@/utils/request'
@@ -66,6 +67,35 @@ function clampNumber(value, min, max, fallback) {
 
 function videoHeight(item) {
   return clampNumber(item?.height, 80, 400, 190)
+}
+
+function customerServiceStyle(item) {
+  return {
+    bottom: `${clampNumber(item?.bottom, 0, 40, 10)}%`,
+    right: `${clampNumber(item?.right, 0, 20, 3)}%`,
+    opacity: clampNumber(item?.opacity, 20, 100, 100) / 100,
+  }
+}
+
+function contactCustomerService(item) {
+  if (item?.serviceType === 'phone') {
+    if (!item.phone) {
+      uni.showToast({ title: '商家暂未配置客服电话', icon: 'none' })
+      return
+    }
+    uni.makePhoneCall({ phoneNumber: String(item.phone) })
+    return
+  }
+  if (item?.chatUrl) {
+    // #ifdef H5
+    window.open(item.chatUrl, '_blank')
+    return
+    // #endif
+  }
+  // 小程序端由 open-type="contact" 唤起客服；其他端没有客服链接时给出明确提示。
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '商家暂未配置在线客服', icon: 'none' })
+  // #endif
 }
 
 function groupList(item) {
@@ -158,7 +188,13 @@ function submitSearch() {
 
 <template>
   <view class="diy" :style="wrapStyle">
-    <view v-for="(item, idx) in items" :key="item._cid || idx" class="block" :style="blockStyle(item)">
+    <view
+      v-for="(item, idx) in items"
+      :key="item._cid || idx"
+      class="block"
+      :class="{ 'customer-service-block': item.type === 'customerService' }"
+      :style="item.type === 'customerService' ? customerServiceStyle(item) : blockStyle(item)"
+    >
       <view v-if="item.type === 'search'" class="search">
         <text>🔍</text>
         <input
@@ -379,9 +415,16 @@ function submitSearch() {
         <view class="divider-line" :style="{ borderTopStyle: item.style || 'solid', borderTopColor: item.color || '#e1e0d9' }" />
       </view>
 
-      <view v-else-if="item.type === 'customerService'" class="cs" @click="uni.showToast({ title: '请联系店铺客服', icon: 'none' })">
-        🎧 在线客服
-      </view>
+      <button
+        v-else-if="item.type === 'customerService'"
+        class="cs"
+        :open-type="item.serviceType === 'phone' ? undefined : 'contact'"
+        aria-label="在线客服"
+        @click="contactCustomerService(item)"
+      >
+        <image v-if="item.icon" class="cs-icon" :src="item.icon" mode="aspectFill" />
+        <Headphones v-else :size="26" :stroke-width="1.8" />
+      </button>
     </view>
   </view>
 </template>
@@ -482,6 +525,13 @@ function submitSearch() {
 .rich { padding: 16rpx 0; font-size: 26rpx; }
 .divider { padding: 16rpx 0; }
 .divider-line { border-top-width: 1rpx; }
-.cs { text-align: center; padding: 20rpx; color: #2a78d6; font-size: 26rpx; }
+.customer-service-block { position: fixed; z-index: 40; width: 96rpx; height: 96rpx; padding: 0; background: transparent !important; }
+.cs {
+  width: 96rpx; height: 96rpx; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; border: 2rpx solid rgba(32, 38, 46, .1); border-radius: 50%;
+  background: #fff; color: #2a78d6; box-shadow: 0 10rpx 30rpx rgba(32, 38, 46, .2); line-height: 1;
+}
+.cs::after { border: 0; }
+.cs-icon { width: 100%; height: 100%; }
 .empty-hint { text-align: center; color: #898781; font-size: 24rpx; padding: 24rpx 0; }
 </style>
