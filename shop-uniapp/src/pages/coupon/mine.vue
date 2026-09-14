@@ -2,6 +2,7 @@
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { getMyCoupons } from '@/api/index'
+import { formatDateTime } from '@/utils/dateTime'
 
 const tabs = [
   { key: 'unused', label: '未使用' },
@@ -37,7 +38,7 @@ function condition(s) {
 }
 function validity(uc) {
   if (!uc.endTime) return ''
-  return `${uc.startTime || ''} ~ ${uc.endTime}`
+  return `${formatDateTime(uc.startTime)} ~ ${formatDateTime(uc.endTime)}`
 }
 </script>
 

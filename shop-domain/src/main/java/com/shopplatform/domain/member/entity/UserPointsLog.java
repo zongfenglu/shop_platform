@@ -1,5 +1,6 @@
 package com.shopplatform.domain.member.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shopplatform.framework.mybatis.BaseEntity;
 
@@ -16,10 +17,13 @@ public class UserPointsLog extends BaseEntity {
     /** recharge/consume/refund/admin/sign/order */
     private String scene;
 
+    @TableField("`value`")
     private Integer value;
 
+    @TableField("`before`")
     private Integer before;
 
+    @TableField("`after`")
     private Integer after;
 
     private String remark;

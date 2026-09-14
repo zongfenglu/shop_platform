@@ -81,8 +81,14 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
             // 同租户内的越权：见 GoodsCommentServiceImpl 同类修复注释。
             throw new TenantAccessDeniedException("该订单不属于当前用户，无法申请售后");
         }
-        if (!"confirmed".equals(order.getReceiptStatus())) {
-            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单尚未确认收货，不能申请售后");
+        if (!"paid".equals(order.getPayStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单尚未支付，不能申请售后");
+        }
+        if ("cancelled".equals(order.getOrderStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "已取消订单不能申请售后");
+        }
+        if ("return_refund".equals(cmd.type()) && "pending".equals(order.getDeliveryStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单尚未发货，请选择仅退款");
         }
 
         OrderGoods orderGoods = orderGoodsService.getByIdWithTenant(cmd.orderGoodsId());

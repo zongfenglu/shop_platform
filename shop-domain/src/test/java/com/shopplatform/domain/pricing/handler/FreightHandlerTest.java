@@ -71,6 +71,39 @@ class FreightHandlerTest {
         assertEquals(BigDecimal.ZERO, state.freightFee());
     }
 
+    @Test
+    void itemFreightTemplate_isUsedWhenContextTemplateIsMissing() {
+        stubTemplate("count", "[{\"first\":1,\"firstFee\":10,\"additional\":1,\"additionalFee\":3}]");
+        PriceContext.PriceItem item = new PriceContext.PriceItem(1L, 11L, "A", "", "",
+                new BigDecimal("600"), null, 1, null, null, null, 1L, null);
+        PriceContext ctx = new PriceContext(1L, 2L, List.of(item), "express", null,
+                null, null, "none", null);
+
+        PriceWorkingState state = new PriceWorkingState(ctx);
+        handler.handle(ctx, state);
+
+        assertEquals(new BigDecimal("10.00"), state.freightFee());
+    }
+
+    @Test
+    void differentTemplates_areCalculatedSeparatelyAndAdded() {
+        stubTemplate("count", "[{\"first\":1,\"firstFee\":10,\"additional\":1,\"additionalFee\":3}]");
+        FreightTemplate second = template();
+        second.setRules("[{\"first\":1,\"firstFee\":8,\"additional\":1,\"additionalFee\":2}]");
+        when(templateService.getByIdWithTenant(2L)).thenReturn(second);
+        PriceContext.PriceItem firstItem = new PriceContext.PriceItem(1L, 11L, "A", "", "",
+                new BigDecimal("20"), null, 1, null, null, null, 1L, null);
+        PriceContext.PriceItem secondItem = new PriceContext.PriceItem(2L, 22L, "B", "", "",
+                new BigDecimal("30"), null, 1, null, null, null, 2L, null);
+        PriceContext ctx = new PriceContext(1L, 2L, List.of(firstItem, secondItem), "express", null,
+                null, null, "none", null);
+
+        PriceWorkingState state = new PriceWorkingState(ctx);
+        handler.handle(ctx, state);
+
+        assertEquals(new BigDecimal("18.00"), state.freightFee());
+    }
+
     private PriceContext context(PriceContext.PriceItem item) {
         return new PriceContext(1L, 2L, List.of(item), "express", 1L, null, null, "none", null);
     }

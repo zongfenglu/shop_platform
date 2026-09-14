@@ -1,5 +1,6 @@
 package com.shopplatform.domain.member.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shopplatform.framework.mybatis.BaseEntity;
 
@@ -21,8 +22,10 @@ public class UserBalanceLog extends BaseEntity {
 
     private BigDecimal money;
 
+    @TableField("`before`")
     private BigDecimal before;
 
+    @TableField("`after`")
     private BigDecimal after;
 
     private String remark;

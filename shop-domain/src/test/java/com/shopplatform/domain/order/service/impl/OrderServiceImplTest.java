@@ -233,6 +233,22 @@ class OrderServiceImplTest {
     }
 
     @Test
+    void cancel_orderAlreadyCancelled_doesNotRestoreStockAgain() {
+        Order order = new Order();
+        order.setId(5L);
+        order.setPayStatus("unpaid");
+        order.setOrderStatus("cancelled");
+        doReturn(order).when(orderService).getByIdWithTenant(5L);
+        doReturn(false).when(orderService).update(any());
+
+        boolean cancelled = orderService.cancel(5L, "重复取消");
+
+        assertFalse(cancelled);
+        verifyNoInteractions(goodsSkuService);
+        verify(orderGoodsService, never()).listByOrderId(any());
+    }
+
+    @Test
     void cancel_crossTenantOrderId_bubbleUpTenantAccessDeniedBeforeAnyMutation() {
         doThrow(new com.shopplatform.common.exception.TenantAccessDeniedException("id=5"))
                 .when(orderService).getByIdWithTenant(5L);

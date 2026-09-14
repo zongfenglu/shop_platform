@@ -21,8 +21,10 @@ import com.shopplatform.domain.marketing.service.BargainRecordService;
 import com.shopplatform.domain.order.entity.Order;
 import com.shopplatform.domain.order.service.OrderService;
 import com.shopplatform.domain.pricing.PriceCalculator;
+import com.shopplatform.domain.pricing.PriceContext;
 import com.shopplatform.framework.security.LoginUserContext;
 import com.shopplatform.framework.tenant.TenantContext;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,6 +103,7 @@ class CheckoutAppServiceTest {
         goods.setStatus("on");
         goods.setImages("[\"img.jpg\"]");
         goods.setCategoryIds("[10]");
+        goods.setFreightTemplateId(77L);
         when(goodsService.getByIdWithTenant(21L)).thenReturn(goods);
         when(goodsSpecValueService.listByIds(any())).thenReturn(List.of());
     }
@@ -190,5 +193,19 @@ class CheckoutAppServiceTest {
 
         verify(orderService, never()).createOrder(any());
         verify(seckillGoodsService, never()).incrSold(any(), anyInt());
+    }
+
+    @Test
+    void preview_usesFreightTemplateFromServerSideGoods() {
+        CheckoutRequest request = new CheckoutRequest(List.of(new CartItemRequest(11L, 1)), "express", null, 999L,
+                null, null, "none", null, null, null, null, List.of());
+
+        service.preview(request);
+
+        ArgumentCaptor<PriceContext> captor = ArgumentCaptor.forClass(PriceContext.class);
+        verify(priceCalculator).calculate(captor.capture());
+        PriceContext context = captor.getValue();
+        assertEquals(null, context.freightTemplateId());
+        assertEquals(77L, context.items().get(0).freightTemplateId());
     }
 }

@@ -7,6 +7,7 @@ import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.exception.TenantAccessDeniedException;
 import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.common.result.Result;
+import com.shopplatform.clientapi.dto.OrderListItem;
 import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
 import com.shopplatform.domain.order.entity.Order;
 import com.shopplatform.domain.order.entity.OrderAddress;
@@ -21,8 +22,10 @@ import com.shopplatform.framework.security.LoginUserContext;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 消费者端"我的订单"：列表/详情/确认收货/物流轨迹。见原型 h5/order-list.html、order-detail.html。
@@ -56,9 +59,9 @@ public class ConsumerOrderController {
     }
 
     @GetMapping
-    public Result<IPage<Order>> list(@RequestParam(required = false) String orderStatus,
-                                      @RequestParam(defaultValue = "1") int pageNum,
-                                      @RequestParam(defaultValue = "20") int pageSize) {
+    public Result<IPage<OrderListItem>> list(@RequestParam(required = false) String orderStatus,
+                                             @RequestParam(defaultValue = "1") int pageNum,
+                                             @RequestParam(defaultValue = "20") int pageSize) {
         Long userId = requireLoginUserId();
         var wrapper = Wrappers.<Order>lambdaQuery().eq(Order::getUserId, userId);
         if (orderStatus != null && !orderStatus.isBlank()) {
@@ -66,7 +69,29 @@ public class ConsumerOrderController {
         }
         wrapper.orderByDesc(Order::getCreateTime);
         Page<Order> page = new Page<>(Math.max(pageNum, 1), Math.min(Math.max(pageSize, 1), 100));
-        return Result.ok(orderService.page(page, wrapper));
+        Page<Order> orderPage = orderService.page(page, wrapper);
+        List<Long> orderIds = orderPage.getRecords().stream().map(Order::getId).toList();
+        Map<Long, List<OrderGoods>> goodsByOrder = orderIds.isEmpty()
+                ? Map.of()
+                : orderGoodsService.list(Wrappers.<OrderGoods>lambdaQuery()
+                        .in(OrderGoods::getOrderId, orderIds)
+                        .orderByAsc(OrderGoods::getId))
+                .stream()
+                .collect(Collectors.groupingBy(OrderGoods::getOrderId, LinkedHashMap::new, Collectors.toList()));
+
+        List<OrderListItem> records = orderPage.getRecords().stream().map(order -> {
+            List<OrderGoods> goods = goodsByOrder.getOrDefault(order.getId(), List.of());
+            OrderGoods first = goods.isEmpty() ? null : goods.get(0);
+            int goodsCount = goods.stream().mapToInt(g -> g.getTotalNum() == null ? 0 : g.getTotalNum()).sum();
+            return new OrderListItem(
+                    order.getId().toString(), order.getOrderNo(), order.getPayPrice(), order.getPayStatus(),
+                    order.getDeliveryStatus(), order.getOrderStatus(), order.getCreateTime(),
+                    first == null ? null : first.getGoodsName(), first == null ? null : first.getImage(),
+                    first == null ? null : first.getSpecText(), goodsCount);
+        }).toList();
+        Page<OrderListItem> resultPage = new Page<>(orderPage.getCurrent(), orderPage.getSize(), orderPage.getTotal());
+        resultPage.setRecords(records);
+        return Result.ok(resultPage);
     }
 
     @GetMapping("/{id}")
@@ -96,7 +121,9 @@ public class ConsumerOrderController {
     @PostMapping("/{id}/cancel")
     public Result<Void> cancel(@PathVariable Long id) {
         requireOwnOrder(id);
-        orderService.cancel(id, "用户取消");
+        if (!orderService.cancel(id, "用户取消")) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "只有待付款订单可以取消");
+        }
         return Result.ok();
     }
 

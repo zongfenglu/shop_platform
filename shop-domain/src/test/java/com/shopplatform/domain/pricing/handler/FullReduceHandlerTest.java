@@ -100,6 +100,23 @@ class FullReduceHandlerTest {
     }
 
     @Test
+    void multipleActiveRules_usesBestEligibleRule() {
+        FullReduceRuleService ruleService = mock(FullReduceRuleService.class);
+        when(ruleService.listActive()).thenReturn(List.of(
+                rule("count", "[{\"threshold\":2,\"discount\":0.90}]", 0),
+                rule("money", "[{\"threshold\":100,\"reduce\":10},{\"threshold\":200,\"reduce\":25}]", 0)));
+
+        PriceCalculator calculator = new PriceCalculator(List.of(
+                new BasePriceHandler(), new FullReduceHandler(ruleService, objectMapper), new RoundingHandler()));
+
+        // 第一条满件规则未命中时，后面的满金额规则仍应生效。
+        OrderPriceResult result = calculator.calculate(ctx(List.of(item(1, new BigDecimal("600.00"), 1))));
+
+        assertEquals(new BigDecimal("25.00"), result.discountPrice());
+        assertEquals(new BigDecimal("575.00"), result.payPrice());
+    }
+
+    @Test
     void noActiveRule_noDiscount() {
         FullReduceRuleService ruleService = mock(FullReduceRuleService.class);
         when(ruleService.listActive()).thenReturn(List.of());

@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface AfterSaleService extends TenantSafeService<AfterSale> {
 
-    /** 申请售后：校验订单归属、订单已完成收货、该 order_goods 尚无进行中的售后单，按分摊比例计算退款金额。 */
+    /** 申请售后：已支付即可申请；未发货仅支持退款，发货后支持退货退款。 */
     AfterSale apply(ApplyCommand command);
 
     /** 商户审核同意：applying -> approved。 */

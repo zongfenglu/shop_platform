@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { PackageOpen } from '@lucide/vue'
 import { cancelOrder, pageOrders } from '@/api'
 
 /**
@@ -61,6 +62,18 @@ function fmtDate(v) {
   return v ? String(v).slice(0, 10) : ''
 }
 
+function canCancel(row) {
+  return row.orderStatus === 'normal' && row.payStatus === 'unpaid'
+}
+
+function canAfterSale(row) {
+  return row.orderStatus !== 'cancelled' && row.payStatus === 'paid'
+}
+
+function canConfirm(row) {
+  return row.orderStatus === 'normal' && row.payStatus === 'paid' && row.deliveryStatus === 'shipped'
+}
+
 function goDetail(id) {
   uni.navigateTo({ url: `/pages/order/detail?id=${id}` })
 }
@@ -108,19 +121,22 @@ function onComment(row) {
           <text class="st" :class="statusText(row).cls">{{ statusText(row).text }}</text>
         </view>
         <view class="goods-row">
-          <view class="ph">📦</view>
+          <image v-if="row.goodsImage" class="goods-image" :src="row.goodsImage" mode="aspectFill" />
+          <view v-else class="ph"><PackageOpen :size="28" :stroke-width="1.6" /></view>
           <view class="mid">
-            <view class="order-no">{{ row.orderNo }}</view>
+            <view class="goods-name">{{ row.goodsName || '订单商品' }}</view>
+            <view class="goods-meta">{{ row.specText || '默认规格' }} · 共 {{ row.goodsCount || 1 }} 件</view>
+            <view class="order-no">订单号 {{ row.orderNo }}</view>
           </view>
           <view class="price">{{ fmtPrice(row.payPrice) }}</view>
         </view>
-        <view class="foot" @click.stop>
-          <text class="pay-hint" v-if="row.payStatus === 'unpaid'">应付 {{ fmtPrice(row.payPrice) }}</text>
+        <view v-if="canCancel(row) || canAfterSale(row) || canConfirm(row) || row.orderStatus === 'finished'" class="foot" @click.stop>
+          <text class="pay-hint" v-if="canCancel(row)">应付 {{ fmtPrice(row.payPrice) }}</text>
           <view style="flex: 1"></view>
-          <button v-if="row.payStatus === 'unpaid'" class="btn" size="mini" @click="onCancel(row)">取消订单</button>
-          <button v-if="row.payStatus === 'unpaid'" class="btn btn-primary" size="mini" @click="goDetail(row.id)">去支付</button>
-          <button v-if="row.deliveryStatus === 'shipped'" class="btn" size="mini" @click="onAfterSale(row)">申请售后</button>
-          <button v-if="row.deliveryStatus === 'shipped'" class="btn btn-primary" size="mini" @click="goDetail(row.id)">确认收货</button>
+          <button v-if="canCancel(row)" class="btn" size="mini" @click="onCancel(row)">取消订单</button>
+          <button v-if="canCancel(row)" class="btn btn-primary" size="mini" @click="goDetail(row.id)">去支付</button>
+          <button v-if="canAfterSale(row)" class="btn" size="mini" @click="onAfterSale(row)">申请售后</button>
+          <button v-if="canConfirm(row)" class="btn btn-primary" size="mini" @click="goDetail(row.id)">确认收货</button>
           <button v-if="row.orderStatus === 'finished'" class="btn" size="mini" @click="onComment(row)">评价</button>
         </view>
       </view>
@@ -193,23 +209,40 @@ function onComment(row) {
   padding: 24rpx 28rpx;
   align-items: center;
 }
-.ph {
+.ph,
+.goods-image {
   width: 96rpx;
   height: 96rpx;
-  border-radius: 16rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+.ph {
   background: linear-gradient(135deg, #f3e7e0, #eadad0);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40rpx;
-  flex-shrink: 0;
+  color: #898781;
 }
 .mid {
   flex: 1;
+  min-width: 0;
+}
+.goods-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.goods-meta {
+  margin-top: 4rpx;
+  font-size: 21rpx;
+  color: #898781;
 }
 .order-no {
-  font-size: 24rpx;
-  color: #52514e;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #aaa7a0;
 }
 .price {
   font-size: 28rpx;

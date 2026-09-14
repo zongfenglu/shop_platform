@@ -2,6 +2,7 @@
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { getReceivableCoupons, receiveCoupon } from '@/api/index'
+import { formatDateTime } from '@/utils/dateTime'
 
 const list = ref([])
 const loading = ref(false)
@@ -26,7 +27,7 @@ function condition(c) {
 }
 function validity(c) {
   if (c.expireType === 'receive') return `领取后 ${c.expireDays || 7} 天内有效`
-  return `${c.startTime || ''} ~ ${c.endTime || ''}`
+  return `${formatDateTime(c.startTime)} ~ ${formatDateTime(c.endTime)}`
 }
 
 async function receive(c) {

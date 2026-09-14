@@ -35,16 +35,29 @@ public record PriceContext(
             BigDecimal weight,
             BigDecimal volume,
             /** 商品所属分类 id 列表，来自 goods.category_ids（JSON 解析后）。优惠券按分类适用时用它判定参与项。 */
-            List<Long> categoryIds
+            List<Long> categoryIds,
+            /** 商品关联的运费模板，必须由服务端商品数据填充，不能信任客户端传值。 */
+            Long freightTemplateId,
+            /** 商品未使用运费模板时的统一运费。 */
+            BigDecimal freightFee
     ) {
         public PriceItem(Long goodsId, Long skuId, String goodsName, String specText, String image,
+                         BigDecimal skuPrice, BigDecimal linePrice, Integer quantity, BigDecimal weight,
+                         BigDecimal volume, List<Long> categoryIds) {
+            this(goodsId, skuId, goodsName, specText, image, skuPrice, linePrice, quantity,
+                    weight, volume, categoryIds, null, null);
+        }
+
+        public PriceItem(Long goodsId, Long skuId, String goodsName, String specText, String image,
                          BigDecimal skuPrice, BigDecimal linePrice, Integer quantity, BigDecimal weight, BigDecimal volume) {
-            this(goodsId, skuId, goodsName, specText, image, skuPrice, linePrice, quantity, weight, volume, null);
+            this(goodsId, skuId, goodsName, specText, image, skuPrice, linePrice, quantity,
+                    weight, volume, null, null, null);
         }
 
         public PriceItem(Long goodsId, Long skuId, String goodsName, String specText, String image,
                          BigDecimal skuPrice, BigDecimal linePrice, Integer quantity, BigDecimal weight) {
-            this(goodsId, skuId, goodsName, specText, image, skuPrice, linePrice, quantity, weight, null, null);
+            this(goodsId, skuId, goodsName, specText, image, skuPrice, linePrice, quantity,
+                    weight, null, null, null, null);
         }
     }
 }

@@ -1,6 +1,7 @@
 <script setup>
 import { onLoad } from '@dcloudio/uni-app'
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
+import { PackageOpen } from '@lucide/vue'
 import { applyAfterSale, getOrder } from '@/api'
 
 /**
@@ -40,6 +41,7 @@ const form = reactive({
 })
 
 const REASON_OPTIONS = ['拍错/多拍/不想要', '商品破损/质量问题', '与描述不符', '商家发错货', '其他原因']
+const canReturn = computed(() => order.value?.order?.deliveryStatus !== 'pending')
 
 function onSelectGoods(g) {
   form.orderGoodsId = g.id
@@ -88,7 +90,8 @@ async function onSubmit() {
         :class="{ selected: form.orderGoodsId === g.id }"
         @click="onSelectGoods(g)"
       >
-        <view class="ph">📦</view>
+        <image v-if="g.image" class="goods-image" :src="g.image" mode="aspectFill" />
+        <view v-else class="ph"><PackageOpen :size="24" :stroke-width="1.6" /></view>
         <view class="mid">
           <view class="g-name">{{ g.goodsName }}</view>
           <view class="g-spec">{{ g.specText || '默认规格' }} ×{{ g.totalNum }}</view>
@@ -101,7 +104,7 @@ async function onSubmit() {
       <view class="card-title">售后类型</view>
       <view class="type-tabs">
         <view class="type-tab" :class="{ active: form.type === 'refund_only' }" @click="form.type = 'refund_only'">仅退款</view>
-        <view class="type-tab" :class="{ active: form.type === 'return_refund' }" @click="form.type = 'return_refund'">退货退款</view>
+        <view v-if="canReturn" class="type-tab" :class="{ active: form.type === 'return_refund' }" @click="form.type = 'return_refund'">退货退款</view>
       </view>
     </view>
 
@@ -162,16 +165,19 @@ async function onSubmit() {
   border-color: #2a78d6;
   background: #eaf2fc;
 }
-.ph {
+.ph,
+.goods-image {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 14rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+.ph {
   background: linear-gradient(135deg, #f3e7e0, #eadad0);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
-  flex-shrink: 0;
+  color: #898781;
 }
 .mid {
   flex: 1;

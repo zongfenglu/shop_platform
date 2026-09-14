@@ -1,6 +1,7 @@
 <script setup>
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+import { PackageOpen } from '@lucide/vue'
 import { cancelOrder, confirmReceipt, getOrder, getOrderTracks, getPayChannels, prepayOrder } from '@/api'
 
 /**
@@ -60,6 +61,25 @@ function statusText() {
   if (o.deliveryStatus === 'pending') return '待发货'
   if (o.deliveryStatus === 'shipped') return '待收货'
   return '处理中'
+}
+
+function canCancel() {
+  const o = data.value?.order
+  return o?.orderStatus === 'normal' && o?.payStatus === 'unpaid'
+}
+
+function canAfterSale() {
+  const o = data.value?.order
+  return o && o.orderStatus !== 'cancelled' && o.payStatus === 'paid'
+}
+
+function canConfirm() {
+  const o = data.value?.order
+  return o?.orderStatus === 'normal' && o?.payStatus === 'paid' && o?.deliveryStatus === 'shipped'
+}
+
+function hasBottomActions() {
+  return canCancel() || canAfterSale() || canConfirm() || data.value?.order?.orderStatus === 'finished'
 }
 
 function goOrderList() {
@@ -224,7 +244,8 @@ function packageGoodsText(pkg) {
 
     <view v-if="data" class="card">
       <view v-for="g in data.goodsList" :key="g.id" class="goods-row">
-        <view class="ph">📦</view>
+        <image v-if="g.image" class="goods-image" :src="g.image" mode="aspectFill" />
+        <view v-else class="ph"><PackageOpen :size="26" :stroke-width="1.6" /></view>
         <view class="mid">
           <view class="g-name">{{ g.goodsName }}</view>
           <view class="g-spec">{{ g.specText || '默认规格' }} ×{{ g.totalNum }}</view>
@@ -265,16 +286,16 @@ function packageGoodsText(pkg) {
       </view>
     </view>
 
-    <view v-if="data" class="bottom-bar">
-      <button v-if="data.order.payStatus === 'unpaid'" class="m-btn" @click="onCancel">取消订单</button>
+    <view v-if="data && hasBottomActions()" class="bottom-bar">
+      <button v-if="canCancel()" class="m-btn" @click="onCancel">取消订单</button>
       <button
-        v-if="data.order.payStatus === 'unpaid'"
+        v-if="canCancel()"
         class="m-btn m-btn-warm"
         :disabled="paying"
         @click="onPay"
       >{{ paying ? '支付中…' : '去支付' }}</button>
-      <button v-if="data.order.deliveryStatus === 'shipped'" class="m-btn" @click="onAfterSale">申请售后</button>
-      <button v-if="data.order.deliveryStatus === 'shipped'" class="m-btn m-btn-warm" @click="onConfirm">确认收货</button>
+      <button v-if="canAfterSale()" class="m-btn" @click="onAfterSale">申请售后</button>
+      <button v-if="canConfirm()" class="m-btn m-btn-warm" @click="onConfirm">确认收货</button>
       <button v-if="data.order.orderStatus === 'finished'" class="m-btn m-btn-warm" @click="onComment">评价</button>
     </view>
   </view>
@@ -348,16 +369,19 @@ function packageGoodsText(pkg) {
   align-items: center;
   padding: 12rpx 0;
 }
-.ph {
+.ph,
+.goods-image {
   width: 88rpx;
   height: 88rpx;
-  border-radius: 14rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+.ph {
   background: linear-gradient(135deg, #f3e7e0, #eadad0);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36rpx;
-  flex-shrink: 0;
+  color: #898781;
 }
 .mid {
   flex: 1;

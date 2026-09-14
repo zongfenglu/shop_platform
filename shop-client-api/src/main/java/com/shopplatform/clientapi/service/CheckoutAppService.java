@@ -122,7 +122,7 @@ public class CheckoutAppService {
 
         try {
             Order order = orderService.createOrder(new OrderService.CreateOrderCommand(
-                    loginUser.userId(), items, request.deliveryType(), request.pickupStoreId(), request.freightTemplateId(),
+                    loginUser.userId(), items, request.deliveryType(), request.pickupStoreId(), null,
                     request.couponId(), request.pointsToUse(), request.activityType(), request.activityId(),
                     groupCtx == null ? null : groupCtx.recordId(),
                     "h5", request.buyerRemark(), addressInfo));
@@ -230,7 +230,7 @@ public class CheckoutAppService {
                 .toList();
         return new PriceContext(TenantContext.getRequired(),
                 LoginUserContext.get() == null ? null : LoginUserContext.get().userId(),
-                items, request.deliveryType(), request.freightTemplateId(), request.couponId(),
+                items, request.deliveryType(), null, request.couponId(),
                 request.pointsToUse(), request.activityType(), request.activityId());
     }
 
@@ -243,7 +243,8 @@ public class CheckoutAppService {
         String image = StringUtils.hasText(sku.getImage()) ? sku.getImage() : firstImage(goods.getImages());
         return new PriceContext.PriceItem(goods.getId(), sku.getId(), goods.getName(),
                 resolveSpecText(sku.getSpecValueIds()), image, sku.getPrice(), sku.getLinePrice(),
-                cartItem.quantity(), sku.getWeight(), sku.getVolume(), parseCategoryIds(goods.getCategoryIds()));
+                cartItem.quantity(), sku.getWeight(), sku.getVolume(), parseCategoryIds(goods.getCategoryIds()),
+                goods.getFreightTemplateId(), goods.getFreightFee());
     }
 
     /** goods.category_ids 存的是 JSON 数组（如 "[10,11]"），优惠券按分类适用时需要它判定参与项。 */

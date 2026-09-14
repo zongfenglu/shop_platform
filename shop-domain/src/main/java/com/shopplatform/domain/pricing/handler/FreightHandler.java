@@ -14,11 +14,15 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 责任链第7节点：运费。见文档三 §4：
  * "运费（运费模板 + 包邮规则 + 自提免运费）"。
  * <p>
+ * 商品按运费模板分组，同一模板合并计量，不同模板的费用相加；未使用模板的商品采用统一运费。
  * 支持按件数、重量或体积的首段/续段阶梯计费，以及按原价小计的满额包邮。
  * 地区差异化包邮仍由地址/地区规则阶段处理。
  */
@@ -49,24 +53,39 @@ public class FreightHandler implements PriceHandler {
             state.setFreightFee(BigDecimal.ZERO);
             return;
         }
-        if (ctx.freightTemplateId() == null) {
-            state.setFreightFee(BigDecimal.ZERO);
-            return;
+        Map<Long, List<PriceContext.PriceItem>> templateGroups = new LinkedHashMap<>();
+        Map<Long, BigDecimal> fixedFeeByGoods = new LinkedHashMap<>();
+        for (PriceContext.PriceItem item : ctx.items()) {
+            if (item.freightTemplateId() != null) {
+                templateGroups.computeIfAbsent(item.freightTemplateId(), ignored -> new java.util.ArrayList<>())
+                        .add(item);
+            } else if (item.freightFee() != null) {
+                // 同一商品购买多个 SKU 只收一次统一运费。
+                fixedFeeByGoods.putIfAbsent(item.goodsId(), item.freightFee());
+            }
         }
 
-        FreightTemplate template = freightTemplateService.getByIdWithTenant(ctx.freightTemplateId());
-        BigDecimal freeMinPrice = readFreeMinPrice(template.getFreeRules());
-        if (freeMinPrice != null && state.originalGoodsTotal().compareTo(freeMinPrice) >= 0) {
-            // 满额包邮判定用原价小计，不受前面 Handler 折扣影响——避免"先靠优惠券把小计砍到临界值以下，
-            // 结果反而触发了包邮"这种优惠叠加造成的悖论，判定口径必须固定为原价。
-            state.setFreightFee(BigDecimal.ZERO);
-            return;
+        // 兼容价格引擎的内部旧调用；消费者结算始终使用服务端写入购物项的模板。
+        if (templateGroups.isEmpty() && fixedFeeByGoods.isEmpty() && ctx.freightTemplateId() != null) {
+            templateGroups.put(ctx.freightTemplateId(), ctx.items());
         }
 
-        state.setFreightFee(calculate(template.getMethod(), template.getRules(), ctx));
+        BigDecimal totalFee = fixedFeeByGoods.values().stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        for (Map.Entry<Long, List<PriceContext.PriceItem>> entry : templateGroups.entrySet()) {
+            FreightTemplate template = freightTemplateService.getByIdWithTenant(entry.getKey());
+            List<PriceContext.PriceItem> items = entry.getValue();
+            BigDecimal freeMinPrice = readFreeMinPrice(template.getFreeRules());
+            if (freeMinPrice == null || originalGoodsTotal(items).compareTo(freeMinPrice) < 0) {
+                totalFee = totalFee.add(calculate(template.getMethod(), template.getRules(), items));
+            }
+        }
+        state.setFreightFee(totalFee.signum() == 0
+                ? BigDecimal.ZERO
+                : totalFee.setScale(2, RoundingMode.HALF_UP));
     }
 
-    private BigDecimal calculate(String method, String rulesJson, PriceContext ctx) {
+    private BigDecimal calculate(String method, String rulesJson, List<PriceContext.PriceItem> items) {
         try {
             JsonNode rules = objectMapper.readTree(rulesJson);
             if (!rules.isArray() || rules.isEmpty()) {
@@ -82,7 +101,7 @@ public class FreightHandler implements PriceHandler {
             }
             BigDecimal additionalFee = new BigDecimal(rule.path("additionalFee").asText("0"));
 
-            BigDecimal measure = measure(method, ctx);
+            BigDecimal measure = measure(method, items);
             if (measure.compareTo(first) <= 0) {
                 return firstFee.setScale(2, RoundingMode.HALF_UP);
             }
@@ -97,9 +116,9 @@ public class FreightHandler implements PriceHandler {
         }
     }
 
-    private BigDecimal measure(String method, PriceContext ctx) {
+    private BigDecimal measure(String method, List<PriceContext.PriceItem> items) {
         if ("count".equals(method)) {
-            return ctx.items().stream()
+            return items.stream()
                     .map(item -> BigDecimal.valueOf(item.quantity()))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
@@ -107,7 +126,7 @@ public class FreightHandler implements PriceHandler {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "不支持的运费计费方式: " + method);
         }
         BigDecimal total = BigDecimal.ZERO;
-        for (PriceContext.PriceItem item : ctx.items()) {
+        for (PriceContext.PriceItem item : items) {
             BigDecimal unit = "weight".equals(method) ? item.weight() : item.volume();
             if (unit == null || unit.signum() < 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID,
@@ -116,6 +135,12 @@ public class FreightHandler implements PriceHandler {
             total = total.add(unit.multiply(BigDecimal.valueOf(item.quantity())));
         }
         return total;
+    }
+
+    private BigDecimal originalGoodsTotal(List<PriceContext.PriceItem> items) {
+        return items.stream()
+                .map(item -> item.skuPrice().multiply(BigDecimal.valueOf(item.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private BigDecimal decimal(JsonNode node, String field, BigDecimal fallback) {

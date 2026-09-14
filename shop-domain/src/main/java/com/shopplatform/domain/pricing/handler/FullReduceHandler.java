@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * 责任链第4节点：满减 / 满件折。见文档三 §4。
  * <p>
- * 取当前租户下排序最高的一条生效规则（多数店铺只配一条；多规则时按 sort 取主规则，避免叠加双扣）：
+ * 计算当前租户下全部生效规则，同时命中多条时只取优惠金额最大的一条，避免叠加双扣：
  * <ul>
  *   <li>type=money：门槛按"参与商品实付小计"（currentGoodsTotal，即活动价/会员折扣后的当前小计）判定，
  *       取满足门槛中最大的一档 reduce 金额；</li>
@@ -52,15 +52,22 @@ public class FullReduceHandler implements PriceHandler {
         if (rules.isEmpty()) {
             return;
         }
-        FullReduceRule rule = rules.get(0);
-
         BigDecimal goodsTotal = state.currentGoodsTotal();
         int totalQty = 0;
         for (PriceWorkingState.WorkingItem item : state.items()) {
             totalQty += item.source().quantity();
         }
 
-        BigDecimal reduceAmount = computeReduce(rule, goodsTotal, totalQty);
+        FullReduceRule matchedRule = null;
+        BigDecimal reduceAmount = null;
+        for (FullReduceRule rule : rules) {
+            BigDecimal candidate = computeReduce(rule, goodsTotal, totalQty);
+            if (candidate != null && candidate.signum() > 0
+                    && (reduceAmount == null || candidate.compareTo(reduceAmount) > 0)) {
+                matchedRule = rule;
+                reduceAmount = candidate;
+            }
+        }
         if (reduceAmount == null || reduceAmount.signum() <= 0) {
             return;
         }
@@ -75,7 +82,7 @@ public class FullReduceHandler implements PriceHandler {
         }
         DiscountApportioner.apportion(state.items(), weights, reduceAmount, "fullReduce");
 
-        if (rule.getFreeExpress() != null && rule.getFreeExpress() == 1) {
+        if (matchedRule.getFreeExpress() != null && matchedRule.getFreeExpress() == 1) {
             state.setFreeExpress(true);
         }
     }

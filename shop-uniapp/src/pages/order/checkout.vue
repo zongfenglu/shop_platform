@@ -10,6 +10,7 @@ import {
   previewCheckout,
   submitCheckout,
 } from '@/api'
+import { formatDateTime } from '@/utils/dateTime'
 
 /**
  * 确认订单。对应原型 docs/prototype/h5/checkout.html。
@@ -348,7 +349,7 @@ function fmtPrice(v) {
               </view>
               <view class="pick-right">
                 <text class="pick-name">{{ uc.snapshot?.name }}</text>
-                <text class="pick-meta">{{ uc.snapshot?.minPrice > 0 ? '满' + uc.snapshot.minPrice + '可用' : '无门槛' }} · 至 {{ uc.endTime }}</text>
+                <text class="pick-meta">{{ uc.snapshot?.minPrice > 0 ? '满' + uc.snapshot.minPrice + '可用' : '无门槛' }} · 至 {{ formatDateTime(uc.endTime) }}</text>
               </view>
             </view>
             <view v-if="!myCoupons.length" class="pick-empty">暂无可用优惠券</view>

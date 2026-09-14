@@ -297,6 +297,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         boolean updated = this.update(Wrappers.<Order>lambdaUpdate()
                 .eq(Order::getId, orderId)
                 .eq(Order::getPayStatus, "unpaid")
+                .eq(Order::getOrderStatus, "normal")
                 .set(Order::getOrderStatus, "cancelled")
                 .set(Order::getCloseReason, reason));
         if (!updated) {
