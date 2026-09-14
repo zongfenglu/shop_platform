@@ -12,8 +12,10 @@ ENV VITE_H5_PUBLIC_URL=${VITE_H5_PUBLIC_URL}
 WORKDIR /build
 
 COPY ${APP_DIR}/package*.json ./
+# Alpine 镜像需要 rollup/esbuild 的 Linux musl 原生包，ci 之后补装再构建。
 RUN --mount=type=cache,target=/root/.npm \
-    if [ -f package-lock.json ]; then npm ci; else npm install; fi
+    if [ -f package-lock.json ]; then npm ci; else npm install; fi \
+    && npm install --no-save @rollup/rollup-linux-x64-musl @esbuild/linux-x64
 
 COPY ${APP_DIR}/ ./
 RUN npm run ${BUILD_CMD}
