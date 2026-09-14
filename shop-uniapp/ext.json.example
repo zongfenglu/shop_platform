@@ -1,0 +1,12 @@
+{
+  "extEnable": true,
+  "extAppid": "wx你的小程序AppID",
+  "directCommit": false,
+  "ext": {
+    "shopId": "改成商户后台看到的店铺数字ID",
+    "shopCode": "店铺编号",
+    "apiBase": "http://h5.2doo.cn",
+    "h5Base": "http://h5.2doo.cn",
+    "host": "h5.2doo.cn"
+  }
+}

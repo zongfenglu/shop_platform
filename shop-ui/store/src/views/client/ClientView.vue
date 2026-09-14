@@ -316,7 +316,7 @@ function onUnbind(row) {
               <input v-model="miniForm.appSecret" class="form-input" type="password" autocomplete="off" />
             </div>
           </div>
-          <div class="form-hint">Secret 加密存储，回显为掩码。下载的 ext.json 只注入 shopId / 域名，业务代码不要写租户分支。</div>
+          <div class="form-hint">也可在「设置 → 小程序设置」填写。Secret 加密存储。顾客打开小程序后按 AppID 进入本店并加载装修。</div>
           <div style="display: flex; gap: 10px">
             <button class="btn btn-primary" :disabled="mpSaving" @click="onSaveSelf('mini')">保存</button>
             <button class="btn" @click="onDownloadExt('mini')">下载 ext.json</button>

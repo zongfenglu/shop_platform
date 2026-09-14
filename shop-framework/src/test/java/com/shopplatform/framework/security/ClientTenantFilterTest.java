@@ -62,6 +62,42 @@ class ClientTenantFilterTest {
     }
 
     @Test
+    void miniAppId_winsOverSharedH5Host() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/diy/home");
+        request.setServerName("h5.2doo.cn");
+        request.addHeader("X-Mini-AppId", "wx0018e9056a2a54f9");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(shopResolver.resolveByHost("h5.2doo.cn")).thenReturn(1001L);
+        when(shopResolver.resolveByAppId("wx0018e9056a2a54f9")).thenReturn(2097131103839346689L);
+
+        FilterChain chain = (req, res) -> assertEquals(2097131103839346689L, TenantContext.getRequired());
+        filter.doFilter(request, response, chain);
+
+        assertEquals(200, response.getStatus());
+        verify(shopResolver).ensureAccessible(2097131103839346689L);
+        verify(shopResolver, never()).resolveByHost(org.mockito.ArgumentMatchers.anyString());
+        assertNull(TenantContext.get());
+    }
+
+    @Test
+    void unknownMiniAppId_doesNotFallBackToHost() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/diy/home");
+        request.setServerName("h5.2doo.cn");
+        request.addHeader("X-Mini-AppId", "wxnotbound");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+        when(shopResolver.resolveByAppId("wxnotbound")).thenReturn(null);
+        when(shopResolver.resolveByHost("h5.2doo.cn")).thenReturn(1001L);
+
+        filter.doFilter(request, response, chain);
+
+        assertEquals(200, response.getStatus());
+        assertTrue(response.getContentAsString().contains("\"code\":20000"));
+        verify(chain, never()).doFilter(any(), any());
+        verify(shopResolver, never()).resolveByHost(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
     void inaccessibleShop_returnsItsBusinessCode() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/diy/home");
         request.addHeader("X-Shop-Id", "42");

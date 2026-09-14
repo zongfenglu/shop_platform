@@ -17,5 +17,9 @@ npm-debug.log*
 *.swp
 .DS_Store
 
+# 商户后台下载的 ext.json（含该店 shopId），不要提交进仓库
+ext.json
+src/ext.json
+
 # uni-app 打包产物
 unpackage/

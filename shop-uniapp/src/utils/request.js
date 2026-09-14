@@ -7,7 +7,9 @@
  *   ③ 小程序 AppID 反查 —— 兜底
  *
  * 因此各端策略不同：
- *   - 小程序：必须显式带 X-Shop-Id（小程序没有"域名"概念，Host 是我们的 API 域名，②③都不可靠）
+ *   - 小程序：启动后读取当前 AppID，请求带 X-Mini-AppId。后端按商户「设置 → 小程序设置」
+ *     绑定的 AppID 定位店铺，再拉该店装修/商品。不要在代码里写死 shopId。
+ *     未配置真实 AppID 时（游客号），才用启动参数 `_shopId` 做本地预览。
  *   - H5/公众号：普通访问不带 X-Shop-Id，让后端按 Host 反查；共享 H5 域名上的
  *     管理后台预览链接通过 _shopId 指定租户，并在当前标签页内携带 X-Shop-Id。
  * 识别失败后端会返回 20000（商城不存在），不要在前端静默重试。
@@ -58,9 +60,26 @@ export function setLoginUser(user) {
 }
 
 /**
+ * 当前小程序 AppID。平台在商户后台绑定 AppID 后，后端可据此反查 shopId。
+ * 游客号 touristappid 不算正式绑定，不传。
+ */
+export function getMiniAppId() {
+  // #ifdef MP-WEIXIN
+  try {
+    const info = typeof uni.getAccountInfoSync === 'function' ? uni.getAccountInfoSync() : null
+    const appId = info && info.miniProgram && info.miniProgram.appId
+    if (appId && appId !== 'touristappid') return String(appId)
+  } catch (e) {
+    // 开发者工具未选 AppID 时可能拿不到
+  }
+  // #endif
+  return ''
+}
+
+/**
  * 小程序端的 shopId。
- * 正式发布时由小程序 ext.json 注入（每个租户一个小程序，构建产物相同、ext 不同），
- * 开发阶段可用 setShopId() 手动指定，方便本地联调。
+ * 正式发布由平台下发的 ext.json 注入（构建产物相同、每个商户 ext 不同）。
+ * 本地开发者工具没有 ext / 未配 AppID 时，才允许 setShopId() 临时预览某家店。
  */
 export function getShopId() {
   // #ifdef MP
@@ -80,6 +99,37 @@ export function getShopId() {
 
 export function setShopId(shopId) {
   uni.setStorageSync(SHOP_ID_KEY, String(shopId))
+}
+
+/** 是否为合法店铺数字 ID（H5 / 小程序启动参数 `_shopId`）。 */
+export function isShopIdValue(value) {
+  return /^\d+$/.test(String(value || '').trim())
+}
+
+/**
+ * 和 H5 的 ?_shopId= 一样：从启动参数 / 页面参数里切店。
+ * 换店时清掉上一店的登录态。有 ext.json 的正式小程序仍以 ext 为准。
+ */
+export function applyQueryShopId(query) {
+  if (!query || typeof query !== 'object') return ''
+  const raw = String(query._shopId || query.shopId || '').trim()
+  if (!isShopIdValue(raw)) return ''
+  try {
+    const ext = uni.getExtConfigSync ? uni.getExtConfigSync() : null
+    if (ext && ext.shopId) return String(ext.shopId)
+  } catch (e) {
+    // 非托管小程序没有 ext
+  }
+  const prev = (() => {
+    try {
+      return String(uni.getStorageSync(SHOP_ID_KEY) || '')
+    } catch (e) {
+      return ''
+    }
+  })()
+  if (prev && prev !== raw) clearToken()
+  setShopId(raw)
+  return raw
 }
 
 /**
@@ -107,7 +157,7 @@ export function getH5PreviewShopId() {
 
 export function setH5PreviewShopId(shopId) {
   const value = String(shopId || '').trim()
-  if (!/^\d+$/.test(value)) return
+  if (!isShopIdValue(value)) return
   // #ifdef H5
   try {
     window.sessionStorage.setItem(H5_PREVIEW_SHOP_ID_KEY, value)
@@ -175,10 +225,16 @@ export function request(options) {
   const token = getToken()
   if (token) header.Authorization = `Bearer ${token}`
 
-  // 只有小程序/APP 需要显式声明租户；H5 生产环境交给后端按 Host 反查。
+  // 小程序：有真实 AppID 时只传 X-Mini-AppId，由后端按绑定表定位店铺。
+  // 游客号 / 未选 AppID 时才传 X-Shop-Id（本地 _shopId 预览）。
   // #ifndef H5
-  const shopId = getShopId()
-  if (shopId) header['X-Shop-Id'] = shopId
+  const miniAppId = getMiniAppId()
+  if (miniAppId) {
+    header['X-Mini-AppId'] = miniAppId
+  } else {
+    const shopId = getShopId()
+    if (shopId) header['X-Shop-Id'] = shopId
+  }
   // #endif
   // #ifdef H5
   // 管理后台预览使用共享 H5 域名，必须显式传 _shopId 对应的请求头；普通正式访问

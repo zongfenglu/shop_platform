@@ -1,13 +1,21 @@
 <script>
-import { setH5PreviewShopId } from '@/utils/request.js'
+import { applyQueryShopId, setH5PreviewShopId } from '@/utils/request.js'
 
 export default {
-  onLaunch() {
-    // 小程序端：ext.json 注入的 shopId 在这里最早可读，request.js 会自动带上 X-Shop-Id
+  onLaunch(options) {
+    // #ifdef MP
+    // 与 H5 ?_shopId= 相同：开发者工具编译模式 / 体验版启动参数指定要预览的店。
+    applyQueryShopId(options && options.query)
+    // #endif
 
     // #ifdef H5
     // H5 共享预览入口：从 URL 参数读取 shopId，并保持在当前标签页内。
     this.setupH5ShopId()
+    // #endif
+  },
+  onShow(options) {
+    // #ifdef MP
+    applyQueryShopId(options && options.query)
     // #endif
   },
   methods: {

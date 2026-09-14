@@ -16,16 +16,17 @@ import java.io.IOException;
 
 /**
  * 消费者端（/api/**）租户识别过滤器。见文档三 §2.2 租户识别来源：
- * ① 请求头 X-Shop-Id（小程序由 ext.json 注入，最高优先级，最明确）
- * ② Host 反查域名表（H5 走自定义域名/泛域名场景）
- * ③ 小程序 AppID 反查（无法拿到 shopId 时的兜底）
+ * ① 小程序 AppID（X-Mini-AppId）—— 商户在「设置 → 小程序设置」绑定后，启动即按 AppID 定位店铺
+ * ② 请求头 X-Shop-Id —— H5 预览、本地未配 AppID 时的显式租户
+ * ③ Host 反查域名表 —— H5 走自定义域名/泛域名
  * <p>
- * 域名/AppID 反查 shopId 依赖 shop-domain 模块的查询能力，这里只定义过滤器骨架与优先级，
- * 具体反查逻辑通过 {@link ShopResolver} 接口交给上层模块实现，避免 framework 反向依赖 domain。
+ * 小程序请求打到共享 API 域名（如 h5.2doo.cn）时，Host 会命中 H5 入口店，必须让 AppID 优先于 Host，
+ * 否则所有小程序都会进同一家店。
  */
 public class ClientTenantFilter extends OncePerRequestFilter {
 
     private static final String HEADER_SHOP_ID = "X-Shop-Id";
+    private static final String HEADER_MINI_APP_ID = "X-Mini-AppId";
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -86,6 +87,11 @@ public class ClientTenantFilter extends OncePerRequestFilter {
     }
 
     private Long resolveShopId(HttpServletRequest request) {
+        String appId = request.getHeader(HEADER_MINI_APP_ID);
+        if (appId != null && !appId.isBlank()) {
+            // 带了小程序 AppID 就只按绑定表定位，不再用共享 H5 域名误匹配别的店
+            return shopResolver.resolveByAppId(appId.trim());
+        }
         String headerShopId = request.getHeader(HEADER_SHOP_ID);
         if (headerShopId != null && !headerShopId.isBlank()) {
             try {
@@ -95,15 +101,7 @@ public class ClientTenantFilter extends OncePerRequestFilter {
             }
         }
         String host = request.getServerName();
-        Long byHost = shopResolver.resolveByHost(host);
-        if (byHost != null) {
-            return byHost;
-        }
-        String appId = request.getHeader("X-Mini-AppId");
-        if (appId != null && !appId.isBlank()) {
-            return shopResolver.resolveByAppId(appId);
-        }
-        return null;
+        return shopResolver.resolveByHost(host);
     }
 
     /** 游客也可浏览，登录态是可选的——未带 token 或 token 非法都不阻断请求，只是不设置 LoginUserContext。 */

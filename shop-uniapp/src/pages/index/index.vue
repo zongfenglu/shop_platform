@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from 'vue'
-import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
-import { getCategoryTree, pageGoods, getDiyHome } from '@/api'
-import { getShopId, setShopId } from '@/utils/request'
+import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { getCategoryTree, pageGoods, getDiyHome, getDiyTabbar } from '@/api'
+import { applyQueryShopId, getShopId, setShopId } from '@/utils/request'
 import { openGoodsSearch } from '@/utils/goodsSearch'
 import DiyPage from '@/components/diy/DiyPage.vue'
 
@@ -19,6 +19,13 @@ const goodsList = ref([])
 const loading = ref(false)
 const keyword = ref('')
 
+onLoad((query) => {
+  if (applyQueryShopId(query)) {
+    shopId.value = getShopId()
+    inputShopId.value = shopId.value
+  }
+})
+
 // 每次回到首页都重新读取已发布快照，确保商户刚发布的装修立即生效。
 onShow(() => {
   shopId.value = getShopId()
@@ -34,7 +41,8 @@ onPullDownRefresh(async () => {
 async function load() {
   loading.value = true
   try {
-    const home = await getDiyHome().catch(() => null)
+    const home = await getDiyHome()
+    applyDiyTabbar()
     if (home && home.exists) {
       diyPage.value = home
       uni.setNavigationBarTitle({ title: home.name || '首页' })
@@ -59,6 +67,25 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+/** 底部导航按当前商户后台装修覆盖文案/颜色；图标仍用小程序本地 tabBar 资源。 */
+function applyDiyTabbar() {
+  getDiyTabbar().then((data) => {
+    const items = Array.isArray(data?.items) ? data.items : []
+    items.slice(0, 4).forEach((item, index) => {
+      if (!item || !item.text) return
+      uni.setTabBarItem({ index, text: String(item.text) })
+    })
+    const style = data?.style
+    if (style && (style.color || style.selectedColor || style.backgroundColor)) {
+      const payload = {}
+      if (style.color) payload.color = style.color
+      if (style.selectedColor) payload.selectedColor = style.selectedColor
+      if (style.backgroundColor) payload.backgroundColor = style.backgroundColor
+      uni.setTabBarStyle(payload)
+    }
+  }).catch(() => {})
 }
 
 function onSaveShopId() {
@@ -96,7 +123,8 @@ function fmtPrice(v) {
       <view class="card-title">未能识别商城</view>
       <view class="card-body">
         <text class="muted small">
-          用 IP 访问（测试机连开发机）时请填店铺数字 ID，演示店填 1001。有独立域名的正式环境不用填。
+          正式小程序由平台绑定的 AppID / ext.json 自动识别商户并加载该店装修。
+          本地可像 H5 一样用启动参数 _shopId 指定店铺（微信开发者工具 → 编译模式）。
         </text>
         <input v-model="inputShopId" class="input" placeholder="输入 shopId，如 2084461863957803010" />
         <button class="btn" @click="onSaveShopId">保存并加载</button>

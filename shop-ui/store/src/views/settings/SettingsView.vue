@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
 import { getAlipayConfig, getPayConfig, saveAlipayConfig, savePayConfig, setPayChannelEnabled } from '@/api/payConfig'
 import { createFreightTemplate, deleteFreightTemplate, listFreightTemplates, updateFreightTemplate } from '@/api/goods'
+import { getStoreMp, saveStoreMpSelf } from '@/api/mp'
 import OperationSettingsPanel from './OperationSettingsPanel.vue'
 
 /** 商户设置：支付、配送、上传、退货、打印和短信均接入租户级接口。 */
@@ -27,6 +28,11 @@ const freightForm = reactive({
   additionalFee: 5,
   freeMinPrice: '',
 })
+
+const mpSaving = ref(false)
+const miniBound = ref(null)
+const miniForm = reactive({ appId: '', appSecret: '' })
+const miniErrors = reactive({ appId: '', appSecret: '' })
 
 async function load() {
   loading.value = true
@@ -65,6 +71,20 @@ async function loadFreightTemplates() {
 }
 
 onMounted(loadFreightTemplates)
+
+async function loadMini() {
+  try {
+    const data = await getStoreMp()
+    const mini = (data?.authorizers || []).find((a) => a.appType === 'mini') || null
+    miniBound.value = mini
+    miniForm.appId = mini?.appId || ''
+    miniForm.appSecret = mini?.secretSet ? '********' : ''
+  } catch (e) {
+    miniBound.value = null
+  }
+}
+
+onMounted(loadMini)
 
 const form = reactive({
   appId: '',
@@ -271,6 +291,34 @@ function confirmDeleteFreight(template) {
   })
 }
 
+function validateMini() {
+  miniErrors.appId = /^wx[a-z0-9]+$/i.test(miniForm.appId.trim()) ? '' : '请填写有效的小程序 AppID'
+  miniErrors.appSecret = (miniBound.value?.secretSet || miniForm.appSecret.trim()) ? '' : '请填写 AppSecret'
+  return !miniErrors.appId && !miniErrors.appSecret
+}
+
+async function onSaveMini() {
+  if (!validateMini()) {
+    message.error('请检查表单中标红的必填项')
+    return
+  }
+  mpSaving.value = true
+  try {
+    await saveStoreMpSelf({
+      appType: 'mini',
+      appId: miniForm.appId.trim(),
+      appSecret: miniForm.appSecret,
+    })
+    message.success('已保存。顾客打开该小程序后将按 AppID 进入本店')
+    miniForm.appSecret = ''
+    await loadMini()
+  } catch (e) {
+    // 拦截器已提示
+  } finally {
+    mpSaving.value = false
+  }
+}
+
 function maskMchId(id) {
   if (!id || id.length < 6) return id || '—'
   return `${id.slice(0, 4)}****${id.slice(-4)}`
@@ -298,6 +346,7 @@ function maskMchId(id) {
         <button class="settings-item" :class="{ active: activeTab === 'sms' }" @click="activeTab = 'sms'">短信通知</button>
         <div class="group-title">收款</div>
         <button class="settings-item" :class="{ active: activeTab === 'pay' }" @click="activeTab = 'pay'">支付设置</button>
+        <button class="settings-item" :class="{ active: activeTab === 'mini' }" @click="activeTab = 'mini'">小程序设置</button>
       </div>
 
       <div v-if="activeTab === 'freight'" class="settings-panel">
@@ -331,6 +380,32 @@ function maskMchId(id) {
         v-else-if="['express', 'returns', 'upload', 'printers', 'sms'].includes(activeTab)"
         :section="activeTab"
       />
+
+      <div v-else-if="activeTab === 'mini'" class="card card-pad payment-panel">
+        <p class="card-title">小程序设置</p>
+        <p class="card-sub">绑定本店微信小程序。顾客打开后按 AppID 识别本店，加载本店装修与商品。同一 AppID 只能绑一家店。</p>
+        <template v-if="miniBound">
+          <div class="kv-row"><div class="k">绑定状态</div><div class="v"><span class="tag tag-good">已绑定</span></div></div>
+          <div class="kv-row"><div class="k">AppID</div><div class="v">{{ miniBound.appId }}</div></div>
+          <div class="kv-row"><div class="k">AppSecret</div><div class="v">{{ miniBound.secretSet ? '●●●●●●●● 已设置' : '未设置' }}</div></div>
+        </template>
+        <div v-else class="pay-empty">尚未绑定小程序</div>
+
+        <p class="card-title" style="margin-top: 24px">{{ miniBound ? '更新配置' : '新增配置' }}</p>
+        <div class="form-item">
+          <label class="form-label"><span class="req">*</span>AppID 小程序原ID</label>
+          <input v-model="miniForm.appId" class="form-input" placeholder="wx 开头的小程序 AppID" />
+          <div v-if="miniErrors.appId" class="field-error">{{ miniErrors.appId }}</div>
+        </div>
+        <div class="form-item">
+          <label class="form-label"><span class="req">*</span>AppSecret 小程序密钥</label>
+          <input v-model="miniForm.appSecret" class="form-input" type="password" autocomplete="new-password" :placeholder="miniBound?.secretSet ? '留空则保留原密钥' : ''" />
+          <div v-if="miniErrors.appSecret" class="field-error">{{ miniErrors.appSecret }}</div>
+        </div>
+        <div class="pay-actions">
+          <button class="btn btn-primary" :disabled="mpSaving" @click="onSaveMini">{{ mpSaving ? '保存中…' : '保存' }}</button>
+        </div>
+      </div>
 
       <div v-else-if="activeTab === 'pay'" class="card card-pad payment-panel">
       <div class="pay-tabs" role="tablist" aria-label="支付渠道">
