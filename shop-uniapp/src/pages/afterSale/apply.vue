@@ -1,7 +1,7 @@
 <script setup>
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, reactive, ref } from 'vue'
-import { PackageOpen } from '@lucide/vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { applyAfterSale, getOrder } from '@/api'
 
 /**
@@ -91,7 +91,7 @@ async function onSubmit() {
         @click="onSelectGoods(g)"
       >
         <image v-if="g.image" class="goods-image" :src="g.image" mode="aspectFill" />
-        <view v-else class="ph"><PackageOpen :size="24" :stroke-width="1.6" /></view>
+        <view v-else class="ph"><AppIcon name="package-open-muted" :size="24" /></view>
         <view class="mid">
           <view class="g-name">{{ g.goodsName }}</view>
           <view class="g-spec">{{ g.specText || '默认规格' }} ×{{ g.totalNum }}</view>

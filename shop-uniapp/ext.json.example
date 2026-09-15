@@ -5,8 +5,8 @@
   "ext": {
     "shopId": "改成商户后台看到的店铺数字ID",
     "shopCode": "店铺编号",
-    "apiBase": "http://h5.2doo.cn",
-    "h5Base": "http://h5.2doo.cn",
+    "apiBase": "https://h5.2doo.cn",
+    "h5Base": "https://h5.2doo.cn",
     "host": "h5.2doo.cn"
   }
 }

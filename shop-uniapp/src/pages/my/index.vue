@@ -1,10 +1,7 @@
 <script setup>
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import {
-  BadgePercent, CalendarCheck2, ChevronRight, CircleDollarSign, Coins, Crown, Gift,
-  LogOut, MapPin, Package, Phone, RotateCcw, Share2, Store, Ticket, UserRound, WalletCards,
-} from '@lucide/vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { clearToken, getLoginUser, getToken, setLoginUser, setToken } from '@/utils/request'
 import { bindWechatPhone, getMyProfile } from '@/api/index'
 import { ensureWechatLogin } from '@/utils/wechatAuth'
@@ -92,16 +89,16 @@ function money(v) { return Number(v || 0).toFixed(2) }
     <view class="hero">
       <view class="user-row" @click="loggedIn ? null : onLogin()">
         <image v-if="loggedIn && profile?.member?.avatar" class="avatar avatar-image" :src="profile.member.avatar" mode="aspectFill" />
-        <view v-else class="avatar"><UserRound :size="30" :stroke-width="1.7" /></view>
+        <view v-else class="avatar"><AppIcon name="user-round-white" :size="30" /></view>
         <view class="info">
           <view class="name">{{ loggedIn ? user?.nickname || '用户' : '登录账号' }}</view>
           <view v-if="loggedIn && profile?.grade?.name" class="member-line">
-            <Crown :size="15" :stroke-width="1.8" /><text>{{ profile.grade.name }}</text>
+            <AppIcon name="crown-light" :size="15" /><text>{{ profile.grade.name }}</text>
             <text class="growth">成长值 {{ profile.member.growthValue || 0 }}</text>
           </view>
           <view v-else class="member-line">{{ loggedIn ? `用户ID ${user?.userId}` : '登录后查看账户与订单' }}</view>
         </view>
-        <ChevronRight v-if="!loggedIn" class="hero-arrow" :size="22" />
+        <AppIcon v-if="!loggedIn" name="chevron-right-light" :size="22" />
       </view>
       <view class="asset-row">
         <view class="asset" @click="go('/pages/my/balance-log')"><view class="asset-value">¥{{ money(profile?.member?.balance) }}</view><view class="asset-label">余额</view></view>
@@ -111,19 +108,19 @@ function money(v) { return Number(v || 0).toFixed(2) }
     </view>
 
     <view class="quick-panel">
-      <view class="quick-item" @click="go('/pages/order/list')"><view class="quick-icon blue"><Package :size="23" :stroke-width="1.8" /></view><text>我的订单</text></view>
-      <view class="quick-item" @click="go('/pages/order/list')"><view class="quick-icon coral"><RotateCcw :size="23" :stroke-width="1.8" /></view><text>退款/售后</text></view>
-      <view class="quick-item" @click="go('/pages/address/list')"><view class="quick-icon green"><MapPin :size="23" :stroke-width="1.8" /></view><text>收货地址</text></view>
-      <view class="quick-item" @click="go('/pages/coupon/center')"><view class="quick-icon amber"><Ticket :size="23" :stroke-width="1.8" /></view><text>领券中心</text></view>
+      <view class="quick-item" @click="go('/pages/order/list')"><view class="quick-icon blue"><AppIcon name="package-blue" :size="23" /></view><text>我的订单</text></view>
+      <view class="quick-item" @click="go('/pages/order/list')"><view class="quick-icon coral"><AppIcon name="rotate-ccw-coral" :size="23" /></view><text>退款/售后</text></view>
+      <view class="quick-item" @click="go('/pages/address/list')"><view class="quick-icon green"><AppIcon name="map-pin-green" :size="23" /></view><text>收货地址</text></view>
+      <view class="quick-item" @click="go('/pages/coupon/center')"><view class="quick-icon amber"><AppIcon name="ticket-amber" :size="23" /></view><text>领券中心</text></view>
     </view>
 
     <view class="section">
       <view class="section-title">账户服务</view>
       <view class="service-grid">
-        <view class="service-item" @click="go('/pages/my/balance-log')"><WalletCards :size="22" /><text>余额明细</text></view>
-        <view class="service-item" @click="go('/pages/my/points-log')"><Coins :size="22" /><text>积分明细</text></view>
-        <view class="service-item" @click="go('/pages/my/recharge')"><CircleDollarSign :size="22" /><text>余额充值</text></view>
-        <view class="service-item" @click="go('/pages/my/grade')"><Crown :size="22" /><text>会员等级</text></view>
+        <view class="service-item" @click="go('/pages/my/balance-log')"><AppIcon name="wallet-cards-service" :size="22" /><text>余额明细</text></view>
+        <view class="service-item" @click="go('/pages/my/points-log')"><AppIcon name="coins-service" :size="22" /><text>积分明细</text></view>
+        <view class="service-item" @click="go('/pages/my/recharge')"><AppIcon name="circle-dollar-sign-service" :size="22" /><text>余额充值</text></view>
+        <view class="service-item" @click="go('/pages/my/grade')"><AppIcon name="crown-service" :size="22" /><text>会员等级</text></view>
       </view>
     </view>
 
@@ -136,22 +133,22 @@ function money(v) { return Number(v || 0).toFixed(2) }
         :disabled="bindingPhone"
         @getphonenumber="onGetPhoneNumber"
       >
-        <view class="cell-main"><view class="cell-icon green"><Phone :size="20" /></view><text>绑定手机号</text></view>
-        <view class="cell-side"><text>{{ bindingPhone ? '绑定中...' : '微信授权获取' }}</text><ChevronRight :size="18" /></view>
+        <view class="cell-main"><view class="cell-icon green"><AppIcon name="phone-green" :size="20" /></view><text>绑定手机号</text></view>
+        <view class="cell-side"><text>{{ bindingPhone ? '绑定中...' : '微信授权获取' }}</text><AppIcon name="chevron-right-muted" :size="18" /></view>
       </button>
       <view v-else-if="loggedIn && profile?.member?.mobile" class="cell">
-        <view class="cell-main"><view class="cell-icon green"><Phone :size="20" /></view><text>手机号</text></view>
+        <view class="cell-main"><view class="cell-icon green"><AppIcon name="phone-green" :size="20" /></view><text>手机号</text></view>
         <view class="cell-side"><text>{{ maskMobile(profile.member.mobile) }}</text></view>
       </view>
       <!-- #endif -->
-      <view class="cell" @click="uni.navigateTo({ url: '/pages/store/locator' })"><view class="cell-main"><view class="cell-icon blue"><Store :size="20" /></view><text>附近门店</text></view><view class="cell-side"><text>查看自提点</text><ChevronRight :size="18" /></view></view>
-      <view class="cell" @click="go('/pages/my/sign-in')"><view class="cell-main"><view class="cell-icon green"><CalendarCheck2 :size="20" /></view><text>每日签到</text></view><view class="cell-side"><text>签到领积分</text><ChevronRight :size="18" /></view></view>
-      <view class="cell" @click="go('/pages/points-mall/index')"><view class="cell-main"><view class="cell-icon amber"><Gift :size="20" /></view><text>积分商城</text></view><view class="cell-side"><text>兑换好物</text><ChevronRight :size="18" /></view></view>
-      <view class="cell" @click="go('/pages/my/dealer')"><view class="cell-main"><view class="cell-icon coral"><Share2 :size="20" /></view><text>我的分销</text></view><view class="cell-side"><text>分销中心</text><ChevronRight :size="18" /></view></view>
-      <view class="cell" @click="go('/pages/coupon/mine')"><view class="cell-main"><view class="cell-icon violet"><BadgePercent :size="20" /></view><text>我的优惠券</text></view><view class="cell-side"><ChevronRight :size="18" /></view></view>
+      <view class="cell" @click="uni.navigateTo({ url: '/pages/store/locator' })"><view class="cell-main"><view class="cell-icon blue"><AppIcon name="store-blue" :size="20" /></view><text>附近门店</text></view><view class="cell-side"><text>查看自提点</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
+      <view class="cell" @click="go('/pages/my/sign-in')"><view class="cell-main"><view class="cell-icon green"><AppIcon name="calendar-check-2-green" :size="20" /></view><text>每日签到</text></view><view class="cell-side"><text>签到领积分</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
+      <view class="cell" @click="go('/pages/points-mall/index')"><view class="cell-main"><view class="cell-icon amber"><AppIcon name="gift-amber" :size="20" /></view><text>积分商城</text></view><view class="cell-side"><text>兑换好物</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
+      <view class="cell" @click="go('/pages/my/dealer')"><view class="cell-main"><view class="cell-icon coral"><AppIcon name="share-2-coral" :size="20" /></view><text>我的分销</text></view><view class="cell-side"><text>分销中心</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
+      <view class="cell" @click="go('/pages/coupon/mine')"><view class="cell-main"><view class="cell-icon violet"><AppIcon name="badge-percent-violet" :size="20" /></view><text>我的优惠券</text></view><view class="cell-side"><AppIcon name="chevron-right-muted" :size="18" /></view></view>
     </view>
     <!-- #ifndef MP-WEIXIN -->
-    <button v-if="loggedIn" class="logout" @click="onLogout"><LogOut :size="19" /><text>退出登录</text></button>
+    <button v-if="loggedIn" class="logout" @click="onLogout"><AppIcon name="log-out-red" :size="19" /><text>退出登录</text></button>
     <!-- #endif -->
   </view>
 </template>
@@ -166,7 +163,6 @@ function money(v) { return Number(v || 0).toFixed(2) }
 .name { color: #fff; font-size: 32rpx; font-weight: 700; }
 .member-line { margin-top: 8rpx; display: flex; align-items: center; gap: 8rpx; color: #cfd5d9; font-size: 21rpx; }
 .growth { margin-left: 8rpx; color: #9fa8ae; }
-.hero-arrow { color: #cfd5d9; }
 .asset-row { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 30rpx; padding-top: 26rpx; border-top: 1rpx solid rgba(255,255,255,.13); }
 .asset { text-align: center; min-width: 0; }
 .asset + .asset { border-left: 1rpx solid rgba(255,255,255,.13); }
@@ -180,7 +176,6 @@ function money(v) { return Number(v || 0).toFixed(2) }
 .section-title { padding: 24rpx 26rpx 8rpx; color: #767d82; font-size: 21rpx; }
 .service-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 18rpx 10rpx 26rpx; }
 .service-item { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 12rpx; color: #454b50; font-size: 21rpx; }
-.service-item :deep(svg) { color: #3c5968; }
 .list-section { padding: 0 26rpx; }
 .cell { min-height: 94rpx; display: flex; justify-content: space-between; align-items: center; border-bottom: 1rpx solid #eceeeb; }
 .phone-cell { width: 100%; padding: 0; border-radius: 0; background: transparent; color: inherit; font-size: inherit; text-align: left; }

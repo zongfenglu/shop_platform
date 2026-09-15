@@ -229,6 +229,23 @@ export function normalizeMediaUrls(value) {
   return value
 }
 
+/**
+ * uni.request 在小程序端会把对象里的 undefined 序列化成字面量 "undefined"。
+ * GET 可选参数必须在发出前删除，否则后端数字参数会发生类型转换异常。
+ */
+export function compactRequestData(value) {
+  if (Array.isArray(value)) {
+    return value.map(compactRequestData)
+  }
+  if (value && Object.prototype.toString.call(value) === '[object Object]') {
+    return Object.entries(value).reduce((result, [key, item]) => {
+      if (item !== undefined) result[key] = compactRequestData(item)
+      return result
+    }, {})
+  }
+  return value
+}
+
 export function request(options) {
   const { url, method = 'GET', data, header = {}, showLoading = false } = options
 
@@ -272,7 +289,7 @@ export function request(options) {
     uni.request({
       url: baseUrl() + url,
       method,
-      data,
+      data: compactRequestData(data),
       header,
       timeout: 20000,
       success(res) {

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Headphones } from '@lucide/vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { receiveCoupon } from '@/api/index'
 import { getToken } from '@/utils/request'
 import { mediaUrl } from '@/utils/request'
@@ -423,7 +423,7 @@ function submitSearch() {
         @click="contactCustomerService(item)"
       >
         <image v-if="item.icon" class="cs-icon" :src="item.icon" mode="aspectFill" />
-        <Headphones v-else :size="26" :stroke-width="1.8" />
+        <AppIcon v-else name="headphones-blue" :size="26" />
       </button>
     </view>
   </view>

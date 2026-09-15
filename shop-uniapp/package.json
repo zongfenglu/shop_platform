@@ -4,6 +4,7 @@
   "private": true,
   "description": "多开 SaaS 商城 - 消费者端（小程序/H5/公众号/APP）",
   "scripts": {
+    "generate:icons": "node scripts/generate-lucide-static-icons.mjs",
     "dev:h5": "uni",
     "dev:mp-weixin": "uni -p mp-weixin",
     "dev:mp-alipay": "uni -p mp-alipay",

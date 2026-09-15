@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { deleteAddress, listAddresses, setDefaultAddress } from '@/api'
+import { createAddress, deleteAddress, listAddresses, setDefaultAddress } from '@/api'
 
 /**
  * 收货地址列表。两种用途：
@@ -13,6 +13,7 @@ import { deleteAddress, listAddresses, setDefaultAddress } from '@/api'
 const rows = ref([])
 const loading = ref(true)
 const pickMode = ref(false)
+const importing = ref(false)
 
 onLoad((query) => {
   pickMode.value = query?.pick === '1'
@@ -43,6 +44,81 @@ function onEdit(row) {
 
 function onCreate() {
   uni.navigateTo({ url: '/pages/address/edit' })
+}
+
+function chooseWechatAddress() {
+  return new Promise((resolve, reject) => {
+    uni.chooseAddress({ success: resolve, fail: reject })
+  })
+}
+
+function normalizeWechatMobile(value) {
+  let digits = String(value || '').replace(/\D/g, '')
+  if (digits.length === 13 && digits.startsWith('86')) digits = digits.slice(2)
+  return digits
+}
+
+function sameAddress(left, right) {
+  return ['name', 'phone', 'province', 'city', 'region', 'detail']
+    .every((key) => String(left?.[key] || '').trim() === String(right?.[key] || '').trim())
+}
+
+async function onImportWechatAddress() {
+  if (importing.value) return
+  importing.value = true
+  try {
+    const selected = await chooseWechatAddress()
+    const payload = {
+      name: String(selected.userName || '').trim(),
+      phone: normalizeWechatMobile(selected.telNumber),
+      province: String(selected.provinceName || '').trim(),
+      city: String(selected.cityName || selected.provinceName || '').trim(),
+      region: String(selected.countyName || '').trim(),
+      detail: String(selected.detailInfoNew || selected.detailInfo || '').trim(),
+      isDefault: rows.value.length === 0,
+    }
+    if (!payload.name || !payload.phone || !payload.province || !payload.city || !payload.region || !payload.detail) {
+      uni.showToast({ title: '微信地址信息不完整，请手动新增', icon: 'none' })
+      return
+    }
+    if (!/^1[3-9]\d{9}$/.test(payload.phone)) {
+      uni.showToast({ title: '微信地址中的手机号格式不正确', icon: 'none' })
+      return
+    }
+    const existing = rows.value.find((row) => sameAddress(row, payload))
+    if (existing) {
+      uni.showToast({ title: '该地址已经导入', icon: 'none' })
+      if (pickMode.value) {
+        uni.setStorageSync('checkout_picked_address', JSON.stringify(existing))
+        setTimeout(() => uni.navigateBack(), 400)
+      }
+      return
+    }
+    const created = await createAddress(payload)
+    await load()
+    uni.showToast({ title: '微信地址已导入', icon: 'success' })
+    if (pickMode.value && created) {
+      uni.setStorageSync('checkout_picked_address', JSON.stringify(created))
+      setTimeout(() => uni.navigateBack(), 400)
+    }
+  } catch (e) {
+    const message = String(e?.errMsg || e?.message || '')
+    if (message.includes('cancel')) return
+    if (message.includes('auth deny') || message.includes('authorize:fail')) {
+      uni.showModal({
+        title: '需要地址权限',
+        content: '请在小程序设置中允许使用微信收货地址。',
+        confirmText: '去设置',
+        success: (result) => {
+          if (result.confirm) uni.openSetting()
+        },
+      })
+    } else {
+      uni.showToast({ title: '未能读取微信地址', icon: 'none' })
+    }
+  } finally {
+    importing.value = false
+  }
 }
 
 async function onSetDefault(row) {
@@ -101,6 +177,11 @@ function onDelete(row) {
 
     <view class="bottom-spacer" />
     <view class="bar">
+      <!-- #ifdef MP-WEIXIN -->
+      <button class="bar-btn import-btn" :disabled="importing" @click="onImportWechatAddress">
+        {{ importing ? '导入中...' : '导入微信地址' }}
+      </button>
+      <!-- #endif -->
       <button class="bar-btn" @click="onCreate">＋ 新增收货地址</button>
     </view>
   </view>
@@ -175,8 +256,11 @@ function onDelete(row) {
   border-top: 2rpx solid rgba(11, 11, 11, 0.08);
   padding: 16rpx 24rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 16rpx;
 }
 .bar-btn {
+  flex: 1;
   background: #d4380d;
   color: #fff;
   border-radius: 38rpx;
@@ -184,6 +268,9 @@ function onDelete(row) {
   line-height: 80rpx;
   font-size: 28rpx;
   margin: 0;
+}
+.import-btn {
+  background: #07c160;
 }
 .empty {
   display: flex;

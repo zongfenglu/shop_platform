@@ -1,7 +1,7 @@
 <script setup>
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
-import { ArrowDownToLine, CheckCircle2, Clock3, Coins, ReceiptText, Users, WalletCards } from '@lucide/vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { applyDealer, applyWithdraw, getDealerSetting, getMyDealer, listDealerOrders, listMyDealerTeam, listMyWithdraws } from '@/api/index'
 import { getToken } from '@/utils/request'
 
@@ -73,21 +73,21 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
 <template>
   <view class="page">
     <view v-if="!getToken()" class="login-state">
-      <WalletCards :size="40" :stroke-width="1.4" />
+      <AppIcon name="wallet-cards-muted" :size="40" />
       <view class="login-title">登录后查看分销账户</view>
       <button class="primary-btn" @click="goLogin">去登录</button>
     </view>
 
     <template v-else-if="!dealer || ['none', 'applying', 'rejected'].includes(dealer.status)">
       <view class="apply-hero">
-        <view class="status-mark"><Clock3 v-if="dealer?.status === 'applying'" :size="30" /><CheckCircle2 v-else :size="30" /></view>
+        <view class="status-mark"><AppIcon v-if="dealer?.status === 'applying'" name="clock-3-green" :size="30" /><AppIcon v-else name="check-circle-2-green" :size="30" /></view>
         <view class="apply-status">{{ statusText }}</view>
         <button v-if="!dealer || dealer.status === 'none' || dealer.status === 'rejected'" class="primary-btn" @click="onApply">申请成为分销商</button>
       </view>
     </template>
 
     <view v-else-if="dealer.status === 'disabled'" class="login-state">
-      <WalletCards :size="40" :stroke-width="1.4" />
+      <AppIcon name="wallet-cards-muted" :size="40" />
       <view class="login-title">分销账户已停用</view>
       <view class="disabled-hint">如需恢复，请联系平台管理员</view>
     </view>
@@ -106,19 +106,19 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
 
       <view class="withdraw-row">
         <view><view class="withdraw-title">佣金提现</view><view class="withdraw-sub">最低提现 ¥{{ minWithdraw }}</view></view>
-        <button class="withdraw-btn" @click="onWithdraw"><ArrowDownToLine :size="18" /><text>申请提现</text></button>
+        <button class="withdraw-btn" @click="onWithdraw"><AppIcon name="arrow-down-to-line-white" :size="18" /><text>申请提现</text></button>
       </view>
 
       <view class="tabs">
-        <button class="tab" :class="{ active: activeSection === 'commission' }" @click="activeSection = 'commission'"><Coins :size="18" /><text>佣金</text></button>
-        <button class="tab" :class="{ active: activeSection === 'team' }" @click="activeSection = 'team'"><Users :size="18" /><text>团队</text></button>
-        <button class="tab" :class="{ active: activeSection === 'withdraw' }" @click="activeSection = 'withdraw'"><ReceiptText :size="18" /><text>提现</text></button>
+        <button class="tab" :class="{ active: activeSection === 'commission' }" @click="activeSection = 'commission'"><AppIcon :name="activeSection === 'commission' ? 'coins-green' : 'coins-muted'" :size="18" /><text>佣金</text></button>
+        <button class="tab" :class="{ active: activeSection === 'team' }" @click="activeSection = 'team'"><AppIcon :name="activeSection === 'team' ? 'users-green' : 'users-muted'" :size="18" /><text>团队</text></button>
+        <button class="tab" :class="{ active: activeSection === 'withdraw' }" @click="activeSection = 'withdraw'"><AppIcon :name="activeSection === 'withdraw' ? 'receipt-text-green' : 'receipt-text-muted'" :size="18" /><text>提现</text></button>
       </view>
 
       <view class="content-section">
         <template v-if="activeSection === 'commission'">
           <view class="section-heading">佣金明细</view>
-          <view v-if="!orders.length" class="empty"><Coins :size="34" :stroke-width="1.3" /><text>暂无佣金记录</text></view>
+          <view v-if="!orders.length" class="empty"><AppIcon name="coins-soft" :size="34" /><text>暂无佣金记录</text></view>
           <view v-for="order in orders" :key="order.id" class="record-row">
             <view><view class="record-title">订单佣金</view><view class="record-meta">订单 {{ order.orderId }}</view></view>
             <view class="record-right"><view class="amount">+¥{{ money(order.commissionAmount) }}</view><view class="state" :class="order.status">{{ orderStatusLabel(order.status) }}</view></view>
@@ -127,7 +127,7 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
 
         <template v-else-if="activeSection === 'team'">
           <view class="section-heading">团队成员 <text>{{ team.length }}</text></view>
-          <view v-if="!team.length" class="empty"><Users :size="34" :stroke-width="1.3" /><text>暂无团队成员</text></view>
+          <view v-if="!team.length" class="empty"><AppIcon name="users-soft" :size="34" /><text>暂无团队成员</text></view>
           <view v-for="member in team" :key="member.id" class="record-row">
             <view class="member-main"><view class="member-avatar">{{ (member.realName || member.mobile || '用')[0] }}</view><view><view class="record-title">{{ member.realName || member.mobile || '用户' }}</view><view class="record-meta">团队成员</view></view></view>
             <view class="record-right"><view class="amount neutral">¥{{ money(member.totalCommission) }}</view><view class="record-meta">累计佣金</view></view>
@@ -136,7 +136,7 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
 
         <template v-else>
           <view class="section-heading">提现记录</view>
-          <view v-if="!withdraws.length" class="empty"><ReceiptText :size="34" :stroke-width="1.3" /><text>暂无提现记录</text></view>
+          <view v-if="!withdraws.length" class="empty"><AppIcon name="receipt-text-soft" :size="34" /><text>暂无提现记录</text></view>
           <view v-for="item in withdraws" :key="item.id" class="record-row">
             <view><view class="record-title">佣金提现</view><view class="record-meta">{{ item.applyTime?.slice(0, 10) || '—' }}</view></view>
             <view class="record-right"><view class="amount neutral">-¥{{ money(item.amount) }}</view><view class="state" :class="item.status">{{ withdrawStatusLabel(item.status) }}</view></view>

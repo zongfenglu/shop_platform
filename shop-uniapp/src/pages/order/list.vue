@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { PackageOpen } from '@lucide/vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { cancelOrder, pageOrders } from '@/api'
 
 /**
@@ -122,7 +122,7 @@ function onComment(row) {
         </view>
         <view class="goods-row">
           <image v-if="row.goodsImage" class="goods-image" :src="row.goodsImage" mode="aspectFill" />
-          <view v-else class="ph"><PackageOpen :size="28" :stroke-width="1.6" /></view>
+          <view v-else class="ph"><AppIcon name="package-open-muted" :size="28" /></view>
           <view class="mid">
             <view class="goods-name">{{ row.goodsName || '订单商品' }}</view>
             <view class="goods-meta">{{ row.specText || '默认规格' }} · 共 {{ row.goodsCount || 1 }} 件</view>
