@@ -22,7 +22,7 @@ import {
 import { listCoupons } from '@/api/coupon'
 import { listSeckillActives } from '@/api/seckill'
 import { listGroupActives, listBargainActives } from '@/api/group-bargain'
-import { getGoods } from '@/api/goods'
+import { getGoods, pageGoods } from '@/api/goods'
 import { listOfflineStores } from '@/api/offlineStore'
 import { pageArticles } from '@/api/content'
 import GoodsPicker from '@/components/GoodsPicker.vue'
@@ -96,15 +96,23 @@ const groupActives = ref([])
 const bargainActives = ref([])
 const storeList = ref([])
 const articleOptions = ref([])
+const goodsOptions = ref([])
+const pageLinkResources = computed(() => ({
+  goods: goodsOptions.value,
+  articles: articleOptions.value,
+  groups: groupActives.value,
+  bargains: bargainActives.value,
+}))
 
 async function loadMarketingLists() {
-  const [coupons, seckills, groups, bargains, stores, articles] = await Promise.all([
+  const [coupons, seckills, groups, bargains, stores, articles, goods] = await Promise.all([
     listCoupons().catch(() => []),
     listSeckillActives().catch(() => []),
     listGroupActives().catch(() => []),
     listBargainActives().catch(() => []),
     listOfflineStores().catch(() => []),
     pageArticles({ pageNum: 1, pageSize: 100, status: 'visible' }).catch(() => ({ records: [] })),
+    pageGoods({ pageNum: 1, pageSize: 100 }).catch(() => ({ records: [] })),
   ])
   couponList.value = coupons || []
   seckillActives.value = seckills || []
@@ -112,6 +120,7 @@ async function loadMarketingLists() {
   bargainActives.value = bargains || []
   storeList.value = stores || []
   articleOptions.value = articles?.records || []
+  goodsOptions.value = goods?.records || []
 }
 
 const blockList = [
@@ -1041,7 +1050,7 @@ function removePage(page) {
             <div class="form-item" v-for="(img, i) in selectedItem.images" :key="i">
               <label class="form-label">{{ selectedItem.type === 'imageWindow' ? ['主图', '右上', '右下'][i] || ('图片 ' + (i + 1)) : ('图片 ' + (i + 1)) }}</label>
               <ImageField v-model="img.url" />
-              <PageLinkField v-model="img.link" :pages="allPages" placeholder="点击跳转链接" />
+              <PageLinkField v-model="img.link" :pages="allPages" :resources="pageLinkResources" placeholder="点击跳转链接" />
               <button v-if="selectedItem.type !== 'imageWindow'" class="btn btn-sm" style="margin-top: 6px" @click="removeBannerImage(selectedItem, i)">删除此图</button>
             </div>
             <button v-if="selectedItem.type !== 'imageWindow'" class="btn btn-sm" @click="addBannerImage(selectedItem)">＋ 添加图片</button>
@@ -1121,7 +1130,7 @@ function removePage(page) {
             <div class="form-item" v-for="(row, i) in selectedItem.items" :key="i">
               <label class="form-label">头条 {{ i + 1 }}</label>
               <input class="form-input" v-model="row.title" placeholder="标题" />
-              <PageLinkField v-model="row.link" :pages="allPages" placeholder="跳转链接" />
+              <PageLinkField v-model="row.link" :pages="allPages" :resources="pageLinkResources" placeholder="跳转链接" />
             </div>
             <button class="btn btn-sm" @click="addNewsItem(selectedItem)">＋ 添加一条</button>
           </template>
@@ -1168,7 +1177,7 @@ function removePage(page) {
               <input class="form-input" style="margin-bottom: 6px" v-model="nav.text" placeholder="文字" />
               <ImageField v-model="nav.icon" size="sm" />
               <input class="form-input" style="margin-top: 6px" v-model="nav.icon" placeholder="也可填写 emoji，如 ◎" />
-              <PageLinkField v-model="nav.link" :pages="allPages" placeholder="请选择入口页面" />
+              <PageLinkField v-model="nav.link" :pages="allPages" :resources="pageLinkResources" placeholder="请选择入口页面" />
               <button class="btn btn-sm" style="margin-top: 6px" @click="removeNavItem(selectedItem, i)">删除此项</button>
             </div>
             <button class="btn btn-sm" @click="addNavItem(selectedItem)">＋ 添加入口</button>
@@ -1353,7 +1362,7 @@ function removePage(page) {
                   <span class="nav-icon" style="cursor: pointer" @click="iconPickerIndex = iconPickerIndex === index ? null : index">{{ element.icon || '⭐' }}</span>
                   <div style="flex: 1">
                     <input class="form-input" style="margin-bottom: 6px" v-model="element.text" placeholder="菜单名称" />
-                    <PageLinkField v-model="element.path" :pages="allPages" placeholder="页面路径，如 /pages/index/index" />
+                    <PageLinkField v-model="element.path" :pages="allPages" :resources="pageLinkResources" placeholder="页面路径，如 /pages/index/index" />
                     <div v-if="iconPickerIndex === index" class="icon-picker-grid">
                       <span
                         v-for="ic in ICON_OPTIONS"
@@ -2144,9 +2153,13 @@ function removePage(page) {
   max-height: 560px;
 }
 .preview-block {
+  width: 100%;
+  padding: 0 12px;
+  box-sizing: border-box;
   pointer-events: none;
 }
 .preview-block.customer-service-block {
+  padding: 0;
   pointer-events: none;
 }
 .range-row { display: grid; grid-template-columns: 58px 1fr 42px; align-items: center; gap: 8px; min-height: 36px; color: var(--text-secondary); font-size: 12px; }

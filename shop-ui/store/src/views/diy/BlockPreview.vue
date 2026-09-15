@@ -215,7 +215,11 @@ function imageGroupList() {
       </div>
     </div>
 
-    <div v-else-if="item.type === 'goods'" class="pv-goods" :class="'cols-' + (item.style === 'list' ? '1' : '2')">
+    <div
+      v-else-if="item.type === 'goods'"
+      class="pv-goods"
+      :class="item.style === 'scroll' ? 'is-scroll' : ('cols-' + (item.style === 'list' ? '1' : '2'))"
+    >
       <div v-for="(id, i) in previewGoodsIds()" :key="i" class="pv-goods-card">
         <div class="pv-goods-img">
           <img v-if="id && goodsCover(id)" :src="goodsCover(id)" alt="" />
@@ -345,7 +349,7 @@ function imageGroupList() {
 </template>
 
 <style scoped>
-.pv { font-size: 12px; color: #2b2a27; }
+.pv { width: 100%; box-sizing: border-box; font-size: 12px; color: #2b2a27; }
 .pv img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pv-muted { color: #9a9892; font-size: 11px; }
 .pv-ph {
@@ -366,7 +370,7 @@ function imageGroupList() {
   flex: 1; min-width: 0; border: 0; outline: 0; padding: 0;
   background: transparent; color: #2b2a27; font: inherit;
 }
-.pv-banner-wrap { padding: 8px; }
+.pv-banner-wrap { width: 100%; }
 .pv-banner { position: relative; height: 110px; overflow: hidden; background: #eef4fc; border-radius: 8px; }
 .pv-badge {
   position: absolute; top: 6px; right: 8px;
@@ -412,10 +416,12 @@ function imageGroupList() {
   background: #eef4fc; display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 
-.pv-goods { display: grid; gap: 8px; }
-.pv-goods.cols-2 { grid-template-columns: 1fr 1fr; }
-.pv-goods.cols-1 { grid-template-columns: 1fr; }
-.pv-goods-card { background: #fff; }
+.pv-goods { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; }
+.pv-goods.cols-2 .pv-goods-card { width: 48.8%; flex: 0 0 48.8%; margin-bottom: 8px; }
+.pv-goods.cols-1 .pv-goods-card { width: 100%; flex: 0 0 100%; margin-bottom: 8px; }
+.pv-goods.is-scroll { flex-wrap: nowrap; justify-content: flex-start; gap: 8px; overflow: hidden; }
+.pv-goods.is-scroll .pv-goods-card { width: 48.8%; flex: 0 0 48.8%; }
+.pv-goods-card { min-width: 0; box-sizing: border-box; background: #fff; }
 .pv-goods-img { height: 86px; background: #dceeff; overflow: hidden; }
 .pv-goods-name { padding: 6px 4px 0; line-height: 1.35; }
 .pv-price-row { padding: 4px; display: flex; align-items: baseline; gap: 6px; }

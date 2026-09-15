@@ -309,6 +309,21 @@ function submitSearch() {
         </view>
       </view>
 
+      <scroll-view v-else-if="item.type === 'goods' && item.style === 'scroll'" class="goods-scroll" scroll-x :show-scrollbar="false">
+        <view class="goods-scroll-track">
+          <view v-for="g in (item.goodsList || [])" :key="g.id" class="goods-card" @click="goGoods(g.id)">
+            <image v-if="g.image" class="goods-img" :src="g.image" mode="aspectFill" />
+            <view v-else class="goods-img ph">无图</view>
+            <view v-if="item.showName !== false" class="goods-name">{{ g.name }}</view>
+            <view class="price-row">
+              <text v-if="item.showPrice !== false" class="price">¥{{ fmtPrice(g.price) }}</text>
+              <text v-if="item.showLinePrice !== false && g.linePrice" class="line">¥{{ fmtPrice(g.linePrice) }}</text>
+            </view>
+          </view>
+          <view v-if="!(item.goodsList || []).length" class="empty-hint">暂无商品</view>
+        </view>
+      </scroll-view>
+
       <view v-else-if="item.type === 'goods'" class="goods-grid" :class="item.style === 'list' ? 'cols-1' : 'cols-2'">
         <view v-for="g in (item.goodsList || [])" :key="g.id" class="goods-card" @click="goGoods(g.id)">
           <image v-if="g.image" class="goods-img" :src="g.image" mode="aspectFill" />
@@ -446,7 +461,7 @@ function submitSearch() {
 
 <style scoped>
 .diy { min-height: 100vh; box-sizing: border-box; }
-.block { padding: 0 24rpx; }
+.block { width: 100%; padding: 0 24rpx; box-sizing: border-box; }
 .search {
   display: flex; align-items: center; gap: 12rpx; margin: 16rpx 0;
   background: #fff; border-radius: 36rpx; height: 68rpx; padding: 0 28rpx;
@@ -457,8 +472,8 @@ function submitSearch() {
   color: #2b2a27; font-size: 26rpx;
 }
 .search-action { color: #2a78d6; flex-shrink: 0; }
-.banner-wrap { padding: 16rpx; }
-.banner { position: relative; height: 280rpx; overflow: hidden; background: #eef4fc; border-radius: 16rpx; }
+.banner-wrap { width: 100%; }
+.banner { position: relative; width: 100%; height: 280rpx; overflow: hidden; background: #eef4fc; border-radius: 16rpx; }
 .banner-img, .banner-ph { display: block; width: 100%; height: 100%; }
 .banner-ph { display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(135deg,#2a78d6,#1c5cab); }
 .img-stack { display: flex; flex-direction: column; gap: 8rpx; }
@@ -490,10 +505,21 @@ function submitSearch() {
 .nav-ph { display: flex; align-items: center; justify-content: center; color: #2a78d6; font-size: 28rpx; }
 .nav-text { font-size: 22rpx; color: #4a4844; }
 
-.goods-grid { display: flex; flex-wrap: wrap; gap: 16rpx; padding: 8rpx 0; }
-.goods-grid.cols-2 .goods-card { width: calc(50% - 8rpx); }
-.goods-grid.cols-1 .goods-card { width: 100%; }
-.goods-card { background: #fff; overflow: hidden; }
+.goods-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8rpx 0;
+}
+.goods-grid.cols-2 .goods-card { width: 48.8%; flex: 0 0 48.8%; margin-bottom: 16rpx; }
+.goods-grid.cols-1 .goods-card { width: 100%; flex: 0 0 100%; margin-bottom: 16rpx; }
+.goods-scroll { width: 100%; white-space: nowrap; padding: 8rpx 0; }
+.goods-scroll-track { display: inline-flex; flex-direction: row; align-items: stretch; }
+.goods-scroll .goods-card { width: 320rpx; flex: 0 0 320rpx; margin-right: 16rpx; white-space: normal; }
+.goods-scroll .goods-card:last-child { margin-right: 0; }
+.goods-card { min-width: 0; box-sizing: border-box; background: #fff; overflow: hidden; }
 .goods-img { width: 100%; height: 300rpx; background: #dceeff; }
 .goods-name { font-size: 26rpx; padding: 12rpx 8rpx 0; line-height: 1.4; }
 .price-row { padding: 8rpx; display: flex; align-items: baseline; gap: 8rpx; }
@@ -546,4 +572,26 @@ function submitSearch() {
 .cs::after { border: 0; }
 .cs-icon { width: 100%; height: 100%; }
 .empty-hint { text-align: center; color: #898781; font-size: 24rpx; padding: 24rpx 0; }
+
+/* 微信真机按 750rpx 设计宽度折算后，20~22rpx 仅约 10~11px，辅助文字会明显偏小。 */
+/* #ifdef MP-WEIXIN */
+.diy { font-size: 30rpx; }
+.search, .search-input { font-size: 28rpx; }
+.article-title { font-size: 30rpx; }
+.muted { font-size: 24rpx; }
+.news-tag { font-size: 22rpx; }
+.news-label, .news-title { font-size: 28rpx; }
+.nav-text { font-size: 24rpx; }
+.goods-name { font-size: 28rpx; }
+.price { font-size: 34rpx; }
+.line { font-size: 24rpx; }
+.ticket-sub { font-size: 22rpx; }
+.ticket-act { font-size: 24rpx; }
+.seckill-badge, .seckill-live, .more { font-size: 24rpx; }
+.timer { font-size: 22rpx; }
+.list-title, .store-name { font-size: 30rpx; }
+.cta { font-size: 24rpx; }
+.rich { font-size: 28rpx; }
+.empty-hint { font-size: 26rpx; }
+/* #endif */
 </style>

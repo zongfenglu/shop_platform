@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 const props = defineProps({
   modelValue: { type: String, default: '' },
   pages: { type: Array, default: () => [] },
+  resources: { type: Object, default: () => ({}) },
   placeholder: { type: String, default: '选择或填写页面链接' },
 })
 
@@ -55,6 +56,64 @@ const customLinks = computed(() => (props.pages || [])
     desc: page.pageData ? '已发布' : '草稿未发布',
   })))
 
+const goodsById = computed(() => new Map((props.resources.goods || []).map((row) => [String(row.id), row])))
+
+function statusText(status) {
+  if (status === 'on') return '上架'
+  if (status === 'off') return '下架'
+  if (status === 'visible') return '显示中'
+  if (status === 'hidden') return '已隐藏'
+  return ''
+}
+
+function activityName(row, type) {
+  const goods = goodsById.value.get(String(row.goodsId))
+  return goods?.name || `${type}活动 ${row.id}`
+}
+
+const resourceGroups = computed(() => [
+  {
+    name: '商品详情',
+    links: (props.resources.goods || []).map((row) => ({
+      id: row.id,
+      name: row.name || `商品 ${row.id}`,
+      path: `/pages/goods/detail?id=${row.id}`,
+      idLabel: '商品ID',
+      meta: [row.code ? `编码 ${row.code}` : '', statusText(row.status)].filter(Boolean).join(' · '),
+    })),
+  },
+  {
+    name: '文章详情',
+    links: (props.resources.articles || []).map((row) => ({
+      id: row.id,
+      name: row.title || `文章 ${row.id}`,
+      path: `/pages/article/detail?id=${row.id}`,
+      idLabel: '文章ID',
+      meta: statusText(row.status),
+    })),
+  },
+  {
+    name: '拼团详情',
+    links: (props.resources.groups || []).map((row) => ({
+      id: row.id,
+      name: activityName(row, '拼团'),
+      path: `/pages/group/detail?id=${row.id}`,
+      idLabel: '活动ID',
+      meta: [row.goodsId ? `商品ID ${row.goodsId}` : '', statusText(row.status)].filter(Boolean).join(' · '),
+    })),
+  },
+  {
+    name: '砍价详情',
+    links: (props.resources.bargains || []).map((row) => ({
+      id: row.id,
+      name: activityName(row, '砍价'),
+      path: `/pages/bargain/detail?id=${row.id}`,
+      idLabel: '活动ID',
+      meta: [row.goodsId ? `商品ID ${row.goodsId}` : '', statusText(row.status)].filter(Boolean).join(' · '),
+    })),
+  },
+])
+
 function matches(...values) {
   const term = keyword.value.trim().toLowerCase()
   return !term || values.some((value) => String(value || '').toLowerCase().includes(term))
@@ -67,6 +126,10 @@ const visibleGroups = computed(() => FIXED_GROUPS.map((group) => ({
 
 const visibleCustomLinks = computed(() => customLinks.value.filter((link) => matches(link.name, link.path, link.desc)))
 const visibleParamLinks = computed(() => PARAM_LINKS.filter((link) => matches(...link)))
+const visibleResourceGroups = computed(() => resourceGroups.value.map((group) => ({
+  ...group,
+  links: group.links.filter((link) => matches(group.name, link.name, link.id, link.idLabel, link.path, link.meta)),
+})).filter((group) => group.links.length))
 
 function update(value) {
   emit('update:modelValue', value)
@@ -103,13 +166,13 @@ function showLinks() {
         <header class="link-modal-head">
           <div>
             <h3>页面链接</h3>
-            <p>选择后自动填写，也可以复制格式后补充参数。</p>
+            <p>选择具体商品或页面后自动填写完整路径，无需手工查找 ID。</p>
           </div>
           <button type="button" class="link-close" aria-label="关闭" @click="open = false">×</button>
         </header>
 
         <div class="link-toolbar">
-          <input v-model="keyword" class="form-input" placeholder="搜索页面名称或路径" />
+          <input v-model="keyword" class="form-input" placeholder="搜索页面、商品名称、编码或 ID" />
         </div>
 
         <div class="link-modal-body">
@@ -131,15 +194,27 @@ function showLinks() {
             </button>
           </div>
 
+          <div v-for="group in visibleResourceGroups" :key="group.name" class="link-section resource-section">
+            <h4>{{ group.name }} <small>点击记录自动填写</small></h4>
+            <button v-for="link in group.links" :key="link.path" type="button" class="link-row resource-row" @click="choose(link.path)">
+              <span class="link-copy">
+                <strong>{{ link.name }}</strong>
+                <small><b>{{ link.idLabel }}：{{ link.id }}</b><template v-if="link.meta"> · {{ link.meta }}</template></small>
+              </span>
+              <code>{{ link.path }}</code>
+              <span class="link-use">使用</span>
+            </button>
+          </div>
+
           <div v-if="visibleParamLinks.length" class="link-section">
-            <h4>带参数页面</h4>
+            <h4>手动填写格式</h4>
             <div v-for="link in visibleParamLinks" :key="link[1]" class="link-row parameter-row">
               <span class="link-copy"><strong>{{ link[0] }}</strong><small>{{ link[2] }}</small></span>
               <code>{{ link[1] }}</code>
             </div>
           </div>
 
-          <div v-if="!visibleGroups.length && !visibleCustomLinks.length && !visibleParamLinks.length" class="link-empty">没有匹配的页面</div>
+          <div v-if="!visibleGroups.length && !visibleCustomLinks.length && !visibleResourceGroups.length && !visibleParamLinks.length" class="link-empty">没有匹配的页面、名称或 ID</div>
         </div>
 
         <footer class="link-modal-foot">
@@ -166,15 +241,19 @@ function showLinks() {
 .link-toolbar { padding: 14px 22px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
 .link-modal-body { overflow-y: auto; padding: 4px 22px 18px; }
 .link-section h4 { margin: 18px 0 8px; padding-left: 9px; border-left: 3px solid var(--primary); font-size: 14px; }
+.link-section h4 small { margin-left: 6px; color: var(--text-muted); font-size: 11px; font-weight: 400; }
 .link-row { width: 100%; min-height: 58px; display: grid; grid-template-columns: minmax(150px, .8fr) minmax(280px, 1.5fr) 42px; align-items: center; gap: 14px; padding: 10px 8px; border: 0; border-bottom: 1px dashed var(--border); border-radius: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
 .link-row:hover { background: var(--surface-2); }
 .link-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .link-copy strong { font-size: 13px; }
 .link-copy small { color: var(--text-muted); font-size: 11px; }
+.link-copy small b { color: var(--text-secondary); font-weight: 600; }
 .link-row code { min-width: 0; overflow: hidden; color: #27824f; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .link-use { color: var(--primary); font-size: 12px; text-align: right; }
 .parameter-row { cursor: default; grid-template-columns: minmax(150px, .8fr) minmax(280px, 1.5fr); }
 .parameter-row:hover { background: transparent; }
+.resource-section { margin-top: 4px; }
+.resource-row { min-height: 64px; }
 .link-empty { padding: 60px 0; color: var(--text-muted); text-align: center; }
 .link-modal-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 22px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; }
 @media (max-width: 720px) {
