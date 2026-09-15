@@ -42,6 +42,8 @@ const form = reactive({
 
 const REASON_OPTIONS = ['拍错/多拍/不想要', '商品破损/质量问题', '与描述不符', '商家发错货', '其他原因']
 const canReturn = computed(() => order.value?.order?.deliveryStatus !== 'pending')
+const eligibleGoods = computed(() => (order.value?.goodsList || [])
+  .filter((goods) => !goods.refundStatus || goods.refundStatus === 'none'))
 
 function onSelectGoods(g) {
   form.orderGoodsId = g.id
@@ -84,7 +86,7 @@ async function onSubmit() {
     <view v-if="order" class="card">
       <view class="card-title">选择商品</view>
       <view
-        v-for="g in order.goodsList"
+        v-for="g in eligibleGoods"
         :key="g.id"
         class="goods-row"
         :class="{ selected: form.orderGoodsId === g.id }"
@@ -98,6 +100,7 @@ async function onSubmit() {
         </view>
         <view class="check" v-if="form.orderGoodsId === g.id">✓</view>
       </view>
+      <view v-if="eligibleGoods.length === 0" class="empty-goods">该订单暂无可申请售后的商品</view>
     </view>
 
     <view class="card">
@@ -194,6 +197,7 @@ async function onSubmit() {
   color: #2a78d6;
   font-weight: 700;
 }
+.empty-goods { padding: 30rpx 0; text-align: center; color: #898781; font-size: 23rpx; }
 .type-tabs {
   display: flex;
   gap: 16rpx;

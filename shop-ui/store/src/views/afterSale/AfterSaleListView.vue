@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
 import { approveAfterSale, pageAfterSales, refundAfterSale, rejectAfterSale } from '@/api/afterSale'
 import { listReturnAddresses } from '@/api/operationSettings'
 
@@ -32,6 +33,7 @@ const STATUS_META = {
 }
 
 const loading = ref(false)
+const router = useRouter()
 const rows = ref([])
 const total = ref(0)
 const returnAddresses = ref([])
@@ -95,6 +97,10 @@ function canReview(row) {
 function canRefund(row) {
   // 仅退款：approved 之后可直接退款；退货退款：要等买家寄回（return_shipped）才能退款
   return (row.type === 'refund_only' && row.status === 'approved') || row.status === 'return_shipped'
+}
+
+function goOrder(row) {
+  router.push({ name: 'order-detail', params: { id: row.orderId } })
 }
 
 // ---------- 审核弹窗 ----------
@@ -201,6 +207,7 @@ async function onRefund(row) {
             <td><span class="tag tag-dot" :class="statusOf(row).cls">{{ statusOf(row).text }}</span></td>
             <td>{{ fmtDateTime(row.createTime) }}</td>
             <td>
+              <button class="btn btn-sm" @click="goOrder(row)">订单详情</button>
               <button v-if="canReview(row)" class="btn btn-sm" @click="openReview(row)">审核</button>
               <button v-if="canRefund(row)" class="btn btn-sm" @click="onRefund(row)">执行退款</button>
             </td>
@@ -229,6 +236,7 @@ async function onRefund(row) {
       <div class="kv-row"><div class="k">退款金额</div><div class="v">{{ fmtPrice(modalTarget.refundAmount) }}</div></div>
       <div class="kv-row"><div class="k">申请原因</div><div class="v">{{ modalTarget.applyReason || '—' }}</div></div>
       <div class="kv-row"><div class="k">买家说明</div><div class="v">{{ modalTarget.applyDesc || '—' }}</div></div>
+      <div class="kv-row"><div class="k">关联订单</div><div class="v"><button class="btn btn-sm" @click="goOrder(modalTarget)">查看订单详情</button></div></div>
 
       <div class="form-item" style="margin-top: 16px">
         <label class="form-label">审核备注（选填，拒绝时必填，将展示给买家）</label>

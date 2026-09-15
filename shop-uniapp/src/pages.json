@@ -63,6 +63,13 @@
       }
     },
     {
+      "path": "pages/afterSale/index",
+      "style": {
+        "navigationBarTitleText": "退款/售后",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
       "path": "pages/afterSale/apply",
       "style": {
         "navigationBarTitleText": "申请售后"

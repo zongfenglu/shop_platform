@@ -109,7 +109,7 @@ function money(v) { return Number(v || 0).toFixed(2) }
 
     <view class="quick-panel">
       <view class="quick-item" @click="go('/pages/order/list')"><view class="quick-icon blue"><AppIcon name="package-blue" :size="23" /></view><text>我的订单</text></view>
-      <view class="quick-item" @click="go('/pages/order/list')"><view class="quick-icon coral"><AppIcon name="rotate-ccw-coral" :size="23" /></view><text>退款/售后</text></view>
+      <view class="quick-item" @click="go('/pages/afterSale/index')"><view class="quick-icon coral"><AppIcon name="rotate-ccw-coral" :size="23" /></view><text>退款/售后</text></view>
       <view class="quick-item" @click="go('/pages/address/list')"><view class="quick-icon green"><AppIcon name="map-pin-green" :size="23" /></view><text>收货地址</text></view>
       <view class="quick-item" @click="go('/pages/coupon/center')"><view class="quick-icon amber"><AppIcon name="ticket-amber" :size="23" /></view><text>领券中心</text></view>
     </view>

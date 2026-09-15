@@ -160,6 +160,10 @@ export function getAfterSale(id) {
   return get(`/api/after-sale/${id}`)
 }
 
+export function listMyAfterSales(params) {
+  return get('/api/after-sale', params)
+}
+
 export function listAfterSaleByOrder(orderId) {
   return get(`/api/after-sale/order/${orderId}`)
 }

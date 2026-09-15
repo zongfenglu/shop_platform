@@ -450,11 +450,11 @@ function submitSearch() {
 .dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: rgba(255,255,255,0.45); }
 .dot.on { background: #fff; }
 .img-stack { display: flex; flex-direction: column; gap: 8rpx; }
-.stack-img { width: 100%; }
-.window { display: flex; gap: 8rpx; height: 280rpx; }
-.window-main { flex: 1.4; height: 100%; background: #eef4fc; }
-.window-side { flex: 1; display: flex; flex-direction: column; gap: 8rpx; }
-.window-sm { height: 136rpx; background: #eef4fc; }
+.stack-img { display: block; width: 100%; }
+.window { display: flex; gap: 8rpx; width: 100%; height: 280rpx; overflow: hidden; }
+.window-main { flex: 1.4 1 0; width: 0; min-width: 0; height: 100%; background: #eef4fc; }
+.window-side { flex: 1 1 0; width: 0; min-width: 0; height: 100%; display: flex; flex-direction: column; gap: 8rpx; }
+.window-sm { display: block; width: 100%; height: 136rpx; min-width: 0; background: #eef4fc; }
 .video-wrap { padding: 0; }
 .video { width: 100%; background: #111; }
 .ph { display: flex; align-items: center; justify-content: center; background: #dceeff; color: #7aa4d4; }

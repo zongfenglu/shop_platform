@@ -1,6 +1,10 @@
 package com.shopplatform.clientapi.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shopplatform.clientapi.dto.ApplyAfterSaleRequest;
+import com.shopplatform.clientapi.dto.AfterSaleListItem;
 import com.shopplatform.clientapi.dto.ReturnShippedRequest;
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.exception.TenantAccessDeniedException;
@@ -8,11 +12,19 @@ import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.common.result.Result;
 import com.shopplatform.domain.aftersale.entity.AfterSale;
 import com.shopplatform.domain.aftersale.service.AfterSaleService;
+import com.shopplatform.domain.order.entity.Order;
+import com.shopplatform.domain.order.entity.OrderGoods;
+import com.shopplatform.domain.order.service.OrderGoodsService;
+import com.shopplatform.domain.order.service.OrderService;
 import com.shopplatform.framework.security.LoginUserContext;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 消费者端申请售后。见原型 h5/order-list.html 的"申请售后"入口。
@@ -25,9 +37,15 @@ import java.util.List;
 public class ConsumerAfterSaleController {
 
     private final AfterSaleService afterSaleService;
+    private final OrderService orderService;
+    private final OrderGoodsService orderGoodsService;
 
-    public ConsumerAfterSaleController(AfterSaleService afterSaleService) {
+    public ConsumerAfterSaleController(AfterSaleService afterSaleService,
+                                       OrderService orderService,
+                                       OrderGoodsService orderGoodsService) {
         this.afterSaleService = afterSaleService;
+        this.orderService = orderService;
+        this.orderGoodsService = orderGoodsService;
     }
 
     @PostMapping
@@ -39,6 +57,48 @@ public class ConsumerAfterSaleController {
         return Result.ok(afterSale);
     }
 
+    /**
+     * 买家的售后记录。scope=processing 查询处理中，scope=review 查询已退款待评价，
+     * scope=records 或不传查询全部申请记录。
+     */
+    @GetMapping
+    public Result<IPage<AfterSaleListItem>> list(@RequestParam(required = false) String scope,
+                                                 @RequestParam(defaultValue = "1") int pageNum,
+                                                 @RequestParam(defaultValue = "20") int pageSize) {
+        Long userId = requireLoginUserId();
+        var wrapper = Wrappers.<AfterSale>lambdaQuery().eq(AfterSale::getUserId, userId);
+        if ("processing".equals(scope)) {
+            wrapper.in(AfterSale::getStatus, List.of("applying", "approved", "return_shipped", "refunding"));
+        } else if ("review".equals(scope)) {
+            wrapper.eq(AfterSale::getStatus, "refunded");
+        }
+        wrapper.orderByDesc(AfterSale::getCreateTime);
+
+        Page<AfterSale> source = afterSaleService.page(
+                new Page<>(Math.max(pageNum, 1), Math.min(Math.max(pageSize, 1), 100)), wrapper);
+        List<Long> orderIds = source.getRecords().stream().map(AfterSale::getOrderId).distinct().toList();
+        List<Long> orderGoodsIds = source.getRecords().stream().map(AfterSale::getOrderGoodsId).distinct().toList();
+        Map<Long, Order> orders = orderIds.isEmpty() ? Map.of() : orderService.list(
+                        Wrappers.<Order>lambdaQuery().in(Order::getId, orderIds))
+                .stream().collect(Collectors.toMap(Order::getId, Function.identity()));
+        Map<Long, OrderGoods> goods = orderGoodsIds.isEmpty() ? Map.of() : orderGoodsService.list(
+                        Wrappers.<OrderGoods>lambdaQuery().in(OrderGoods::getId, orderGoodsIds))
+                .stream().collect(Collectors.toMap(OrderGoods::getId, Function.identity(), (left, right) -> left, LinkedHashMap::new));
+
+        List<AfterSaleListItem> records = source.getRecords().stream().map(row -> {
+            Order order = orders.get(row.getOrderId());
+            OrderGoods item = goods.get(row.getOrderGoodsId());
+            return new AfterSaleListItem(
+                    row.getId(), row.getOrderId(), row.getOrderGoodsId(), order == null ? null : order.getOrderNo(),
+                    item == null ? null : item.getGoodsName(), item == null ? null : item.getImage(),
+                    item == null ? null : item.getSpecText(), row.getRefundNum(), row.getType(),
+                    row.getApplyReason(), row.getRefundAmount(), row.getStatus(), row.getCreateTime());
+        }).toList();
+        Page<AfterSaleListItem> result = new Page<>(source.getCurrent(), source.getSize(), source.getTotal());
+        result.setRecords(records);
+        return Result.ok(result);
+    }
+
     @GetMapping("/{id}")
     public Result<AfterSale> detail(@PathVariable Long id) {
         return Result.ok(requireOwnAfterSale(id));
@@ -46,6 +106,10 @@ public class ConsumerAfterSaleController {
 
     @GetMapping("/order/{orderId}")
     public Result<List<AfterSale>> listByOrder(@PathVariable Long orderId) {
+        Order order = orderService.getByIdWithTenant(orderId);
+        if (!order.getUserId().equals(requireLoginUserId())) {
+            throw new TenantAccessDeniedException("该订单不属于当前用户");
+        }
         return Result.ok(afterSaleService.listByOrderId(orderId));
     }
 

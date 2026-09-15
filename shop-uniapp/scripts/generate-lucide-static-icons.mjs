@@ -1,6 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const { chromium } = require('playwright')
 
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputDir = resolve(projectDir, 'src/static/icons')
@@ -62,10 +66,23 @@ function renderNode([tag, attributes, children]) {
 
 await mkdir(outputDir, { recursive: true })
 
-for (const [assetName, [iconName, color]] of Object.entries(icons)) {
-  const moduleUrl = new URL(`../node_modules/@lucide/vue/dist/esm/icons/${iconName}.mjs`, import.meta.url)
-  const { __iconData } = await import(moduleUrl)
-  const body = __iconData.node.map(renderNode).join('')
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>\n`
-  await writeFile(resolve(outputDir, `${assetName}.svg`), svg, 'utf8')
+const browser = await chromium.launch({ headless: true })
+const page = await browser.newPage({ viewport: { width: 96, height: 96 } })
+
+try {
+  for (const [assetName, [iconName, color]] of Object.entries(icons)) {
+    const moduleUrl = new URL(`../node_modules/@lucide/vue/dist/esm/icons/${iconName}.mjs`, import.meta.url)
+    const { __iconData } = await import(moduleUrl)
+    const body = __iconData.node.map(renderNode).join('')
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>\n`
+    await writeFile(resolve(outputDir, `${assetName}.svg`), svg, 'utf8')
+    await page.setContent(`<style>html,body{margin:0;width:96px;height:96px;background:transparent}svg{display:block;width:96px;height:96px}</style>${svg}`)
+    await page.screenshot({
+      path: resolve(outputDir, `${assetName}.png`),
+      clip: { x: 0, y: 0, width: 96, height: 96 },
+      omitBackground: true,
+    })
+  }
+} finally {
+  await browser.close()
 }

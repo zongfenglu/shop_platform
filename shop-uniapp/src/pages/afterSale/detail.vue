@@ -1,7 +1,8 @@
 <script setup>
 import { onLoad } from '@dcloudio/uni-app'
-import { ref } from 'vue'
-import { closeAfterSale, getAfterSale, returnShippedAfterSale } from '@/api'
+import { computed, ref } from 'vue'
+import AppIcon from '@/components/AppIcon.vue'
+import { closeAfterSale, getAfterSale, getOrder, returnShippedAfterSale } from '@/api'
 
 /**
  * 售后详情。对应 ConsumerAfterSaleController#detail/return-shipped/close。
@@ -12,6 +13,7 @@ import { closeAfterSale, getAfterSale, returnShippedAfterSale } from '@/api'
  */
 const id = ref(null)
 const data = ref(null)
+const orderData = ref(null)
 const loading = ref(false)
 
 onLoad((query) => {
@@ -23,12 +25,23 @@ async function load() {
   loading.value = true
   try {
     data.value = await getAfterSale(id.value)
+    try {
+      orderData.value = await getOrder(data.value.orderId)
+    } catch (e) {
+      orderData.value = null
+    }
   } catch (e) {
     data.value = null
+    orderData.value = null
   } finally {
     loading.value = false
   }
 }
+
+const relatedGoods = computed(() => {
+  const items = orderData.value?.goodsList || []
+  return items.filter((item) => String(item.id) === String(data.value?.orderGoodsId))
+})
 
 const TYPE_TEXT = { refund_only: '仅退款', return_refund: '退货退款' }
 const STATUS_TEXT = {
@@ -63,6 +76,11 @@ function canClose() {
 
 function needsReturnShip() {
   return data.value?.type === 'return_refund' && data.value?.status === 'approved'
+}
+
+function goOrderDetail() {
+  if (!data.value?.orderId) return
+  uni.navigateTo({ url: `/pages/order/detail?id=${data.value.orderId}` })
 }
 
 function onClose() {
@@ -122,7 +140,34 @@ async function onSubmitShip() {
       <view class="hero-title">{{ STATUS_TEXT[data.status] || data.status }}</view>
     </view>
 
+    <view v-if="data && orderData" class="card order-card">
+      <view class="card-head" @click="goOrderDetail">
+        <view>
+          <view class="card-title">关联订单</view>
+          <view class="order-no">{{ orderData.order.orderNo }}</view>
+        </view>
+        <view class="detail-link">查看完整订单 ›</view>
+      </view>
+      <view v-for="goods in relatedGoods" :key="goods.id" class="goods-row">
+        <image v-if="goods.image" class="goods-image" :src="goods.image" mode="aspectFill" />
+        <view v-else class="goods-image placeholder"><AppIcon name="package-open-muted" :size="24" /></view>
+        <view class="goods-body">
+          <view class="goods-name">{{ goods.goodsName }}</view>
+          <view class="goods-spec">{{ goods.specText || '默认规格' }} ×{{ data.refundNum || goods.totalNum }}</view>
+        </view>
+        <view class="goods-price">{{ fmtPrice(goods.totalPrice) }}</view>
+      </view>
+      <view class="order-summary">
+        <text>订单实付</text><text>{{ fmtPrice(orderData.order.payPrice) }}</text>
+      </view>
+      <view v-if="orderData.address?.name" class="address-block">
+        <view>{{ orderData.address.name }} {{ orderData.address.phone }}</view>
+        <view class="address-detail">{{ orderData.address.province }}{{ orderData.address.city }}{{ orderData.address.region }}{{ orderData.address.detail }}</view>
+      </view>
+    </view>
+
     <view v-if="data" class="card">
+      <view class="card-title">售后信息</view>
       <view class="kv-row"><text>申请类型</text><text>{{ TYPE_TEXT[data.type] || data.type }}</text></view>
       <view class="kv-row"><text>退款金额</text><text>{{ fmtPrice(data.refundAmount) }}</text></view>
       <view class="kv-row"><text>申请原因</text><text>{{ data.applyReason || '—' }}</text></view>
@@ -194,6 +239,19 @@ async function onSubmitShip() {
   font-weight: 600;
   margin-bottom: 12rpx;
 }
+.card-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 18rpx; border-bottom: 1rpx solid #eceeeb; }
+.card-head .card-title { margin-bottom: 5rpx; }
+.order-no { color: #8b9296; font-size: 20rpx; }
+.detail-link { color: #2a78d6; font-size: 21rpx; }
+.goods-row { display: flex; align-items: center; gap: 18rpx; padding: 22rpx 0; border-bottom: 1rpx solid #eceeeb; }
+.goods-image { width: 104rpx; height: 104rpx; flex: 0 0 104rpx; border-radius: 8rpx; background: #f0f2ef; }
+.placeholder { display: flex; align-items: center; justify-content: center; }
+.goods-body { flex: 1; min-width: 0; }
+.goods-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 24rpx; font-weight: 600; }
+.goods-spec { margin-top: 8rpx; color: #8b9296; font-size: 21rpx; }
+.goods-price { font-size: 23rpx; font-weight: 600; }
+.order-summary { display: flex; justify-content: space-between; padding: 18rpx 0 4rpx; font-size: 23rpx; font-weight: 600; }
+.address-block { margin-top: 18rpx; padding-top: 18rpx; border-top: 1rpx solid #eceeeb; font-size: 23rpx; font-weight: 600; }
 .address-name { font-size: 26rpx; font-weight: 600; margin-bottom: 8rpx; }
 .address-detail { font-size: 24rpx; color: #52514e; line-height: 1.55; }
 .kv-row {
