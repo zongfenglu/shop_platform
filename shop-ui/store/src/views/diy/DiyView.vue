@@ -222,7 +222,7 @@ function defaultItemData(type) {
     case 'search':
       return { ...base, placeholder: '搜索心动好物' }
     case 'banner':
-      return { ...base, images: [{ url: '', link: '' }], bgColor: '#ffffff' }
+      return { ...base, images: [{ url: '', link: '' }], autoplay: true, interval: 3000, bgColor: '#ffffff' }
     case 'imageGroup':
       return { ...base, images: [{ url: '', link: '' }], bgColor: '#ffffff' }
     case 'imageWindow':
@@ -465,6 +465,10 @@ function addNewsItem(item) {
 
 function stripClientFields(item) {
   const { _cid, ...rest } = item
+  if (rest.type === 'banner') {
+    rest.autoplay = rest.autoplay !== false && rest.autoplay !== 'false'
+    rest.interval = clampNumber(rest.interval, 2000, 10000, 3000)
+  }
   if (rest.type === 'video') {
     const margin = Number(rest.margin)
     const height = Number(rest.height)
@@ -494,9 +498,12 @@ function customerServicePreviewStyle(item) {
 }
 
 function restoreEditorItem(item) {
-  const defaults = item?.type === 'customerService'
-    ? { serviceType: 'chat', icon: '', bottom: 10, right: 3, opacity: 100, phone: '', chatUrl: '' }
-    : {}
+  let defaults = {}
+  if (item?.type === 'banner') {
+    defaults = { autoplay: true, interval: 3000 }
+  } else if (item?.type === 'customerService') {
+    defaults = { serviceType: 'chat', icon: '', bottom: 10, right: 3, opacity: 100, phone: '', chatUrl: '' }
+  }
   return { _cid: nextCid(), ...defaults, ...item }
 }
 
@@ -1038,6 +1045,19 @@ function removePage(page) {
               <button v-if="selectedItem.type !== 'imageWindow'" class="btn btn-sm" style="margin-top: 6px" @click="removeBannerImage(selectedItem, i)">删除此图</button>
             </div>
             <button v-if="selectedItem.type !== 'imageWindow'" class="btn btn-sm" @click="addBannerImage(selectedItem)">＋ 添加图片</button>
+            <template v-if="selectedItem.type === 'banner'">
+              <div class="form-item" style="margin-top: 12px">
+                <label class="form-label">自动播放</label>
+                <select class="form-select" v-model="selectedItem.autoplay">
+                  <option :value="true">开启</option>
+                  <option :value="false">关闭</option>
+                </select>
+              </div>
+              <div class="form-item">
+                <label class="form-label">轮播间隔（毫秒）</label>
+                <input class="form-input" type="number" v-model.number="selectedItem.interval" min="2000" max="10000" step="500" />
+              </div>
+            </template>
           </template>
 
           <template v-else-if="selectedItem.type === 'video'">

@@ -173,11 +173,14 @@ function goSignIn() {
 .goods-grid {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   padding: 20rpx 20rpx;
-  gap: 16rpx;
 }
 .goods-card {
-  width: calc(50% - 8rpx);
+  width: 48.8%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin-bottom: 16rpx;
   background: #fff;
   border-radius: 16rpx;
   overflow: hidden;
