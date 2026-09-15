@@ -14,6 +14,12 @@ public interface MemberService extends TenantSafeService<Member> {
      */
     Member loginOrRegister(String mobile);
 
+    /** 微信小程序按当前租户内的 openId 登录，首次访问时创建一个无需手机号的会员。 */
+    Member loginOrRegisterWechat(String openId, String unionId);
+
+    /** 将微信授权取得的手机号绑定到当前会员。 */
+    Member bindMobile(Long userId, String mobile);
+
     /**
      * 原子调整余额。delta 带正负号：充值+/消费-/退款+/后台调整±/佣金+。
      * 扣减后余额不可透支，否则抛业务异常。变动成功后写一条 user_balance_log，

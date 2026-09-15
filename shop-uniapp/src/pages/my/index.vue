@@ -3,16 +3,21 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import {
   BadgePercent, CalendarCheck2, ChevronRight, CircleDollarSign, Coins, Crown, Gift,
-  LogOut, MapPin, Package, RotateCcw, Share2, Store, Ticket, UserRound, WalletCards,
+  LogOut, MapPin, Package, Phone, RotateCcw, Share2, Store, Ticket, UserRound, WalletCards,
 } from '@lucide/vue'
-import { clearToken, getLoginUser, getToken, setLoginUser } from '@/utils/request'
-import { getMyProfile } from '@/api/index'
+import { clearToken, getLoginUser, getToken, setLoginUser, setToken } from '@/utils/request'
+import { bindWechatPhone, getMyProfile } from '@/api/index'
+import { ensureWechatLogin } from '@/utils/wechatAuth'
 
 const loggedIn = ref(false)
 const user = ref(null)
 const profile = ref(null)
+const bindingPhone = ref(false)
 
 onShow(async () => {
+  // #ifdef MP-WEIXIN
+  await ensureWechatLogin().catch(() => null)
+  // #endif
   loggedIn.value = !!getToken()
   user.value = getLoginUser()
   if (loggedIn.value) await loadProfile()
@@ -31,6 +36,35 @@ async function loadProfile() {
   } catch (e) {
     // 请求层已提示
   }
+}
+
+async function onGetPhoneNumber(event) {
+  const code = event?.detail?.code
+  if (!code) {
+    if (!String(event?.detail?.errMsg || '').includes('deny')) {
+      uni.showToast({ title: '未取得手机号授权', icon: 'none' })
+    }
+    return
+  }
+  if (bindingPhone.value) return
+  bindingPhone.value = true
+  try {
+    const data = await bindWechatPhone(code)
+    setToken(data.token)
+    const cached = { ...(user.value || {}), userId: data.userId, nickname: data.nickname, mobile: data.mobile || '' }
+    setLoginUser(cached)
+    user.value = cached
+    await loadProfile()
+    uni.showToast({ title: '手机号已绑定', icon: 'success' })
+  } catch (e) {
+    // 请求层已提示
+  } finally {
+    bindingPhone.value = false
+  }
+}
+
+function maskMobile(mobile) {
+  return String(mobile || '').replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')
 }
 
 function onLogin() { uni.navigateTo({ url: '/pages/my/login' }) }
@@ -94,13 +128,31 @@ function money(v) { return Number(v || 0).toFixed(2) }
     </view>
 
     <view class="section list-section">
+      <!-- #ifdef MP-WEIXIN -->
+      <button
+        v-if="loggedIn && !profile?.member?.mobile"
+        class="cell phone-cell"
+        open-type="getPhoneNumber"
+        :disabled="bindingPhone"
+        @getphonenumber="onGetPhoneNumber"
+      >
+        <view class="cell-main"><view class="cell-icon green"><Phone :size="20" /></view><text>绑定手机号</text></view>
+        <view class="cell-side"><text>{{ bindingPhone ? '绑定中...' : '微信授权获取' }}</text><ChevronRight :size="18" /></view>
+      </button>
+      <view v-else-if="loggedIn && profile?.member?.mobile" class="cell">
+        <view class="cell-main"><view class="cell-icon green"><Phone :size="20" /></view><text>手机号</text></view>
+        <view class="cell-side"><text>{{ maskMobile(profile.member.mobile) }}</text></view>
+      </view>
+      <!-- #endif -->
       <view class="cell" @click="uni.navigateTo({ url: '/pages/store/locator' })"><view class="cell-main"><view class="cell-icon blue"><Store :size="20" /></view><text>附近门店</text></view><view class="cell-side"><text>查看自提点</text><ChevronRight :size="18" /></view></view>
       <view class="cell" @click="go('/pages/my/sign-in')"><view class="cell-main"><view class="cell-icon green"><CalendarCheck2 :size="20" /></view><text>每日签到</text></view><view class="cell-side"><text>签到领积分</text><ChevronRight :size="18" /></view></view>
       <view class="cell" @click="go('/pages/points-mall/index')"><view class="cell-main"><view class="cell-icon amber"><Gift :size="20" /></view><text>积分商城</text></view><view class="cell-side"><text>兑换好物</text><ChevronRight :size="18" /></view></view>
       <view class="cell" @click="go('/pages/my/dealer')"><view class="cell-main"><view class="cell-icon coral"><Share2 :size="20" /></view><text>我的分销</text></view><view class="cell-side"><text>分销中心</text><ChevronRight :size="18" /></view></view>
       <view class="cell" @click="go('/pages/coupon/mine')"><view class="cell-main"><view class="cell-icon violet"><BadgePercent :size="20" /></view><text>我的优惠券</text></view><view class="cell-side"><ChevronRight :size="18" /></view></view>
     </view>
+    <!-- #ifndef MP-WEIXIN -->
     <button v-if="loggedIn" class="logout" @click="onLogout"><LogOut :size="19" /><text>退出登录</text></button>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -131,6 +183,8 @@ function money(v) { return Number(v || 0).toFixed(2) }
 .service-item :deep(svg) { color: #3c5968; }
 .list-section { padding: 0 26rpx; }
 .cell { min-height: 94rpx; display: flex; justify-content: space-between; align-items: center; border-bottom: 1rpx solid #eceeeb; }
+.phone-cell { width: 100%; padding: 0; border-radius: 0; background: transparent; color: inherit; font-size: inherit; text-align: left; }
+.phone-cell::after { border: 0; }
 .cell:last-child { border-bottom: 0; }
 .cell-main, .cell-side { display: flex; align-items: center; }
 .cell-main { gap: 18rpx; font-size: 25rpx; font-weight: 500; }.cell-side { gap: 5rpx; color: #969ca0; font-size: 21rpx; }

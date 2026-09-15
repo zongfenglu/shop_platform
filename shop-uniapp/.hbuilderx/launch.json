@@ -1,0 +1,11 @@
+{
+  "version": "0.0",
+  "configurations": [
+    {
+      "playtype": 2,
+      "playtype_name": "wx",
+      "type": "uniapp-run",
+      "name": "mp-weixin"
+    }
+  ]
+}

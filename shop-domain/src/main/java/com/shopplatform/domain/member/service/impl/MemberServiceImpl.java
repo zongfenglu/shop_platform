@@ -50,6 +50,49 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
         Member member = new Member();
         member.setMobile(mobile);
         member.setNickname("用户" + mobile.substring(7));
+        initializeMember(member);
+        this.save(member);
+        return member;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Member loginOrRegisterWechat(String openId, String unionId) {
+        if (!StringUtils.hasText(openId)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "微信 openId 不能为空");
+        }
+        Member existing = this.getOne(Wrappers.<Member>lambdaQuery().eq(Member::getOpenId, openId.trim()));
+        if (existing != null) {
+            baseMapper.updateLastLoginTime(existing.getId(), LocalDateTime.now());
+            return existing;
+        }
+        Member member = new Member();
+        member.setNickname("微信用户");
+        member.setPlatform("mp");
+        member.setOpenId(openId.trim());
+        member.setUnionId(StringUtils.hasText(unionId) ? unionId.trim() : null);
+        initializeMember(member);
+        this.save(member);
+        return member;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Member bindMobile(Long userId, String mobile) {
+        if (!StringUtils.hasText(mobile) || !mobile.matches("^1[3-9]\\d{9}$")) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "手机号格式不正确");
+        }
+        Member member = this.getByIdWithTenant(userId);
+        Member occupied = this.getOne(Wrappers.<Member>lambdaQuery().eq(Member::getMobile, mobile));
+        if (occupied != null && !occupied.getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "该手机号已绑定其他账号");
+        }
+        member.setMobile(mobile);
+        this.updateById(member);
+        return member;
+    }
+
+    private void initializeMember(Member member) {
         member.setStatus(1);
         member.setBalance(BigDecimal.ZERO);
         member.setPoints(0);
@@ -57,8 +100,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
         member.setPayMoney(BigDecimal.ZERO);
         member.setPayCount(0);
         member.setIsBlack(0);
-        this.save(member);
-        return member;
+        member.setLastLoginTime(LocalDateTime.now());
     }
 
     @Override

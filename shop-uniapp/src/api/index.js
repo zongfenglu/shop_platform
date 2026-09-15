@@ -9,6 +9,16 @@ export function login(mobile) {
   return post('/api/auth/login', { mobile })
 }
 
+/** 微信小程序静默登录，code 来自 uni.login。 */
+export function wechatLogin(code) {
+  return post('/api/auth/wechat/login', { code })
+}
+
+/** 微信手机号授权，code 来自 getPhoneNumber 事件。 */
+export function bindWechatPhone(code) {
+  return post('/api/auth/wechat/phone', { code })
+}
+
 // ---- 商品浏览（ConsumerGoodsController）----
 
 /** 分类树（只含 is_show=1 的分类，children 递归嵌套） */

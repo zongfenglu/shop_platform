@@ -210,6 +210,25 @@ export function mediaUrl(url) {
   // #endif
 }
 
+/**
+ * 后端上传文件统一返回 /uploads/... 相对路径。浏览器能按当前站点解析，
+ * 但小程序会把它当成本地包路径，因此在请求出口统一补全资源域名。
+ */
+export function normalizeMediaUrls(value) {
+  if (typeof value === 'string') {
+    return value.startsWith('/uploads/') ? mediaUrl(value) : value
+  }
+  if (Array.isArray(value)) {
+    return value.map(normalizeMediaUrls)
+  }
+  if (value && typeof value === 'object') {
+    Object.keys(value).forEach((key) => {
+      value[key] = normalizeMediaUrls(value[key])
+    })
+  }
+  return value
+}
+
 export function request(options) {
   const { url, method = 'GET', data, header = {}, showLoading = false } = options
 
@@ -265,11 +284,11 @@ export function request(options) {
           return
         }
         if (!body || typeof body !== 'object' || !('code' in body)) {
-          resolve(body)
+          resolve(normalizeMediaUrls(body))
           return
         }
         if (body.code === ErrorCode.OK) {
-          resolve(body.data)
+          resolve(normalizeMediaUrls(body.data))
           return
         }
         // 登录态失效：/api/** 走 ClientTenantFilter（只识别不拦断），

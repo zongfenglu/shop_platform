@@ -1,11 +1,17 @@
 <script>
 import { applyQueryShopId, setH5PreviewShopId } from '@/utils/request.js'
+import { ensureWechatLogin } from '@/utils/wechatAuth.js'
 
 export default {
   onLaunch(options) {
     // #ifdef MP
     // 与 H5 ?_shopId= 相同：开发者工具编译模式 / 体验版启动参数指定要预览的店。
     applyQueryShopId(options && options.query)
+    // #endif
+
+    // #ifdef MP-WEIXIN
+    // wx.login 不弹授权框；先按 openId 建立会员身份，手机号在业务需要时另行申请。
+    ensureWechatLogin().catch((e) => console.warn('[MP-WEIXIN] silent login failed:', e?.message || e))
     // #endif
 
     // #ifdef H5
