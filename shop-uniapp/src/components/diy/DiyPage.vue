@@ -462,7 +462,7 @@ function submitSearch() {
 <style scoped>
 .diy { min-height: 100vh; box-sizing: border-box; }
 .block {
-  width: auto;
+  width: calc(100% - 48rpx);
   margin-left: 24rpx;
   margin-right: 24rpx;
   box-sizing: border-box;
@@ -487,8 +487,8 @@ function submitSearch() {
 .window-main { flex: 1.4 1 0; width: 0; min-width: 0; height: 100%; background: #eef4fc; }
 .window-side { flex: 1 1 0; width: 0; min-width: 0; height: 100%; display: flex; flex-direction: column; gap: 8rpx; }
 .window-sm { display: block; width: 100%; height: 136rpx; min-width: 0; background: #eef4fc; }
-.video-wrap { padding: 0; }
-.video { width: 100%; background: #111; }
+.video-wrap { width: 100%; max-width: 100%; padding: 0; overflow: hidden; box-sizing: border-box; }
+.video { display: block; width: 100%; max-width: 100%; background: #111; box-sizing: border-box; }
 .ph { display: flex; align-items: center; justify-content: center; background: #dceeff; color: #7aa4d4; }
 
 .article-row { display: flex; gap: 20rpx; padding: 20rpx 0; border-bottom: 1rpx solid #f0efec; }

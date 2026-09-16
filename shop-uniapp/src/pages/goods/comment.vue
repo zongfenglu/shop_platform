@@ -86,7 +86,8 @@ async function onSubmit() {
         :class="{ selected: form.orderGoodsId === g.id }"
         @click="onSelectGoods(g)"
       >
-        <view class="ph">📦</view>
+        <image v-if="g.image" class="goods-image" :src="g.image" mode="aspectFill" />
+        <view v-else class="ph">📦</view>
         <view class="mid">
           <view class="g-name">{{ g.goodsName }}</view>
           <view class="g-spec">{{ g.specText || '默认规格' }}</view>
@@ -151,16 +152,22 @@ async function onSubmit() {
   border-color: #e34948;
   background: #fbe7e6;
 }
+.goods-image,
 .ph {
   width: 80rpx;
   height: 80rpx;
   border-radius: 14rpx;
+  flex-shrink: 0;
+}
+.goods-image {
+  display: block;
+}
+.ph {
   background: linear-gradient(135deg, #f3e7e0, #eadad0);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 32rpx;
-  flex-shrink: 0;
 }
 .mid {
   flex: 1;
