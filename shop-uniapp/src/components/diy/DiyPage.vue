@@ -204,7 +204,10 @@ function submitSearch() {
       v-for="(item, idx) in items"
       :key="item._cid || idx"
       class="block"
-      :class="{ 'customer-service-block': item.type === 'customerService' }"
+      :class="{
+        'customer-service-block': item.type === 'customerService',
+        'video-block': item.type === 'video',
+      }"
       :style="item.type === 'customerService' ? customerServiceStyle(item) : blockStyle(item)"
     >
       <view v-if="item.type === 'search'" class="search">
@@ -260,7 +263,11 @@ function submitSearch() {
         </view>
       </view>
 
-      <view v-else-if="item.type === 'video'" class="video-wrap">
+      <view
+        v-else-if="item.type === 'video'"
+        class="video-wrap"
+        :style="{ backgroundColor: item.bgColor || '#000000' }"
+      >
         <video
           v-if="item.url"
           class="video"
@@ -487,6 +494,7 @@ function submitSearch() {
 .window-main { flex: 1.4 1 0; width: 0; min-width: 0; height: 100%; background: #eef4fc; }
 .window-side { flex: 1 1 0; width: 0; min-width: 0; height: 100%; display: flex; flex-direction: column; gap: 8rpx; }
 .window-sm { display: block; width: 100%; height: 136rpx; min-width: 0; background: #eef4fc; }
+.video-block { background: transparent !important; }
 .video-wrap { width: 100%; max-width: 100%; padding: 0; overflow: hidden; box-sizing: border-box; }
 .video { display: block; width: 100%; max-width: 100%; background: #111; box-sizing: border-box; }
 .ph { display: flex; align-items: center; justify-content: center; background: #dceeff; color: #7aa4d4; }
@@ -589,6 +597,7 @@ function submitSearch() {
 
 /* 微信真机按 750rpx 设计宽度折算后，20~22rpx 仅约 10~11px，辅助文字会明显偏小。 */
 /* #ifdef MP-WEIXIN */
+.video-wrap, .video { width: 702rpx; max-width: 702rpx; }
 .diy { font-size: 30rpx; }
 .search, .search-input { font-size: 28rpx; }
 .article-title { font-size: 30rpx; }
