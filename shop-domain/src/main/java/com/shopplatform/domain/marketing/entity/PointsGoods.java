@@ -1,5 +1,7 @@
 package com.shopplatform.domain.marketing.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shopplatform.framework.mybatis.BaseEntity;
 
@@ -18,8 +20,10 @@ public class PointsGoods extends BaseEntity {
     /** 展示图 */
     private String image;
     /** 实物商品 goods.id（发货类） */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private Long goodsId;
     /** 优惠券 coupon.id（发券类） */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private Long couponId;
     /** 所需积分 */
     private Integer points;

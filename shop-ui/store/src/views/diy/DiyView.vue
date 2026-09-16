@@ -121,6 +121,10 @@ async function loadMarketingLists() {
   storeList.value = stores || []
   articleOptions.value = articles?.records || []
   goodsOptions.value = goods?.records || []
+  await rememberGoods([
+    ...groupActives.value.map((item) => item.goodsId),
+    ...bargainActives.value.map((item) => item.goodsId),
+  ])
 }
 
 const blockList = [
@@ -330,6 +334,7 @@ function removeItem(index) {
 }
 
 const goodsMeta = ref({})
+const activityKeyword = ref('')
 const materialOpen = ref(false)
 const materialTarget = ref(null)
 const videoPickerOpen = ref(false)
@@ -368,9 +373,14 @@ async function rememberGoods(ids) {
     try {
       const detail = await getGoods(id)
       const g = detail?.goods
-      goodsMeta.value[id] = { name: g?.name || `#${id}`, image: firstGoodsImage(g) }
+      const prices = (detail?.skus || []).map((sku) => Number(sku.price)).filter(Number.isFinite)
+      goodsMeta.value[id] = {
+        name: g?.name || `#${id}`,
+        image: firstGoodsImage(g),
+        price: prices.length ? Math.min(...prices) : null,
+      }
     } catch {
-      goodsMeta.value[id] = { name: `#${id}`, image: '' }
+      goodsMeta.value[id] = { name: `#${id}`, image: '', price: null }
     }
   }))
 }
@@ -381,6 +391,51 @@ function goodsName(id) {
 
 function goodsCover(id) {
   return goodsMeta.value[String(id)]?.image || ''
+}
+
+function goodsPrice(id) {
+  const raw = goodsMeta.value[String(id)]?.price
+  if (raw == null || raw === '') return ''
+  const value = Number(raw)
+  return Number.isFinite(value) ? value.toFixed(2) : ''
+}
+
+function minGroupPrice(active) {
+  try {
+    const values = Object.values(JSON.parse(active?.groupPrice || '{}'))
+      .map(Number)
+      .filter(Number.isFinite)
+    return values.length ? Math.min(...values).toFixed(2) : ''
+  } catch {
+    return ''
+  }
+}
+
+function activityOptions(type) {
+  const list = type === 'group' ? groupActives.value : bargainActives.value
+  const keyword = activityKeyword.value.trim().toLowerCase()
+  if (!keyword) return list
+  return list.filter((active) => [
+    active.id,
+    active.goodsId,
+    goodsName(active.goodsId),
+  ].some((value) => String(value || '').toLowerCase().includes(keyword)))
+}
+
+function activityPrice(active, type) {
+  const floorPrice = Number(active?.floorPrice)
+  const value = type === 'group'
+    ? minGroupPrice(active)
+    : (Number.isFinite(floorPrice) ? floorPrice.toFixed(2) : '')
+  return value || '未设置'
+}
+
+function selectedActivityCount(item) {
+  return Array.isArray(item?.activeIds) ? item.activeIds.length : 0
+}
+
+function isActivitySelected(item, activeId) {
+  return (item?.activeIds || []).some((id) => String(id) === String(activeId))
 }
 
 function onSelectDiyGoods({ goods }) {
@@ -1276,12 +1331,40 @@ function removePage(page) {
             </div>
             <div v-if="selectedItem.source === 'manual'" class="form-item">
               <label class="form-label">选择活动</label>
-              <div class="nav-list">
-                <label v-for="a in (selectedItem.type === 'group' ? groupActives : bargainActives)" :key="a.id" class="nav-item-row" style="cursor: pointer">
-                  <input type="checkbox" :value="a.id" v-model="selectedItem.activeIds" />
-                  <span style="flex: 1; font-size: 13px">{{ a.name || a.goodsName || ((selectedItem.type === 'group' ? '拼团 #' : '砍价 #') + a.id) }}</span>
-                </label>
+              <div v-if="!(selectedItem.type === 'group' ? groupActives : bargainActives).length" class="form-hint">
+                暂无可选活动，请先在「营销」中创建并配置商品。
               </div>
+              <template v-else>
+                <div class="activity-picker-toolbar">
+                  <input v-model.trim="activityKeyword" class="form-input" placeholder="搜索商品名称或活动 ID" />
+                  <span>已选 {{ selectedActivityCount(selectedItem) }} 项</span>
+                </div>
+                <div class="activity-option-list">
+                  <label
+                    v-for="a in activityOptions(selectedItem.type)"
+                    :key="a.id"
+                    class="activity-option"
+                    :class="{ selected: isActivitySelected(selectedItem, a.id) }"
+                  >
+                    <input v-model="selectedItem.activeIds" type="checkbox" :value="a.id" />
+                    <img v-if="goodsCover(a.goodsId)" :src="goodsCover(a.goodsId)" alt="" class="activity-option-thumb" />
+                    <div v-else class="activity-option-thumb activity-option-thumb-empty">无图</div>
+                    <div class="activity-option-meta">
+                      <div class="activity-option-head">
+                        <span class="activity-option-name">{{ goodsName(a.goodsId) }}</span>
+                        <span class="tag" :class="a.status === 'on' ? 'tag-good' : 'tag-muted'">{{ a.status === 'on' ? '上架' : '下架' }}</span>
+                      </div>
+                      <div class="activity-option-price">
+                        {{ selectedItem.type === 'group' ? `${a.groupNum || 2}人团` : '砍价底价' }}
+                        <strong>¥{{ activityPrice(a, selectedItem.type) }}</strong>
+                        <span v-if="goodsPrice(a.goodsId)">原价 ¥{{ goodsPrice(a.goodsId) }}</span>
+                      </div>
+                      <div class="activity-option-sub">活动 ID {{ a.id }} · 商品 ID {{ a.goodsId }}</div>
+                    </div>
+                  </label>
+                  <div v-if="!activityOptions(selectedItem.type).length" class="activity-option-empty">没有匹配的活动</div>
+                </div>
+              </template>
             </div>
             <div class="form-item">
               <label class="form-label">显示数量</label>
@@ -2053,6 +2136,97 @@ function removePage(page) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.activity-picker-toolbar {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.activity-picker-toolbar span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.activity-option-list {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.activity-option {
+  display: grid;
+  grid-template-columns: 16px 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+.activity-option:hover,
+.activity-option.selected {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+.activity-option input { margin: 0; }
+.activity-option-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.activity-option-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.activity-option-meta { min-width: 0; }
+.activity-option-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.activity-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-option-head .tag { flex-shrink: 0; }
+.activity-option-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.activity-option-price strong { color: var(--price); font-size: 13px; }
+.activity-option-price span { color: var(--text-muted); text-decoration: line-through; }
+.activity-option-sub {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-option-empty {
+  padding: 20px 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
 }
 
 /* ---- 视频组属性面板 ---- */

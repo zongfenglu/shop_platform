@@ -91,6 +91,34 @@ function bargainRows() {
   return sliced.length ? sliced : [{}, {}]
 }
 
+function activityGoods(row) {
+  return props.goodsMeta[String(row?.goodsId)] || {}
+}
+
+function activityName(row, fallback) {
+  return activityGoods(row).name || row?.goodsName || fallback
+}
+
+function activityImage(row) {
+  return activityGoods(row).image || row?.goodsImage || ''
+}
+
+function activityOriginalPrice(row) {
+  const raw = activityGoods(row).price
+  if (raw == null || raw === '') return '139.00'
+  const price = Number(raw)
+  return Number.isFinite(price) ? price.toFixed(2) : '139.00'
+}
+
+function activityGroupPrice(row) {
+  try {
+    const values = Object.values(JSON.parse(row?.groupPrice || '{}')).map(Number).filter(Number.isFinite)
+    return values.length ? Math.min(...values).toFixed(2) : '69.00'
+  } catch {
+    return '69.00'
+  }
+}
+
 function stores() {
   const ids = props.item.storeIds || []
   const list = ids.length
@@ -268,14 +296,17 @@ function imageGroupList() {
 
     <div v-else-if="item.type === 'group'" class="pv-list">
       <div v-for="(row, i) in groupRows()" :key="row.id || i" class="pv-list-row">
-        <div class="pv-list-img"><div class="pv-ph">🖼</div></div>
+        <div class="pv-list-img">
+          <img v-if="activityImage(row)" :src="activityImage(row)" alt="" />
+          <div v-else class="pv-ph">🖼</div>
+        </div>
         <div class="pv-list-body">
-          <div class="pv-list-title">{{ row.name || row.goodsName || '此处是拼团商品' }}</div>
+          <div class="pv-list-title">{{ activityName(row, '此处是拼团商品') }}</div>
           <div v-if="item.showSellingPoint !== false" class="pv-muted">{{ row.groupNum || 2 }}人团 · 正在拼团</div>
           <div class="pv-list-foot">
             <div>
-              <span v-if="item.showPrice !== false" class="pv-price">¥{{ row.minGroupPrice || '69.00' }}</span>
-              <span v-if="item.showLinePrice !== false" class="pv-line">¥139.00</span>
+              <span v-if="item.showPrice !== false" class="pv-price">¥{{ activityGroupPrice(row) }}</span>
+              <span v-if="item.showLinePrice !== false" class="pv-line">¥{{ activityOriginalPrice(row) }}</span>
             </div>
             <span class="pv-cta red">去拼团</span>
           </div>
@@ -285,13 +316,16 @@ function imageGroupList() {
 
     <div v-else-if="item.type === 'bargain'" class="pv-list">
       <div v-for="(row, i) in bargainRows()" :key="row.id || i" class="pv-list-row">
-        <div class="pv-list-img"><div class="pv-ph">🖼</div></div>
+        <div class="pv-list-img">
+          <img v-if="activityImage(row)" :src="activityImage(row)" alt="" />
+          <div v-else class="pv-ph">🖼</div>
+        </div>
         <div class="pv-list-body">
-          <div class="pv-list-title">{{ row.name || row.goodsName || '此处是砍价商品' }}</div>
+          <div class="pv-list-title">{{ activityName(row, '此处是砍价商品') }}</div>
           <div class="pv-muted">2人正在砍价</div>
           <div class="pv-list-foot">
             <div>
-              <div v-if="item.showLinePrice !== false" class="pv-line">¥ 139.00</div>
+              <div v-if="item.showLinePrice !== false" class="pv-line">¥ {{ activityOriginalPrice(row) }}</div>
               <div v-if="item.showPrice !== false" class="pv-price">最低 ¥ {{ row.floorPrice || '0.01' }}</div>
             </div>
             <span class="pv-cta tan">立即参加</span>
