@@ -461,7 +461,12 @@ function submitSearch() {
 
 <style scoped>
 .diy { min-height: 100vh; box-sizing: border-box; }
-.block { width: 100%; padding: 0 24rpx; box-sizing: border-box; }
+.block {
+  width: auto;
+  margin-left: 24rpx;
+  margin-right: 24rpx;
+  box-sizing: border-box;
+}
 .search {
   display: flex; align-items: center; gap: 12rpx; margin: 16rpx 0;
   background: #fff; border-radius: 36rpx; height: 68rpx; padding: 0 28rpx;
@@ -563,7 +568,16 @@ function submitSearch() {
 .rich { padding: 16rpx 0; font-size: 26rpx; }
 .divider { padding: 16rpx 0; }
 .divider-line { border-top-width: 1rpx; }
-.customer-service-block { position: fixed; z-index: 40; width: 96rpx; height: 96rpx; padding: 0; background: transparent !important; }
+.customer-service-block {
+  position: fixed;
+  z-index: 40;
+  width: 96rpx;
+  height: 96rpx;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0;
+  background: transparent !important;
+}
 .cs {
   width: 96rpx; height: 96rpx; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center;
   overflow: hidden; border: 2rpx solid rgba(32, 38, 46, .1); border-radius: 50%;
