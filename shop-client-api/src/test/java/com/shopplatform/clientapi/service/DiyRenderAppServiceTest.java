@@ -227,11 +227,12 @@ class DiyRenderAppServiceTest {
 
     @Test
     void resolveSeckill_activeOnSale_returnsGoodsWithRemainingStock() {
-        String pageData = "{\"items\":[{\"type\":\"seckill\",\"activeId\":1}]}";
+        long activeId = 209872871375908865L;
+        String pageData = "{\"items\":[{\"type\":\"seckill\",\"activeId\":\"209872871375908865\"}]}";
         when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
 
         SeckillActive active = new SeckillActive();
-        active.setId(1L);
+        active.setId(activeId);
         active.setName("秒杀场");
         when(seckillActiveService.listOnSale()).thenReturn(List.of(active));
 
@@ -242,7 +243,7 @@ class DiyRenderAppServiceTest {
         sg.setSeckillNum(100);
         sg.setSold(20);
         sg.setStatus("on");
-        when(seckillGoodsService.listByActive(1L)).thenReturn(List.of(sg));
+        when(seckillGoodsService.listByActive(activeId)).thenReturn(List.of(sg));
 
         GoodsSku sku = new GoodsSku();
         sku.setId(11L);
@@ -253,7 +254,7 @@ class DiyRenderAppServiceTest {
         goods.setId(21L);
         goods.setName("秒杀商品");
         when(goodsService.getByIdWithTenant(21L)).thenReturn(goods);
-        when(seckillStockService.getStock(1L, 11L)).thenReturn(null);
+        when(seckillStockService.getStock(activeId, 11L)).thenReturn(null);
 
         Map<String, Object> result = service.renderHome(SHOP_ID);
         Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
@@ -261,6 +262,25 @@ class DiyRenderAppServiceTest {
         List<?> goodsViews = (List<?>) active2.get("goods");
         assertEquals(1, goodsViews.size());
         assertEquals(80, ((Map<?, ?>) goodsViews.get(0)).get("remaining"));
+    }
+
+    @Test
+    void resolveSeckill_legacyRoundedSnowflakeId_recoversUniqueActivity() {
+        long activeId = 209872871375908865L;
+        String pageData = "{\"items\":[{\"type\":\"seckill\",\"activeId\":209872871375908860}]}";
+        when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
+
+        SeckillActive active = new SeckillActive();
+        active.setId(activeId);
+        active.setName("晚场秒杀");
+        when(seckillActiveService.listOnSale()).thenReturn(List.of(active));
+        when(seckillGoodsService.listByActive(activeId)).thenReturn(List.of());
+
+        Map<String, Object> result = service.renderHome(SHOP_ID);
+        Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
+        Map<?, ?> activeView = (Map<?, ?>) item.get("active");
+
+        assertEquals(activeId, activeView.get("id"));
     }
 
     @Test

@@ -67,7 +67,7 @@ function canCancel(row) {
 }
 
 function canAfterSale(row) {
-  return row.orderStatus !== 'cancelled' && row.payStatus === 'paid'
+  return row.orderStatus !== 'cancelled' && row.payStatus === 'paid' && row.canApplyAfterSale === true
 }
 
 function canConfirm(row) {

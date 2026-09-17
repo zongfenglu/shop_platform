@@ -20,7 +20,7 @@ import {
   updateDiyPageDraft,
 } from '@/api/diy'
 import { listCoupons } from '@/api/coupon'
-import { listSeckillActives } from '@/api/seckill'
+import { listSeckillActives, listSeckillGoods } from '@/api/seckill'
 import { listGroupActives, listBargainActives } from '@/api/group-bargain'
 import { getGoods, pageGoods } from '@/api/goods'
 import { listOfflineStores } from '@/api/offlineStore'
@@ -92,6 +92,7 @@ async function loadMenus() {
 
 const couponList = ref([])
 const seckillActives = ref([])
+const seckillGoodsByActive = ref({})
 const groupActives = ref([])
 const bargainActives = ref([])
 const storeList = ref([])
@@ -121,7 +122,17 @@ async function loadMarketingLists() {
   storeList.value = stores || []
   articleOptions.value = articles?.records || []
   goodsOptions.value = goods?.records || []
+  const seckillEntries = await Promise.all(seckillActives.value.map(async (active) => {
+    const result = await listSeckillGoods(active.id).catch(() => [])
+    const rows = Array.isArray(result) ? result : (result?.records || [])
+    return [String(active.id), rows]
+  }))
+  seckillGoodsByActive.value = Object.fromEntries(seckillEntries)
+  items.value.forEach((item) => {
+    if (item.type === 'seckill') item.activeId = normalizeSeckillActiveId(item.activeId)
+  })
   await rememberGoods([
+    ...seckillEntries.flatMap(([, rows]) => rows.map((item) => item.goodsId)),
     ...groupActives.value.map((item) => item.goodsId),
     ...bargainActives.value.map((item) => item.goodsId),
   ])
@@ -430,6 +441,34 @@ function activityPrice(active, type) {
   return value || '未设置'
 }
 
+function selectedSeckillActive(item) {
+  return seckillActives.value.find((active) => String(active.id) === String(item?.activeId))
+}
+
+function seckillGoodsCount(item) {
+  return (seckillGoodsByActive.value[String(item?.activeId)] || [])
+    .filter((goods) => goods.status === 'on').length
+}
+
+function seckillActivitySummary(item) {
+  const active = selectedSeckillActive(item)
+  if (!active) return item?.activeId ? '原关联活动不存在，请重新选择' : ''
+  const status = active.status === 'on' ? '已上架' : '已下架'
+  const dates = active.startDate && active.endDate ? `${active.startDate} 至 ${active.endDate}` : '未设置活动日期'
+  return `${status} · ${dates} · ${seckillGoodsCount(item)} 件可展示商品`
+}
+
+function normalizeSeckillActiveId(activeId) {
+  if (activeId == null || activeId === '') return activeId
+  const exact = seckillActives.value.find((active) => String(active.id) === String(activeId))
+  if (exact) return String(exact.id)
+  const numericId = Number(activeId)
+  const matches = Number.isFinite(numericId)
+    ? seckillActives.value.filter((active) => Number(active.id) === numericId)
+    : []
+  return matches.length === 1 ? String(matches[0].id) : String(activeId)
+}
+
 function selectedActivityCount(item) {
   return Array.isArray(item?.activeIds) ? item.activeIds.length : 0
 }
@@ -539,6 +578,9 @@ function stripClientFields(item) {
     rest.margin = Number.isFinite(margin) ? Math.max(0, Math.min(80, margin)) : 0
     rest.height = Number.isFinite(height) ? Math.max(80, Math.min(400, height)) : 190
   }
+  if (rest.type === 'seckill') {
+    rest.activeId = normalizeSeckillActiveId(rest.activeId)
+  }
   if (rest.type === 'customerService') {
     rest.bottom = clampNumber(rest.bottom, 0, 40, 10)
     rest.right = clampNumber(rest.right, 0, 20, 3)
@@ -568,7 +610,11 @@ function restoreEditorItem(item) {
   } else if (item?.type === 'customerService') {
     defaults = { serviceType: 'chat', icon: '', bottom: 10, right: 3, opacity: 100, phone: '', chatUrl: '' }
   }
-  return { _cid: nextCid(), ...defaults, ...item }
+  const restored = { _cid: nextCid(), ...defaults, ...item }
+  if (restored.type === 'seckill') {
+    restored.activeId = normalizeSeckillActiveId(restored.activeId)
+  }
+  return restored
 }
 
 function editPage(page) {
@@ -1032,6 +1078,7 @@ function removePage(page) {
                     :item="element"
                     :coupon-list="couponList"
                     :seckill-actives="seckillActives"
+                    :seckill-goods-by-active="seckillGoodsByActive"
                     :group-actives="groupActives"
                     :bargain-actives="bargainActives"
                     :store-list="storeList"
@@ -1301,10 +1348,15 @@ function removePage(page) {
           <template v-else-if="selectedItem.type === 'seckill'">
             <div class="form-item">
               <label class="form-label">关联秒杀专场</label>
-              <select class="form-select" v-model.number="selectedItem.activeId">
+              <select class="form-select" v-model="selectedItem.activeId">
                 <option :value="null">请选择</option>
-                <option v-for="a in seckillActives" :key="a.id" :value="a.id">{{ a.name }}</option>
+                <option v-for="a in seckillActives" :key="a.id" :value="String(a.id)">
+                  {{ a.name }} · {{ a.status === 'on' ? '已上架' : '已下架' }}
+                </option>
               </select>
+              <div v-if="seckillActivitySummary(selectedItem)" class="form-hint">
+                {{ seckillActivitySummary(selectedItem) }}
+              </div>
             </div>
             <div class="form-item">
               <label class="form-label">商品数量</label>
@@ -1547,6 +1599,7 @@ function removePage(page) {
                   :item="element"
                   :coupon-list="couponList"
                   :seckill-actives="seckillActives"
+                  :seckill-goods-by-active="seckillGoodsByActive"
                   :group-actives="groupActives"
                   :bargain-actives="bargainActives"
                   :store-list="storeList"

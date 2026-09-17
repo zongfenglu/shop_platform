@@ -70,7 +70,10 @@ function canCancel() {
 
 function canAfterSale() {
   const o = data.value?.order
-  return o && o.orderStatus !== 'cancelled' && o.payStatus === 'paid'
+  return o
+    && o.orderStatus !== 'cancelled'
+    && o.payStatus === 'paid'
+    && (data.value?.goodsList || []).some((goods) => goods.refundStatus === 'none')
 }
 
 function canConfirm() {

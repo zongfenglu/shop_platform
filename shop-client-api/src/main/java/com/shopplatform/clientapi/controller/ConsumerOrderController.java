@@ -83,11 +83,12 @@ public class ConsumerOrderController {
             List<OrderGoods> goods = goodsByOrder.getOrDefault(order.getId(), List.of());
             OrderGoods first = goods.isEmpty() ? null : goods.get(0);
             int goodsCount = goods.stream().mapToInt(g -> g.getTotalNum() == null ? 0 : g.getTotalNum()).sum();
+            boolean canApplyAfterSale = goods.stream().anyMatch(g -> "none".equals(g.getRefundStatus()));
             return new OrderListItem(
                     order.getId().toString(), order.getOrderNo(), order.getPayPrice(), order.getPayStatus(),
                     order.getDeliveryStatus(), order.getOrderStatus(), order.getCreateTime(),
                     first == null ? null : first.getGoodsName(), first == null ? null : first.getImage(),
-                    first == null ? null : first.getSpecText(), goodsCount);
+                    first == null ? null : first.getSpecText(), goodsCount, canApplyAfterSale);
         }).toList();
         Page<OrderListItem> resultPage = new Page<>(orderPage.getCurrent(), orderPage.getSize(), orderPage.getTotal());
         resultPage.setRecords(records);

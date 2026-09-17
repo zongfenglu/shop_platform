@@ -3,6 +3,7 @@ const props = defineProps({
   item: { type: Object, required: true },
   couponList: { type: Array, default: () => [] },
   seckillActives: { type: Array, default: () => [] },
+  seckillGoodsByActive: { type: Object, default: () => ({}) },
   groupActives: { type: Array, default: () => [] },
   bargainActives: { type: Array, default: () => [] },
   storeList: { type: Array, default: () => [] },
@@ -70,9 +71,24 @@ function previewGoodsIds() {
 }
 
 function seckillGoods() {
-  const found = props.seckillActives.find((a) => String(a.id) === String(props.item.activeId))
   const n = Math.min(props.item.limit || 6, props.item.columns === 2 ? 4 : 6)
-  return Array.from({ length: found ? Math.min(n, 3) : 3 })
+  const rows = (props.seckillGoodsByActive[String(props.item.activeId)] || [])
+    .filter((goods) => goods.status === 'on')
+    .slice(0, n)
+  return rows.length ? rows : Array.from({ length: Math.min(n, 3) }, () => ({}))
+}
+
+function seckillName(row) {
+  return activityName(row, '此处是秒杀商品')
+}
+
+function seckillImage(row) {
+  return activityImage(row)
+}
+
+function seckillPrice(row) {
+  const price = Number(row?.seckillPrice)
+  return Number.isFinite(price) ? price.toFixed(2) : '69.00'
 }
 
 function groupRows() {
@@ -283,12 +299,15 @@ function imageGroupList() {
         <span class="pv-more">更多 ›</span>
       </div>
       <div class="pv-seckill-grid" :class="'cols-' + (item.columns || 3)">
-        <div v-for="(_, i) in seckillGoods()" :key="i" class="pv-seckill-card">
-          <div class="pv-goods-img"><div class="pv-ph">🖼</div></div>
-          <div v-if="item.showName !== false" class="pv-goods-name">此处是秒杀商品</div>
+        <div v-for="(row, i) in seckillGoods()" :key="row.id || i" class="pv-seckill-card">
+          <div class="pv-goods-img">
+            <img v-if="seckillImage(row)" :src="seckillImage(row)" alt="" />
+            <div v-else class="pv-ph">🖼</div>
+          </div>
+          <div v-if="item.showName !== false" class="pv-goods-name">{{ seckillName(row) }}</div>
           <div class="pv-price-row">
-            <span v-if="item.showPrice !== false" class="pv-price">69.00</span>
-            <span v-if="item.showLinePrice !== false" class="pv-line">139.00</span>
+            <span v-if="item.showPrice !== false" class="pv-price">{{ seckillPrice(row) }}</span>
+            <span v-if="item.showLinePrice !== false" class="pv-line">{{ activityOriginalPrice(row) }}</span>
           </div>
         </div>
       </div>

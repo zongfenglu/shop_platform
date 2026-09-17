@@ -44,7 +44,11 @@ async function load() {
   try {
     if (activeTab.value === 'apply') {
       const page = await pageOrders({ pageNum: 1, pageSize: 50 })
-      rows.value = (page.records || []).filter((row) => row.payStatus === 'paid' && row.orderStatus !== 'cancelled')
+      rows.value = (page.records || []).filter((row) => (
+        row.payStatus === 'paid'
+        && row.orderStatus !== 'cancelled'
+        && row.canApplyAfterSale === true
+      ))
     } else {
       const page = await listMyAfterSales({ scope: activeTab.value, pageNum: 1, pageSize: 50 })
       rows.value = page.records || []

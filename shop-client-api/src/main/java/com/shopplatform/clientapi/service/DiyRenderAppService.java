@@ -300,11 +300,23 @@ public class DiyRenderAppService {
         if (activeId == null) {
             return base;
         }
-        SeckillActive active = seckillActiveService.listOnSale().stream()
+        List<SeckillActive> onSale = seckillActiveService.listOnSale();
+        SeckillActive active = onSale.stream()
                 .filter(a -> a.getId().equals(activeId)).findFirst().orElse(null);
+        if (active == null) {
+            // 旧版装修曾把 19 位雪花 ID 强转为 JavaScript Number。仅在唯一匹配时兼容恢复，
+            // 避免多个相邻雪花 ID 落入同一个双精度数值区间时误选活动。
+            List<SeckillActive> precisionMatches = onSale.stream()
+                    .filter(a -> a.getId().doubleValue() == activeId.doubleValue())
+                    .toList();
+            if (precisionMatches.size() == 1) {
+                active = precisionMatches.get(0);
+            }
+        }
         if (active == null) {
             return null;
         }
+        Long resolvedActiveId = active.getId();
         Map<String, Object> av = new LinkedHashMap<>();
         av.put("id", active.getId());
         av.put("name", active.getName());
@@ -312,7 +324,7 @@ public class DiyRenderAppService {
         av.put("endDate", active.getEndDate());
 
         List<Map<String, Object>> goodsViews = new ArrayList<>();
-        for (SeckillGoods g : seckillGoodsService.listByActive(activeId)) {
+        for (SeckillGoods g : seckillGoodsService.listByActive(resolvedActiveId)) {
             if (!"on".equals(g.getStatus())) {
                 continue;
             }
@@ -326,7 +338,7 @@ public class DiyRenderAppService {
                 gv.put("image", StringUtils.hasText(sku.getImage()) ? sku.getImage() : firstImage(goods.getImages()));
                 gv.put("seckillPrice", g.getSeckillPrice());
                 gv.put("originalPrice", sku.getPrice());
-                Integer redis = seckillStockService.getStock(activeId, g.getSkuId());
+                Integer redis = seckillStockService.getStock(resolvedActiveId, g.getSkuId());
                 int sold = g.getSold() == null ? 0 : g.getSold();
                 int num = g.getSeckillNum() == null ? 0 : g.getSeckillNum();
                 gv.put("remaining", redis != null ? redis : Math.max(0, num - sold));

@@ -43,7 +43,7 @@ const form = reactive({
 const REASON_OPTIONS = ['拍错/多拍/不想要', '商品破损/质量问题', '与描述不符', '商家发错货', '其他原因']
 const canReturn = computed(() => order.value?.order?.deliveryStatus !== 'pending')
 const eligibleGoods = computed(() => (order.value?.goodsList || [])
-  .filter((goods) => !goods.refundStatus || goods.refundStatus === 'none'))
+  .filter((goods) => goods.refundStatus === 'none'))
 
 function onSelectGoods(g) {
   form.orderGoodsId = g.id
@@ -103,7 +103,7 @@ async function onSubmit() {
       <view v-if="eligibleGoods.length === 0" class="empty-goods">该订单暂无可申请售后的商品</view>
     </view>
 
-    <view class="card">
+    <view v-if="eligibleGoods.length" class="card">
       <view class="card-title">售后类型</view>
       <view class="type-tabs">
         <view class="type-tab" :class="{ active: form.type === 'refund_only' }" @click="form.type = 'refund_only'">仅退款</view>
@@ -111,7 +111,7 @@ async function onSubmit() {
       </view>
     </view>
 
-    <view class="card">
+    <view v-if="eligibleGoods.length" class="card">
       <view class="card-title">申请原因</view>
       <view class="reason-list">
         <view
@@ -126,12 +126,12 @@ async function onSubmit() {
       </view>
     </view>
 
-    <view class="card">
+    <view v-if="eligibleGoods.length" class="card">
       <view class="card-title">补充说明（选填）</view>
       <textarea v-model="form.applyDesc" class="textarea" placeholder="详细描述问题，帮助商家更快处理" />
     </view>
 
-    <view class="bottom-bar">
+    <view v-if="eligibleGoods.length" class="bottom-bar">
       <button class="m-btn m-btn-warm" :disabled="submitting" @click="onSubmit">
         {{ submitting ? '提交中…' : '提交申请' }}
       </button>
