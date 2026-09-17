@@ -56,9 +56,9 @@ onLoad(async (query) => {
   try {
     // 秒杀/限时折扣进入时携带活动信息（单 sku 行）
     if (query?.activityType) activityType.value = query.activityType
-    if (query?.activityId) activityId.value = Number(query.activityId)
+    if (query?.activityId) activityId.value = String(query.activityId)
     // 拼团参团：携带要加入的 group_record.id
-    if (query?.groupRecordId) groupRecordId.value = Number(query.groupRecordId)
+    if (query?.groupRecordId) groupRecordId.value = String(query.groupRecordId)
     if (query?.cartIds) {
       // id 全程按字符串处理，split 出来就是字符串，不要 Number()
       cartIds.value = String(query.cartIds).split(',').filter(Boolean)

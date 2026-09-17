@@ -16,8 +16,9 @@ const now = ref(Date.now())
 let timer = null
 
 onLoad(async (query) => {
-  const id = Number(query.id)
-  const recordId = query.recordId ? Number(query.recordId) : null
+  // 雪花 ID 超出 Number.MAX_SAFE_INTEGER，路由参数必须全程保留为字符串。
+  const id = query.id ? String(query.id) : ''
+  const recordId = query.recordId ? String(query.recordId) : null
   try {
     active.value = await getGroupActive(id)
     const skus = active.value?.skus || []
