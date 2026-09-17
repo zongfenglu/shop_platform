@@ -38,4 +38,9 @@ public class StoreDealerUserController {
     public Result<DealerUser> disable(@PathVariable Long id) {
         return Result.ok(dealerUserService.disable(id));
     }
+
+    @PostMapping("/{id}/enable")
+    public Result<DealerUser> enable(@PathVariable Long id) {
+        return Result.ok(dealerUserService.enable(id));
+    }
 }

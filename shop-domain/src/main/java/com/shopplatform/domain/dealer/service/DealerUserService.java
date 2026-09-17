@@ -19,6 +19,9 @@ public interface DealerUserService extends TenantSafeService<DealerUser> {
     /** Store 禁用分销商。 */
     DealerUser disable(Long id);
 
+    /** Store 恢复已禁用的分销商。 */
+    DealerUser enable(Long id);
+
     /** Store 端列表（支持状态筛选）。 */
     List<DealerUser> listByShop(String status, String keyword);
 

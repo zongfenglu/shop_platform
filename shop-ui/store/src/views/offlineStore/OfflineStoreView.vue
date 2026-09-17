@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { pcaTextArr } from 'element-china-area-data'
+import MapLocationPicker from '@/components/MapLocationPicker.vue'
 import {
   createOfflineStore,
   listOfflineStores,
@@ -20,8 +21,9 @@ const editing = ref(null)
 const saving = ref(false)
 const verifyCode = ref('')
 const verifying = ref(false)
+const locationPickerOpen = ref(false)
 
-const form = reactive({ name: '', phone: '', region: '', detail: '', businessHours: '' })
+const form = reactive({ name: '', phone: '', region: '', detail: '', longitude: '', latitude: '', businessHours: '' })
 // 省市区级联的选中值（文本三段，如 ['四川省','成都市','武侯区']）。后端 region 是单个字符串，
 // 存取时用 '/' 拼接/拆分——与库里已有的自由文本兼容：拆不回三段的老数据保持原文显示，重选后覆盖。
 const regionParts = ref([])
@@ -52,7 +54,7 @@ async function load() {
 onMounted(load)
 
 function resetForm() {
-  Object.assign(form, { name: '', phone: '', region: '', detail: '', businessHours: '' })
+  Object.assign(form, { name: '', phone: '', region: '', detail: '', longitude: '', latitude: '', businessHours: '' })
   regionParts.value = []
 }
 
@@ -69,6 +71,8 @@ function openEdit(store) {
     phone: store.phone || '',
     region: store.region || '',
     detail: store.detail || '',
+    longitude: store.longitude ?? '',
+    latitude: store.latitude ?? '',
     businessHours: store.businessHours || '',
   })
   regionParts.value = regionToParts(store.region)
@@ -83,8 +87,17 @@ function closeModal() {
   if (!saving.value) modalOpen.value = false
 }
 
+function onLocationConfirm(location) {
+  form.latitude = location.latitude
+  form.longitude = location.longitude
+  locationPickerOpen.value = false
+}
+
 async function save() {
   if (!form.name.trim()) return message.error('请输入门店名称')
+  const hasLongitude = form.longitude !== '' && form.longitude != null
+  const hasLatitude = form.latitude !== '' && form.latitude != null
+  if (hasLongitude !== hasLatitude) return message.error('门店经纬度必须同时设置')
   saving.value = true
   try {
     if (editing.value) {
@@ -210,7 +223,7 @@ function dateText(value) {
   </div>
 
   <div v-if="modalOpen" class="modal-mask" @click.self="closeModal">
-    <div class="modal">
+    <div class="modal store-modal">
       <div class="modal-header"><span>{{ editing ? '编辑门店' : '新建门店' }}</span><button class="modal-close" aria-label="关闭" @click="closeModal">×</button></div>
       <div class="modal-body">
         <div class="form-item"><label class="form-label"><span class="req">*</span>门店名称</label><input v-model="form.name" class="form-input" /></div>
@@ -227,15 +240,37 @@ function dateText(value) {
           <div v-if="form.region && !regionParts.length" class="form-hint">当前保存值：{{ form.region }}（老数据，重新选择后覆盖）</div>
         </div>
         <div class="form-item"><label class="form-label">详细地址</label><input v-model="form.detail" class="form-input" /></div>
+        <div class="form-item">
+          <label class="form-label">地图位置</label>
+          <div class="location-field">
+            <div class="location-value">
+              <template v-if="form.latitude !== '' && form.longitude !== ''">纬度 {{ form.latitude }} · 经度 {{ form.longitude }}</template>
+              <template v-else>尚未选择门店位置</template>
+            </div>
+            <button class="btn" type="button" @click="locationPickerOpen = true">地图选点</button>
+          </div>
+          <div class="form-hint">配置后，消费者可在小程序“附近门店”中打开地图导航。</div>
+        </div>
         <div class="form-item"><label class="form-label">营业时间</label><input v-model="form.businessHours" class="form-input" placeholder="例如 10:00 - 22:00" /></div>
       </div>
       <div class="modal-footer"><button class="btn" @click="closeModal">取消</button><button class="btn btn-primary" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存' }}</button></div>
     </div>
   </div>
+
+  <MapLocationPicker
+    v-if="locationPickerOpen"
+    :latitude="form.latitude"
+    :longitude="form.longitude"
+    @confirm="onLocationConfirm"
+    @close="locationPickerOpen = false"
+  />
 </template>
 
 <style scoped>
 .tab { border: 0; background: transparent; cursor: pointer; }
 .verify-box { display: flex; gap: 10px; margin-bottom: 16px; max-width: 480px; }
 .verify-box .form-input { flex: 1; }
+.store-modal { width: min(680px, calc(100vw - 32px)); }
+.location-field { display: flex; align-items: center; gap: 10px; }
+.location-value { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); background: var(--surface-2); font-size: 13px; }
 </style>

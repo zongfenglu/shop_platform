@@ -156,6 +156,14 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         this.updateById(goods);
     }
 
+    @Override
+    public void increaseSalesActual(Long goodsId, int quantity) {
+        if (goodsId == null || quantity <= 0) {
+            return;
+        }
+        baseMapper.increaseSalesActual(goodsId, quantity);
+    }
+
     /** 未显式传 SKU 明细时（前端单规格表单只填了一组价格/库存），兜底生成一条空规格的 SkuItem。 */
     private List<SkuItem> normalizeSkuItems(PublishGoodsCommand cmd) {
         if (!CollectionUtils.isEmpty(cmd.skuItems())) {

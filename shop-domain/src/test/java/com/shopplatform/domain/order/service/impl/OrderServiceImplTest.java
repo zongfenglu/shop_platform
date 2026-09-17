@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shopplatform.common.exception.BusinessException;
+import com.shopplatform.domain.goods.service.GoodsService;
 import com.shopplatform.domain.goods.service.GoodsSkuService;
 import com.shopplatform.domain.marketing.service.UserCouponService;
 import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.*;
 class OrderServiceImplTest {
 
     private PriceCalculator priceCalculator;
+    private GoodsService goodsService;
     private GoodsSkuService goodsSkuService;
     private OrderGoodsService orderGoodsService;
     private OrderAddressService orderAddressService;
@@ -74,6 +76,7 @@ class OrderServiceImplTest {
     @BeforeEach
     void setUp() {
         priceCalculator = mock(PriceCalculator.class);
+        goodsService = mock(GoodsService.class);
         goodsSkuService = mock(GoodsSkuService.class);
         orderGoodsService = mock(OrderGoodsService.class);
         orderAddressService = mock(OrderAddressService.class);
@@ -82,7 +85,7 @@ class OrderServiceImplTest {
         userCouponService = mock(UserCouponService.class);
         offlineStoreService = mock(OfflineStoreService.class);
 
-        OrderServiceImpl impl = new OrderServiceImpl(priceCalculator, goodsSkuService, orderGoodsService,
+        OrderServiceImpl impl = new OrderServiceImpl(priceCalculator, goodsService, goodsSkuService, orderGoodsService,
                 orderAddressService, orderPackageService, orderCloseDelayProducer, userCouponService,
                 offlineStoreService, new ObjectMapper());
         orderService = spy(impl);
@@ -263,11 +266,22 @@ class OrderServiceImplTest {
     @Test
     void markPaid_conditionalUpdate_delegatesToOptimisticStatusTransition() {
         doReturn(true).when(orderService).update(any());
+        Order order = new Order();
+        order.setId(88L);
+        doReturn(order).when(orderService).findByOrderNo("ORDER123");
+        OrderGoods first = new OrderGoods();
+        first.setGoodsId(201L);
+        first.setTotalNum(2);
+        OrderGoods second = new OrderGoods();
+        second.setGoodsId(201L);
+        second.setTotalNum(1);
+        when(orderGoodsService.listByOrderId(88L)).thenReturn(List.of(first, second));
 
         boolean result = orderService.markPaid("ORDER123", "wx_txn_1", "wechat");
 
         assertTrue(result);
         verify(orderService).update(any());
+        verify(goodsService).increaseSalesActual(201L, 3);
     }
 
     @Test
@@ -277,6 +291,7 @@ class OrderServiceImplTest {
         boolean result = orderService.markPaid("ORDER123", "wx_txn_1", "wechat");
 
         assertFalse(result);
+        verifyNoInteractions(goodsService);
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
+import com.shopplatform.domain.goods.service.GoodsService;
 import com.shopplatform.domain.goods.service.GoodsSkuService;
 import com.shopplatform.domain.marketing.service.UserCouponService;
 import com.shopplatform.domain.offlinestore.entity.OfflineStore;
@@ -42,6 +43,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final PriceCalculator priceCalculator;
+    private final GoodsService goodsService;
     private final GoodsSkuService goodsSkuService;
     private final OrderGoodsService orderGoodsService;
     private final OrderAddressService orderAddressService;
@@ -56,6 +58,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private int payTimeoutMinutes;
 
     public OrderServiceImpl(PriceCalculator priceCalculator,
+                             GoodsService goodsService,
                              GoodsSkuService goodsSkuService,
                              OrderGoodsService orderGoodsService,
                              OrderAddressService orderAddressService,
@@ -65,6 +68,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                              OfflineStoreService offlineStoreService,
                              ObjectMapper objectMapper) {
         this.priceCalculator = priceCalculator;
+        this.goodsService = goodsService;
         this.goodsSkuService = goodsSkuService;
         this.orderGoodsService = orderGoodsService;
         this.orderAddressService = orderAddressService;
@@ -206,14 +210,29 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean markPaid(String orderNo, String transactionId, String payMethod) {
-        return this.update(Wrappers.<Order>lambdaUpdate()
+        boolean updated = this.update(Wrappers.<Order>lambdaUpdate()
                 .eq(Order::getOrderNo, orderNo)
                 .eq(Order::getPayStatus, "unpaid")
                 .set(Order::getPayStatus, "paid")
                 .set(Order::getPayMethod, payMethod)
                 .set(Order::getTransactionId, transactionId)
                 .set(Order::getPayTime, LocalDateTime.now()));
+        if (!updated) {
+            return false;
+        }
+
+        Order order = findByOrderNo(orderNo);
+        if (order != null) {
+            orderGoodsService.listByOrderId(order.getId()).stream()
+                    .filter(goods -> goods.getGoodsId() != null && goods.getTotalNum() != null && goods.getTotalNum() > 0)
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            OrderGoods::getGoodsId,
+                            java.util.stream.Collectors.summingInt(OrderGoods::getTotalNum)))
+                    .forEach(goodsService::increaseSalesActual);
+        }
+        return true;
     }
 
     @Override

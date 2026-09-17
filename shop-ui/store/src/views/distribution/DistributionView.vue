@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
   getDealerSettings, saveDealerSettings,
-  listDealerUsers, approveDealer, rejectDealer, disableDealer,
+  listDealerUsers, approveDealer, rejectDealer, disableDealer, enableDealer,
   listDealerOrders,
   listDealerWithdraws, approveDealerWithdraw, rejectDealerWithdraw,
 } from '@/api/dealer'
@@ -55,6 +55,7 @@ async function loadDealerUsers() {
 async function onApprove(id) { await approveDealer(id); await loadDealerUsers() }
 async function onReject(id) { await rejectDealer(id); await loadDealerUsers() }
 async function onDisable(id) { if (confirm('确认禁用？')) { await disableDealer(id); await loadDealerUsers() } }
+async function onEnable(id) { if (confirm('确认恢复该分销商？')) { await enableDealer(id); await loadDealerUsers() } }
 
 // ---------- 订单 ----------
 const dealerOrders = ref([])
@@ -151,6 +152,7 @@ onMounted(() => { loadSettings(); loadDealerUsers(); loadDealerOrders(); loadWit
             <button v-if="u.status === 'applying'" class="btn btn-sm" @click="onApprove(u.id)">通过</button>
             <button v-if="u.status === 'applying'" class="btn btn-sm" @click="onReject(u.id)" style="margin-left:4px">拒绝</button>
             <button v-if="u.status === 'active'" class="btn btn-sm" @click="onDisable(u.id)">禁用</button>
+            <button v-if="u.status === 'disabled'" class="btn btn-sm btn-primary" @click="onEnable(u.id)">恢复正常</button>
           </td>
         </tr>
         <tr v-if="!dealerUsers.length"><td colspan="8" style="text-align:center;color:var(--text-muted)">暂无分销商</td></tr>

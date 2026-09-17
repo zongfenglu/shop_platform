@@ -69,6 +69,12 @@ function go(url) {
   if (!loggedIn.value) return onLogin()
   uni.navigateTo({ url })
 }
+function openNearbyStores() {
+  uni.navigateTo({
+    url: '/pages/store/locator',
+    fail: () => uni.showToast({ title: '门店页面打开失败，请重试', icon: 'none' }),
+  })
+}
 function onLogout() {
   uni.showModal({
     title: '退出登录', content: '确认退出当前账号？',
@@ -141,7 +147,7 @@ function money(v) { return Number(v || 0).toFixed(2) }
         <view class="cell-side"><text>{{ maskMobile(profile.member.mobile) }}</text></view>
       </view>
       <!-- #endif -->
-      <view class="cell" @click="uni.navigateTo({ url: '/pages/store/locator' })"><view class="cell-main"><view class="cell-icon blue"><AppIcon name="store-blue" :size="20" /></view><text>附近门店</text></view><view class="cell-side"><text>查看自提点</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
+      <view class="cell" @tap="openNearbyStores"><view class="cell-main"><view class="cell-icon blue"><AppIcon name="store-blue" :size="20" /></view><text>附近门店</text></view><view class="cell-side"><text>查看自提点</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/my/sign-in')"><view class="cell-main"><view class="cell-icon green"><AppIcon name="calendar-check-2-green" :size="20" /></view><text>每日签到</text></view><view class="cell-side"><text>签到领积分</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/points-mall/index')"><view class="cell-main"><view class="cell-icon amber"><AppIcon name="gift-amber" :size="20" /></view><text>积分商城</text></view><view class="cell-side"><text>兑换好物</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/my/dealer')"><view class="cell-main"><view class="cell-icon coral"><AppIcon name="share-2-coral" :size="20" /></view><text>我的分销</text></view><view class="cell-side"><text>分销中心</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>

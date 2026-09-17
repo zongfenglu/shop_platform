@@ -95,6 +95,21 @@ public class DealerUserServiceImpl extends ServiceImpl<DealerUserMapper, DealerU
     }
 
     @Override
+    @Transactional
+    public DealerUser enable(Long id) {
+        DealerUser du = getByIdWithTenant(id);
+        if (du == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "分销商不存在");
+        }
+        if (!"disabled".equals(du.getStatus())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "仅可恢复已禁用的分销商");
+        }
+        du.setStatus("active");
+        updateById(du);
+        return du;
+    }
+
+    @Override
     public List<DealerUser> listByShop(String status, String keyword) {
         LambdaQueryWrapper<DealerUser> wrapper = new LambdaQueryWrapper<DealerUser>()
                 .orderByDesc(DealerUser::getId);

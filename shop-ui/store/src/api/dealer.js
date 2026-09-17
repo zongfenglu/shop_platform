@@ -26,6 +26,10 @@ export function disableDealer(id) {
   return http.post(`/store/dealer/users/${id}/disable`)
 }
 
+export function enableDealer(id) {
+  return http.post(`/store/dealer/users/${id}/enable`)
+}
+
 // ---- 分销订单 ----
 export function listDealerOrders(status) {
   // axios.get 第二参是 config，查询参数必须放 params —— 直接传 { status } 会被当 config 丢掉

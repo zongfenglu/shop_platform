@@ -27,6 +27,9 @@ public interface GoodsService extends TenantSafeService<Goods> {
     /** 上架/下架/移入回收站 */
     void updateStatus(Long goodsId, String status);
 
+    /** 订单首次支付成功后累加真实销量。 */
+    void increaseSalesActual(Long goodsId, int quantity);
+
     record PublishGoodsCommand(
             List<Long> categoryIds,
             Long brandId,
