@@ -504,8 +504,23 @@ public class DiyRenderAppService {
         if (ids.isEmpty() || "auto".equals(item.path("source").asText("auto"))) {
             return onSale.stream().limit(limit).toList();
         }
-        Set<Long> want = new HashSet<>(ids);
-        return onSale.stream().filter(a -> want.contains(idFn.apply(a))).limit(limit).toList();
+        List<T> picked = new ArrayList<>();
+        for (Long requestedId : ids) {
+            T exact = onSale.stream()
+                    .filter(active -> idFn.apply(active).equals(requestedId))
+                    .findFirst().orElse(null);
+            if (exact != null) {
+                picked.add(exact);
+                continue;
+            }
+            List<T> compatible = onSale.stream()
+                    .filter(active -> idFn.apply(active).doubleValue() == requestedId.doubleValue())
+                    .toList();
+            if (compatible.size() == 1) {
+                picked.add(compatible.get(0));
+            }
+        }
+        return picked.stream().distinct().limit(limit).toList();
     }
 
     private Map<String, Object> toMap(JsonNode item) {

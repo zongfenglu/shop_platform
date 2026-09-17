@@ -63,7 +63,7 @@ public class ConsumerGroupController {
 
     @GetMapping("/actives/{id}")
     public Result<Map<String, Object>> active(@PathVariable Long id) {
-        GroupActive a = groupActiveService.getByIdWithTenant(id);
+        GroupActive a = requireOnSaleActive(id);
         Map<String, Object> view = activeView(a, true);
         // 各 SKU 拼团价
         Map<Long, BigDecimal> groupPrices = groupActiveService.parseGroupPrice(a);
@@ -132,6 +132,27 @@ public class ConsumerGroupController {
             }
         }
         return m;
+    }
+
+    /** 兼容旧端把雪花 ID 舍入后的链接；仅在当前租户上架活动中唯一匹配时恢复。 */
+    private GroupActive requireOnSaleActive(Long requestedId) {
+        if (requestedId == null) {
+            throw new BusinessException(ErrorCode.GROUP_NOT_FOUND, "拼团活动不存在或已结束");
+        }
+        List<GroupActive> onSale = groupActiveService.listOnSale();
+        GroupActive exact = onSale.stream()
+                .filter(active -> active.getId().equals(requestedId))
+                .findFirst().orElse(null);
+        if (exact != null) {
+            return exact;
+        }
+        List<GroupActive> compatible = onSale.stream()
+                .filter(active -> active.getId().doubleValue() == requestedId.doubleValue())
+                .toList();
+        if (compatible.size() == 1) {
+            return compatible.get(0);
+        }
+        throw new BusinessException(ErrorCode.GROUP_NOT_FOUND, "拼团活动不存在或已结束");
     }
 
     private String firstImage(String imagesJson) {

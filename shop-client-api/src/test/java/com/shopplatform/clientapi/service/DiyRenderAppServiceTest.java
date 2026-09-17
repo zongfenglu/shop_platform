@@ -357,6 +357,24 @@ class DiyRenderAppServiceTest {
     }
 
     @Test
+    void resolveGroup_legacyRoundedSnowflakeId_recoversUniqueActivity() {
+        long activeId = 2097872871375908865L;
+        String pageData = "{\"items\":[{\"type\":\"group\",\"source\":\"manual\",\"activeIds\":[2097872871375908864]}]}";
+        when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
+        GroupActive active = new GroupActive();
+        active.setId(activeId);
+        active.setGoodsId(21L);
+        when(groupActiveService.listOnSale()).thenReturn(List.of(active));
+        when(groupActiveService.parseGroupPrice(active)).thenReturn(Map.of());
+
+        Map<String, Object> result = service.renderHome(SHOP_ID);
+        Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
+        Map<?, ?> resolved = (Map<?, ?>) ((List<?>) item.get("list")).get(0);
+
+        assertEquals(String.valueOf(activeId), resolved.get("id"));
+    }
+
+    @Test
     void resolveBargain_activeOnSale_returnsFloorPrice() {
         long activeId = 2097153019094523906L;
         String pageData = "{\"items\":[{\"type\":\"bargain\",\"activeId\":\"" + activeId + "\"}]}";
@@ -388,6 +406,23 @@ class DiyRenderAppServiceTest {
         Map<String, Object> result = service.renderHome(SHOP_ID);
         Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
         assertTrue(((List<?>) item.get("list")).isEmpty());
+    }
+
+    @Test
+    void resolveBargain_legacyRoundedSnowflakeId_recoversUniqueActivity() {
+        long activeId = 2097153019094523906L;
+        String pageData = "{\"items\":[{\"type\":\"bargain\",\"source\":\"manual\",\"activeIds\":[2097153019094524000]}]}";
+        when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
+        BargainActive active = new BargainActive();
+        active.setId(activeId);
+        active.setGoodsId(21L);
+        when(bargainActiveService.listOnSale()).thenReturn(List.of(active));
+
+        Map<String, Object> result = service.renderHome(SHOP_ID);
+        Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
+        Map<?, ?> resolved = (Map<?, ?>) ((List<?>) item.get("list")).get(0);
+
+        assertEquals(String.valueOf(activeId), resolved.get("id"));
     }
 
     @Test

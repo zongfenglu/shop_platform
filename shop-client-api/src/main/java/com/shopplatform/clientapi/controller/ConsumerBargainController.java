@@ -63,7 +63,7 @@ public class ConsumerBargainController {
 
     @GetMapping("/actives/{id}")
     public Result<Map<String, Object>> active(@PathVariable Long id) {
-        BargainActive a = bargainActiveService.getByIdWithTenant(id);
+        BargainActive a = requireOnSaleActive(id);
         Map<String, Object> view = activeView(a, true);
         // 各 SKU 原价（砍价从原价开始砍到底价）
         List<Map<String, Object>> skus = new ArrayList<>();
@@ -89,7 +89,7 @@ public class ConsumerBargainController {
     @PostMapping("/start")
     public Result<Map<String, Object>> start(@RequestBody StartRequest req) {
         Long userId = requireLoginUserId();
-        BargainActive a = bargainActiveService.getByIdWithTenant(req.activeId());
+        BargainActive a = requireOnSaleActive(req.activeId());
         if (!"on".equals(a.getStatus())) {
             throw new BusinessException(ErrorCode.BARGAIN_NOT_FOUND, "砍价活动不存在或已结束");
         }
@@ -189,6 +189,30 @@ public class ConsumerBargainController {
             }
         }
         return m;
+    }
+
+    /**
+     * 兼容旧小程序/旧装修数据把 19 位雪花 ID 转成 JavaScript Number 后产生的舍入值。
+     * 只在当前租户上架活动中唯一命中同一双精度数值时恢复，避免跨租户或歧义匹配。
+     */
+    private BargainActive requireOnSaleActive(Long requestedId) {
+        if (requestedId == null) {
+            throw new BusinessException(ErrorCode.BARGAIN_NOT_FOUND, "砍价活动不存在或已结束");
+        }
+        List<BargainActive> onSale = bargainActiveService.listOnSale();
+        BargainActive exact = onSale.stream()
+                .filter(active -> active.getId().equals(requestedId))
+                .findFirst().orElse(null);
+        if (exact != null) {
+            return exact;
+        }
+        List<BargainActive> compatible = onSale.stream()
+                .filter(active -> active.getId().doubleValue() == requestedId.doubleValue())
+                .toList();
+        if (compatible.size() == 1) {
+            return compatible.get(0);
+        }
+        throw new BusinessException(ErrorCode.BARGAIN_NOT_FOUND, "砍价活动不存在或已结束");
     }
 
     private String firstImage(String imagesJson) {
