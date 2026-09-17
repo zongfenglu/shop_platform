@@ -13,6 +13,8 @@ import com.shopplatform.domain.order.service.OrderGoodsService;
 import com.shopplatform.domain.order.service.OrderPackageService;
 import com.shopplatform.domain.order.service.OrderService;
 import com.shopplatform.domain.setting.service.ExpressCompanyService;
+import com.shopplatform.domain.aftersale.service.AfterSaleService;
+import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.storeapi.dto.OrderListQuery;
@@ -36,17 +38,23 @@ public class StoreOrderController {
     private final OrderAddressService orderAddressService;
     private final OrderPackageService orderPackageService;
     private final ExpressCompanyService expressCompanyService;
+    private final AfterSaleService afterSaleService;
+    private final OfflineStoreService offlineStoreService;
 
     public StoreOrderController(OrderService orderService,
                                  OrderGoodsService orderGoodsService,
                                  OrderAddressService orderAddressService,
                                  OrderPackageService orderPackageService,
-                                 ExpressCompanyService expressCompanyService) {
+                                 ExpressCompanyService expressCompanyService,
+                                 AfterSaleService afterSaleService,
+                                 OfflineStoreService offlineStoreService) {
         this.orderService = orderService;
         this.orderGoodsService = orderGoodsService;
         this.orderAddressService = orderAddressService;
         this.orderPackageService = orderPackageService;
         this.expressCompanyService = expressCompanyService;
+        this.afterSaleService = afterSaleService;
+        this.offlineStoreService = offlineStoreService;
     }
 
     @GetMapping
@@ -76,8 +84,16 @@ public class StoreOrderController {
         List<OrderGoods> goodsList = orderGoodsService.listByOrderId(id);
         OrderAddress address = orderAddressService.findByOrderId(id);
         List<OrderPackage> packages = orderPackageService.listByOrderId(id);
-        return Result.ok(Map.of("order", order, "goodsList", goodsList,
-                "address", address == null ? Map.of() : address, "packages", packages));
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("order", order);
+        result.put("goodsList", goodsList);
+        result.put("address", address == null ? Map.of() : address);
+        result.put("packages", packages);
+        result.put("afterSales", afterSaleService.listByOrderId(id));
+        if ("pickup".equals(order.getDeliveryType()) && order.getPickupStoreId() != null) {
+            result.put("pickupStore", offlineStoreService.getByIdWithTenant(order.getPickupStoreId()));
+        }
+        return Result.ok(result);
     }
 
     @PostMapping("/{id}/ship")

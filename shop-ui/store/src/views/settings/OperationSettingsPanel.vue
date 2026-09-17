@@ -1,6 +1,7 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
 import { Modal, message } from 'ant-design-vue'
+import { pcaTextArr } from 'element-china-area-data'
 import {
   createExpressCompany, createPrinter, createReturnAddress, createSmsChannel,
   deleteExpressCompany, deletePrinter, deleteReturnAddress, deleteSmsChannel,
@@ -23,6 +24,12 @@ const addressForm = reactive({
   contactName: '', phone: '', province: '', city: '', district: '', detail: '',
   postalCode: '', isDefault: false, sort: 100, enabled: true,
 })
+const returnRegionParts = ref([])
+
+function onReturnRegionChange(values) {
+  const [province = '', city = '', district = ''] = values || []
+  Object.assign(addressForm, { province, city, district })
+}
 const printerForm = reactive({
   name: '', provider: 'feie', deviceNo: '', accessKey: '', accessSecret: '',
   endpoint: '', sort: 100, enabled: true,
@@ -108,6 +115,7 @@ function openCreate() {
     contactName: '', phone: '', province: '', city: '', district: '', detail: '',
     postalCode: '', isDefault: rows.value.length === 0, sort: 100, enabled: true,
   })
+  if (props.section === 'returns') returnRegionParts.value = []
   if (props.section === 'printers') Object.assign(printerForm, {
     name: '', provider: 'feie', deviceNo: '', accessKey: '', accessSecret: '', endpoint: '', sort: 100, enabled: true,
   })
@@ -127,6 +135,10 @@ function openEdit(row) {
     district: row.district, detail: row.detail, postalCode: row.postalCode || '',
     isDefault: !!row.isDefault, sort: row.sort, enabled: row.status === 'enabled',
   })
+  if (props.section === 'returns') {
+    const values = [row.province, row.city, row.district].filter(Boolean)
+    returnRegionParts.value = pcaTextArr.some((province) => province.value === values[0]) ? values : []
+  }
   if (props.section === 'printers') Object.assign(printerForm, {
     name: row.name, provider: row.provider, deviceNo: row.deviceNo, accessKey: '',
     accessSecret: '', endpoint: row.endpoint || '', sort: row.sort, enabled: row.status === 'enabled',
@@ -315,7 +327,7 @@ function modalTitle() {
 
     <a-modal v-model:open="modalOpen" :title="modalTitle()" :confirm-loading="submitting" ok-text="保存" cancel-text="取消" width="620px" @ok="saveModal">
       <template v-if="section === 'express'"><div class="form-row form-item"><div><label class="form-label">物流公司名称</label><input v-model.trim="expressForm.name" class="form-input" /></div><div><label class="form-label">物流公司代码</label><input v-model.trim="expressForm.code" class="form-input" placeholder="如 shunfeng" /></div></div><div class="form-row form-item"><div><label class="form-label">排序</label><input v-model.number="expressForm.sort" type="number" min="0" class="form-input" /></div><label class="switch-line"><input v-model="expressForm.enabled" type="checkbox" /><span>启用</span></label></div></template>
-      <template v-else-if="section === 'returns'"><div class="form-row form-item"><div><label class="form-label">联系人</label><input v-model.trim="addressForm.contactName" class="form-input" /></div><div><label class="form-label">联系电话</label><input v-model.trim="addressForm.phone" class="form-input" /></div></div><div class="region-row form-item"><div><label class="form-label">省</label><input v-model.trim="addressForm.province" class="form-input" /></div><div><label class="form-label">市</label><input v-model.trim="addressForm.city" class="form-input" /></div><div><label class="form-label">区/县</label><input v-model.trim="addressForm.district" class="form-input" /></div></div><div class="form-item"><label class="form-label">详细地址</label><input v-model.trim="addressForm.detail" class="form-input" /></div><div class="form-row form-item"><div><label class="form-label">邮政编码</label><input v-model.trim="addressForm.postalCode" class="form-input" /></div><div><label class="form-label">排序</label><input v-model.number="addressForm.sort" type="number" min="0" class="form-input" /></div></div><div class="toggle-row"><label class="switch-line"><input v-model="addressForm.isDefault" type="checkbox" /><span>默认地址</span></label><label class="switch-line"><input v-model="addressForm.enabled" type="checkbox" /><span>启用</span></label></div></template>
+      <template v-else-if="section === 'returns'"><div class="form-row form-item"><div><label class="form-label">联系人</label><input v-model.trim="addressForm.contactName" class="form-input" /></div><div><label class="form-label">联系电话</label><input v-model.trim="addressForm.phone" class="form-input" /></div></div><div class="form-item"><label class="form-label">省 / 市 / 区</label><a-cascader v-model:value="returnRegionParts" :options="pcaTextArr" placeholder="请选择省 / 市 / 区" style="width: 100%" @change="onReturnRegionChange" /><div v-if="addressForm.province && !returnRegionParts.length" class="form-hint">当前保存值：{{ addressForm.province }}{{ addressForm.city }}{{ addressForm.district }}（重新选择后覆盖）</div></div><div class="form-item"><label class="form-label">详细地址</label><input v-model.trim="addressForm.detail" class="form-input" /></div><div class="form-row form-item"><div><label class="form-label">邮政编码</label><input v-model.trim="addressForm.postalCode" class="form-input" /></div><div><label class="form-label">排序</label><input v-model.number="addressForm.sort" type="number" min="0" class="form-input" /></div></div><div class="toggle-row"><label class="switch-line"><input v-model="addressForm.isDefault" type="checkbox" /><span>默认地址</span></label><label class="switch-line"><input v-model="addressForm.enabled" type="checkbox" /><span>启用</span></label></div></template>
       <template v-else-if="section === 'printers'"><div class="form-row form-item"><div><label class="form-label">打印机名称</label><input v-model.trim="printerForm.name" class="form-input" /></div><div><label class="form-label">打印渠道</label><select v-model="printerForm.provider" class="form-select"><option value="feie">飞鹅云</option><option value="yilianyun">易联云</option><option value="cloud">通用云打印</option><option value="custom_http">自定义 HTTP</option></select></div></div><div class="form-item"><label class="form-label">终端编号</label><input v-model.trim="printerForm.deviceNo" class="form-input" /></div><div class="form-row form-item"><div><label class="form-label">用户密钥 / Key</label><input v-model.trim="printerForm.accessKey" type="password" class="form-input" autocomplete="new-password" /></div><div><label class="form-label">应用密钥 / Secret</label><input v-model.trim="printerForm.accessSecret" type="password" class="form-input" autocomplete="new-password" /></div></div><div v-if="printerForm.provider === 'custom_http'" class="form-item"><label class="form-label">接口地址</label><input v-model.trim="printerForm.endpoint" class="form-input" /></div><div class="toggle-row"><label class="switch-line"><input v-model="printerForm.enabled" type="checkbox" /><span>启用</span></label><div class="compact"><label class="form-label">排序</label><input v-model.number="printerForm.sort" type="number" min="0" class="form-input" /></div></div></template>
       <template v-else-if="section === 'sms'"><div class="form-row form-item"><div><label class="form-label">渠道名称</label><input v-model.trim="smsForm.name" class="form-input" /></div><div><label class="form-label">服务商</label><select v-model="smsForm.provider" class="form-select"><option value="aliyun">阿里云</option><option value="tencent">腾讯云</option><option value="huawei">华为云</option><option value="yunpian">云片</option><option value="custom_http">自定义 HTTP</option></select></div></div><div class="form-row form-item"><div><label class="form-label">App ID</label><input v-model.trim="smsForm.appId" class="form-input" /></div><div><label class="form-label">短信签名</label><input v-model.trim="smsForm.signName" class="form-input" /></div></div><div class="form-row form-item"><div><label class="form-label">AccessKey ID</label><input v-model.trim="smsForm.accessKeyId" type="password" class="form-input" autocomplete="new-password" /></div><div><label class="form-label">AccessKey Secret</label><input v-model.trim="smsForm.accessKeySecret" type="password" class="form-input" autocomplete="new-password" /></div></div><div v-if="smsForm.provider === 'custom_http'" class="form-item"><label class="form-label">接口地址</label><input v-model.trim="smsForm.endpoint" class="form-input" placeholder="https://..." /></div><div class="toggle-row"><label class="switch-line"><input v-model="smsForm.enabled" type="checkbox" /><span>启用</span></label><div class="compact"><label class="form-label">优先级</label><input v-model.number="smsForm.priority" type="number" min="0" class="form-input" /></div></div></template>
     </a-modal>

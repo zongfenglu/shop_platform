@@ -41,9 +41,9 @@ const form = reactive({
 })
 
 const REASON_OPTIONS = ['拍错/多拍/不想要', '商品破损/质量问题', '与描述不符', '商家发错货', '其他原因']
-const canReturn = computed(() => order.value?.order?.deliveryStatus !== 'pending')
+const canReturn = computed(() => order.value?.order?.deliveryStatus === 'received')
 const eligibleGoods = computed(() => (order.value?.goodsList || [])
-  .filter((goods) => goods.refundStatus === 'none'))
+  .filter((goods) => goods.refundStatus === 'none' && order.value?.order?.deliveryStatus !== 'shipped'))
 
 function onSelectGoods(g) {
   form.orderGoodsId = g.id
@@ -109,6 +109,7 @@ async function onSubmit() {
         <view class="type-tab" :class="{ active: form.type === 'refund_only' }" @click="form.type = 'refund_only'">仅退款</view>
         <view v-if="canReturn" class="type-tab" :class="{ active: form.type === 'return_refund' }" @click="form.type = 'return_refund'">退货退款</view>
       </view>
+      <view class="flow-hint">仅退款：商家同意后退款；退货退款：商家同意后寄回商品，商家收货后退款。</view>
     </view>
 
     <view v-if="eligibleGoods.length" class="card">
@@ -217,6 +218,7 @@ async function onSubmit() {
   color: #1c5cab;
   font-weight: 600;
 }
+.flow-hint { margin-top: 18rpx; color: #898781; font-size: 21rpx; line-height: 1.6; }
 .reason-list {
   display: flex;
   flex-wrap: wrap;

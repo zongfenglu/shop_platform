@@ -16,6 +16,8 @@ public record OrderListItem(
         String goodsImage,
         String specText,
         int goodsCount,
-        boolean canApplyAfterSale
+        boolean canApplyAfterSale,
+        String afterSaleId,
+        String afterSaleStatus
 ) {
 }

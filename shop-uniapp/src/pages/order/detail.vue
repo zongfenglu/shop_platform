@@ -73,7 +73,36 @@ function canAfterSale() {
   return o
     && o.orderStatus !== 'cancelled'
     && o.payStatus === 'paid'
+    && o.deliveryStatus !== 'shipped'
     && (data.value?.goodsList || []).some((goods) => goods.refundStatus === 'none')
+}
+
+const AFTER_SALE_STATUS = {
+  applying: '售后审核中', approved: '商家已同意', rejected: '售后已拒绝',
+  return_shipped: '商品已寄回', refunding: '退款处理中', refunded: '已退款', closed: '售后已关闭',
+}
+
+function afterSaleFor(goodsId) {
+  return (data.value?.afterSales || [])
+    .filter((sale) => String(sale.orderGoodsId) === String(goodsId))
+    .sort((a, b) => String(b.createTime || '').localeCompare(String(a.createTime || '')))[0]
+}
+
+function goAfterSaleDetail(id) {
+  uni.navigateTo({ url: `/pages/afterSale/detail?id=${id}` })
+}
+
+function discountAmountOf(goods) {
+  try {
+    return Object.values(JSON.parse(goods.discountDetail || '{}'))
+      .reduce((sum, value) => sum + Number(value || 0), 0)
+  } catch (e) {
+    return 0
+  }
+}
+
+function activityText(type) {
+  return ({ seckill: '秒杀活动', group: '拼团活动', bargain: '砍价活动' })[type] || '营销活动'
 }
 
 function canConfirm() {
@@ -252,6 +281,14 @@ function packageGoodsText(pkg) {
         <view class="mid">
           <view class="g-name">{{ g.goodsName }}</view>
           <view class="g-spec">{{ g.specText || '默认规格' }} ×{{ g.totalNum }}</view>
+          <view v-if="discountAmountOf(g) > 0" class="g-discount">本商品优惠 -{{ fmtPrice(discountAmountOf(g)) }}</view>
+          <view
+            v-if="afterSaleFor(g.id)"
+            class="after-sale-link"
+            @click.stop="goAfterSaleDetail(afterSaleFor(g.id).id)"
+          >
+            {{ AFTER_SALE_STATUS[afterSaleFor(g.id).status] || '售后处理中' }} · {{ afterSaleFor(g.id).refundNum }}件 · 售后详情 ›
+          </view>
         </view>
         <view class="price">{{ fmtPrice(g.totalPrice) }}</view>
       </view>
@@ -260,6 +297,9 @@ function packageGoodsText(pkg) {
     <view v-if="data" class="card">
       <view class="kv-row"><text>商品总额</text><text>{{ fmtPrice(data.order.totalPrice) }}</text></view>
       <view class="kv-row"><text>运费</text><text>{{ fmtPrice(data.order.expressPrice) }}</text></view>
+      <view v-if="Number(data.order.discountPrice)" class="kv-row discount"><text>{{ activityText(data.order.activityType) }}/满减/会员优惠</text><text>-{{ fmtPrice(data.order.discountPrice) }}</text></view>
+      <view v-if="Number(data.order.couponPrice)" class="kv-row discount"><text>优惠券</text><text>-{{ fmtPrice(data.order.couponPrice) }}</text></view>
+      <view v-if="Number(data.order.pointsPrice)" class="kv-row discount"><text>积分抵扣<span v-if="data.order.pointsNum">（{{ data.order.pointsNum }}积分）</span></text><text>-{{ fmtPrice(data.order.pointsPrice) }}</text></view>
       <view class="kv-row" style="font-weight: 700; color: #0b0b0b">
         <text>实付金额</text><text style="color: #e34948">{{ fmtPrice(data.order.payPrice) }}</text>
       </view>
@@ -397,6 +437,8 @@ function packageGoodsText(pkg) {
   color: #898781;
   margin-top: 6rpx;
 }
+.g-discount { margin-top: 6rpx; color: #d4380d; font-size: 20rpx; }
+.after-sale-link { margin-top: 8rpx; color: #2a78d6; font-size: 21rpx; }
 .price {
   font-size: 26rpx;
   font-weight: 600;
@@ -408,6 +450,7 @@ function packageGoodsText(pkg) {
   font-size: 24rpx;
   color: #52514e;
 }
+.kv-row.discount { color: #d4380d; }
 .track-row {
   padding: 14rpx 0;
   border-bottom: 2rpx dashed #e1e0d9;

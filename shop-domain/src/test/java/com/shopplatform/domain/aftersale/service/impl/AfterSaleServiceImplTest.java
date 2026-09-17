@@ -77,7 +77,17 @@ class AfterSaleServiceImplTest {
         BusinessException error = assertThrows(BusinessException.class,
                 () -> service.apply(command("return_refund")));
 
-        assertEquals("订单尚未发货，请选择仅退款", error.getMessage());
+        assertEquals("商品尚未收货，请选择仅退款", error.getMessage());
+    }
+
+    @Test
+    void apply_shippedOrder_requiresReceiptFirst() {
+        when(orderService.getByIdWithTenant(10L)).thenReturn(order("paid", "normal", "shipped"));
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> service.apply(command("refund_only")));
+
+        assertEquals("商品运输中，请确认收货后再申请售后", error.getMessage());
     }
 
     @Test

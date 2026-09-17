@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getBargainActive, startBargain, helpBargain, getBargainRecord } from '@/api/index'
+import { decodeRouteId, encodeRouteId } from '@/utils/routeId'
 
 /**
  * 砍价详情。对应原型 h5/bargain-detail.html。
@@ -20,9 +21,8 @@ const now = ref(Date.now())
 let timer = null
 
 onLoad(async (query) => {
-  // 雪花 ID 超出 Number.MAX_SAFE_INTEGER，路由参数必须全程保留为字符串。
-  const id = query.id ? String(query.id) : ''
-  const recordId = query.recordId ? String(query.recordId) : null
+  const id = decodeRouteId(query.id)
+  const recordId = decodeRouteId(query.recordId) || null
   try {
     active.value = await getBargainActive(id)
     const skus = active.value?.skus || []
@@ -127,8 +127,8 @@ function goCheckout() {
   }
   const a = active.value
   uni.navigateTo({
-    url: `/pages/order/checkout?skuId=${selectedSku.value?.skuId}&goodsId=${a.goodsId}&quantity=1`
-      + `&activityType=bargain&activityId=${record.value.recordId}`,
+    url: `/pages/order/checkout?skuId=${encodeRouteId(selectedSku.value?.skuId)}&goodsId=${encodeRouteId(a.goodsId)}&quantity=1`
+      + `&activityType=bargain&activityId=${encodeRouteId(record.value.recordId)}`,
   })
 }
 </script>

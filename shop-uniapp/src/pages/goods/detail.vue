@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { addToCart, getGoodsComments, getGoodsDetail } from '@/api'
 import { getToken } from '@/utils/request'
+import { encodeRouteId } from '@/utils/routeId'
 
 /**
  * 商品详情。对应原型 docs/prototype/h5/goods-detail.html。
@@ -141,7 +142,7 @@ async function confirmSpec() {
     specPopupVisible.value = false
     // 立即购买不经过购物车，直接把 goodsId/skuId/数量带到结算页（结算页据此重新拉商品取最新价）
     uni.navigateTo({
-      url: `/pages/order/checkout?goodsId=${goods.value.id}&skuId=${sku.id}&quantity=${quantity.value}`,
+      url: `/pages/order/checkout?goodsId=${encodeRouteId(goods.value.id)}&skuId=${encodeRouteId(sku.id)}&quantity=${quantity.value}`,
     })
     return
   }

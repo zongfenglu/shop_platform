@@ -71,7 +71,7 @@ public class ConsumerBargainController {
             Goods goods = goodsService.getByIdWithTenant(a.getGoodsId());
             for (GoodsSku sku : goodsSkuService.listByGoodsId(a.getGoodsId())) {
                 Map<String, Object> sv = new HashMap<>();
-                sv.put("skuId", sku.getId());
+                sv.put("skuId", String.valueOf(sku.getId()));
                 sv.put("price", sku.getPrice());
                 sv.put("stock", sku.getStock());
                 sv.put("image", StringUtils.hasText(sku.getImage()) ? sku.getImage() : firstImage(goods.getImages()));
@@ -150,8 +150,8 @@ public class ConsumerBargainController {
 
     private Map<String, Object> recordView(BargainRecord rec, BargainActive a) {
         Map<String, Object> m = new HashMap<>();
-        m.put("recordId", rec.getId());
-        m.put("activeId", rec.getActiveId());
+        m.put("recordId", String.valueOf(rec.getId()));
+        m.put("activeId", String.valueOf(rec.getActiveId()));
         m.put("currentPrice", rec.getCurrentPrice());
         m.put("floorPrice", a.getFloorPrice());
         m.put("helpCount", rec.getHelpCount());
@@ -171,8 +171,8 @@ public class ConsumerBargainController {
 
     private Map<String, Object> activeView(BargainActive a, boolean detail) {
         Map<String, Object> m = new HashMap<>();
-        m.put("id", a.getId());
-        m.put("goodsId", a.getGoodsId());
+        m.put("id", String.valueOf(a.getId()));
+        m.put("goodsId", String.valueOf(a.getGoodsId()));
         m.put("floorPrice", a.getFloorPrice());
         m.put("validHours", a.getValidHours());
         m.put("helpLimit", a.getHelpLimit());

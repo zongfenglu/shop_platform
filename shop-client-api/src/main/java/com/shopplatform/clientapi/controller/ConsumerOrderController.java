@@ -9,6 +9,8 @@ import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.common.result.Result;
 import com.shopplatform.clientapi.dto.OrderListItem;
 import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
+import com.shopplatform.domain.aftersale.entity.AfterSale;
+import com.shopplatform.domain.aftersale.service.AfterSaleService;
 import com.shopplatform.domain.order.entity.Order;
 import com.shopplatform.domain.order.entity.OrderAddress;
 import com.shopplatform.domain.order.entity.OrderGoods;
@@ -26,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 /**
  * 消费者端"我的订单"：列表/详情/确认收货/物流轨迹。见原型 h5/order-list.html、order-detail.html。
@@ -43,19 +46,22 @@ public class ConsumerOrderController {
     private final OrderPackageService orderPackageService;
     private final LogisticsQueryService logisticsQueryService;
     private final OfflineStoreService offlineStoreService;
+    private final AfterSaleService afterSaleService;
 
     public ConsumerOrderController(OrderService orderService,
                                     OrderGoodsService orderGoodsService,
                                     OrderAddressService orderAddressService,
                                     OrderPackageService orderPackageService,
                                     LogisticsQueryService logisticsQueryService,
-                                    OfflineStoreService offlineStoreService) {
+                                    OfflineStoreService offlineStoreService,
+                                    AfterSaleService afterSaleService) {
         this.orderService = orderService;
         this.orderGoodsService = orderGoodsService;
         this.orderAddressService = orderAddressService;
         this.orderPackageService = orderPackageService;
         this.logisticsQueryService = logisticsQueryService;
         this.offlineStoreService = offlineStoreService;
+        this.afterSaleService = afterSaleService;
     }
 
     @GetMapping
@@ -78,17 +84,27 @@ public class ConsumerOrderController {
                         .orderByAsc(OrderGoods::getId))
                 .stream()
                 .collect(Collectors.groupingBy(OrderGoods::getOrderId, LinkedHashMap::new, Collectors.toList()));
+        Map<Long, AfterSale> latestAfterSaleByOrder = orderIds.isEmpty() ? Map.of()
+                : afterSaleService.list(Wrappers.<AfterSale>lambdaQuery().in(AfterSale::getOrderId, orderIds))
+                .stream().collect(Collectors.toMap(AfterSale::getOrderId, sale -> sale,
+                        (left, right) -> Comparator.nullsFirst(java.time.LocalDateTime::compareTo)
+                                .compare(left.getCreateTime(), right.getCreateTime()) >= 0 ? left : right));
 
         List<OrderListItem> records = orderPage.getRecords().stream().map(order -> {
             List<OrderGoods> goods = goodsByOrder.getOrDefault(order.getId(), List.of());
             OrderGoods first = goods.isEmpty() ? null : goods.get(0);
             int goodsCount = goods.stream().mapToInt(g -> g.getTotalNum() == null ? 0 : g.getTotalNum()).sum();
-            boolean canApplyAfterSale = goods.stream().anyMatch(g -> "none".equals(g.getRefundStatus()));
+            boolean deliveryAllowsAfterSale = !"shipped".equals(order.getDeliveryStatus());
+            boolean canApplyAfterSale = deliveryAllowsAfterSale
+                    && goods.stream().anyMatch(g -> "none".equals(g.getRefundStatus()));
+            AfterSale latestAfterSale = latestAfterSaleByOrder.get(order.getId());
             return new OrderListItem(
                     order.getId().toString(), order.getOrderNo(), order.getPayPrice(), order.getPayStatus(),
                     order.getDeliveryStatus(), order.getOrderStatus(), order.getCreateTime(),
                     first == null ? null : first.getGoodsName(), first == null ? null : first.getImage(),
-                    first == null ? null : first.getSpecText(), goodsCount, canApplyAfterSale);
+                    first == null ? null : first.getSpecText(), goodsCount, canApplyAfterSale,
+                    latestAfterSale == null ? null : latestAfterSale.getId().toString(),
+                    latestAfterSale == null ? null : latestAfterSale.getStatus());
         }).toList();
         Page<OrderListItem> resultPage = new Page<>(orderPage.getCurrent(), orderPage.getSize(), orderPage.getTotal());
         resultPage.setRecords(records);
@@ -106,6 +122,7 @@ public class ConsumerOrderController {
         result.put("goodsList", goodsList);
         result.put("address", address == null ? Map.of() : address);
         result.put("packages", packages);
+        result.put("afterSales", afterSaleService.listByOrderId(id));
         if ("pickup".equals(order.getDeliveryType()) && order.getPickupStoreId() != null) {
             result.put("pickupStore", offlineStoreService.getByIdWithTenant(order.getPickupStoreId()));
         }

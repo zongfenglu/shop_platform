@@ -87,8 +87,11 @@ public class AfterSaleServiceImpl extends ServiceImpl<AfterSaleMapper, AfterSale
         if ("cancelled".equals(order.getOrderStatus())) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "已取消订单不能申请售后");
         }
+        if ("shipped".equals(order.getDeliveryStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "商品运输中，请确认收货后再申请售后");
+        }
         if ("return_refund".equals(cmd.type()) && "pending".equals(order.getDeliveryStatus())) {
-            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单尚未发货，请选择仅退款");
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "商品尚未收货，请选择仅退款");
         }
 
         OrderGoods orderGoods = orderGoodsService.getByIdWithTenant(cmd.orderGoodsId());

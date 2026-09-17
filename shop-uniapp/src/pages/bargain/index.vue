@@ -2,6 +2,7 @@
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { listBargainActives } from '@/api/index'
+import { encodeRouteId } from '@/utils/routeId'
 
 /**
  * 砍价专场。对应原型 h5/bargain.html。
@@ -23,8 +24,10 @@ async function load() {
 
 function fmtPrice(v) { return Number(v ?? 0).toFixed(2) }
 
-function goDetail(a) {
-  uni.navigateTo({ url: `/pages/bargain/detail?id=${a.id}` })
+function goDetail(index) {
+  const a = actives.value[index]
+  if (!a?.id) return
+  uni.navigateTo({ url: `/pages/bargain/detail?id=${encodeRouteId(a.id)}` })
 }
 </script>
 
@@ -38,7 +41,7 @@ function goDetail(a) {
       </view>
 
       <view v-if="!actives.length" class="empty">暂无进行中的砍价活动</view>
-      <view v-for="a in actives" :key="a.id" class="active" @click="goDetail(a)">
+      <view v-for="(a, index) in actives" :key="a.id" class="active" @click="goDetail(index)">
         <image v-if="a.goodsImage" class="goods-img" :src="a.goodsImage" mode="aspectFill" />
         <view v-else class="goods-img goods-img-ph">无图</view>
         <view class="info">

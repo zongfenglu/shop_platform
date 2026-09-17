@@ -91,6 +91,26 @@ function canCancel() {
   return o && o.payStatus === 'unpaid'
 }
 
+const AFTER_SALE_STATUS = {
+  applying: '审核中', approved: '已同意', rejected: '已拒绝', return_shipped: '买家已寄回',
+  refunding: '退款中', refunded: '已退款', closed: '已关闭',
+}
+
+function afterSaleFor(goodsId) {
+  return (data.value?.afterSales || [])
+    .filter((sale) => String(sale.orderGoodsId) === String(goodsId))
+    .sort((a, b) => String(b.createTime || '').localeCompare(String(a.createTime || '')))[0]
+}
+
+function discountAmountOf(goods) {
+  try {
+    return Object.values(JSON.parse(goods.discountDetail || '{}'))
+      .reduce((sum, value) => sum + Number(value || 0), 0)
+  } catch (e) {
+    return 0
+  }
+}
+
 function onCancel() {
   Modal.confirm({
     title: '确认关闭该订单？',
@@ -139,12 +159,19 @@ function onCancel() {
       </div>
 
       <div class="card card-pad" style="margin-bottom: 14px">
-        <p class="card-title">收货地址</p>
-        <template v-if="data.address && data.address.name">
+        <p class="card-title">{{ data.order.deliveryType === 'pickup' ? '门店自提' : '收货地址' }}</p>
+        <template v-if="data.order.deliveryType === 'pickup'">
+          <div class="kv-row"><div class="k">自提门店</div><div class="v">{{ data.pickupStore?.name || '自提门店' }}</div></div>
+          <div class="kv-row"><div class="k">门店地址</div><div class="v">{{ `${data.pickupStore?.region || ''}${data.pickupStore?.detail || ''}` || '—' }}</div></div>
+          <div class="kv-row"><div class="k">核销码</div><div class="v">{{ data.order.pickupCode || '—' }}</div></div>
+          <div style="margin-top: 12px; color: var(--text-muted); font-size: 13px">自提订单无需发货。买家到店后，请在“门店 → 核销记录”输入核销码完成交付。</div>
+          <button class="btn btn-sm" style="margin-top: 12px" @click="router.push({ name: 'offline-stores' })">前往门店核销</button>
+        </template>
+        <template v-else-if="data.address && data.address.name">
           <div class="kv-row"><div class="k">收货人</div><div class="v">{{ data.address.name }} {{ data.address.phone }}</div></div>
           <div class="kv-row"><div class="k">收货地址</div><div class="v">{{ data.address.province }}{{ data.address.city }}{{ data.address.region }}{{ data.address.detail }}</div></div>
         </template>
-        <div v-else style="color: var(--text-muted); font-size: 13px">门店自提或虚拟商品，无收货地址</div>
+        <div v-else-if="data.order.deliveryType !== 'pickup'" style="color: var(--text-muted); font-size: 13px">虚拟商品，无收货地址</div>
       </div>
 
       <div class="card" style="margin-bottom: 14px">
@@ -173,8 +200,12 @@ function onCancel() {
               <td class="num">{{ fmtPrice(g.totalPrice) }}</td>
               <td>
                 <span class="tag" :class="isShipped(g) ? 'tag-good' : 'tag-warning'">
-                  {{ isShipped(g) ? '已发' : '待发' }}
+                  {{ data.order.deliveryType === 'pickup' ? (data.order.deliveryStatus === 'received' ? '已核销' : '待自提') : (isShipped(g) ? '已发' : '待发') }}
                 </span>
+                <div v-if="discountAmountOf(g) > 0" style="margin-top: 6px; color: var(--price); font-size: 12px">优惠 -{{ fmtPrice(discountAmountOf(g)) }}</div>
+                <a v-if="afterSaleFor(g.id)" style="display: block; margin-top: 6px" @click="router.push({ name: 'after-sales' })">
+                  {{ AFTER_SALE_STATUS[afterSaleFor(g.id).status] || '售后中' }} · {{ afterSaleFor(g.id).refundNum }}件 · {{ fmtPrice(afterSaleFor(g.id).refundAmount) }}
+                </a>
               </td>
             </tr>
           </tbody>
@@ -184,7 +215,9 @@ function onCancel() {
       <div class="card card-pad" style="margin-bottom: 14px; max-width: 400px; margin-left: auto">
         <div class="kv-row"><div class="k">商品总额</div><div class="v">{{ fmtPrice(data.order.totalPrice) }}</div></div>
         <div class="kv-row"><div class="k">运费</div><div class="v">{{ fmtPrice(data.order.expressPrice) }}</div></div>
-        <div class="kv-row"><div class="k">优惠</div><div class="v">-{{ fmtPrice(data.order.discountPrice) }}</div></div>
+        <div v-if="Number(data.order.discountPrice)" class="kv-row"><div class="k">活动/满减/会员</div><div class="v">-{{ fmtPrice(data.order.discountPrice) }}</div></div>
+        <div v-if="Number(data.order.couponPrice)" class="kv-row"><div class="k">优惠券</div><div class="v">-{{ fmtPrice(data.order.couponPrice) }}</div></div>
+        <div v-if="Number(data.order.pointsPrice)" class="kv-row"><div class="k">积分抵扣</div><div class="v">-{{ fmtPrice(data.order.pointsPrice) }}<span v-if="data.order.pointsNum">（{{ data.order.pointsNum }}积分）</span></div></div>
         <div class="kv-row"><div class="k" style="font-weight: 600; color: var(--text-primary)">实付金额</div><div class="v" style="color: var(--price); font-weight: 700">{{ fmtPrice(data.order.payPrice) }}</div></div>
       </div>
 

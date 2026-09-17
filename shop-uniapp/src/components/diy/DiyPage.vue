@@ -5,6 +5,7 @@ import { receiveCoupon } from '@/api/index'
 import { getToken } from '@/utils/request'
 import { mediaUrl } from '@/utils/request'
 import { openGoodsSearch } from '@/utils/goodsSearch'
+import { encodeRouteId } from '@/utils/routeId'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -168,16 +169,26 @@ function goGoods(id) {
   uni.navigateTo({ url: `/pages/goods/detail?id=${id}` })
 }
 
-function goSeckill(activeId, skuId, goodsId) {
-  uni.navigateTo({ url: `/pages/order/checkout?skuId=${skuId}&goodsId=${goodsId}&quantity=1&activityType=seckill&activityId=${activeId}` })
+function getActivityRow(itemIndex, rowIndex = 0) {
+  const item = props.items[itemIndex]
+  return item ? groupList(item)[rowIndex] : null
 }
 
-function goGroup(id) {
-  if (id) uni.navigateTo({ url: `/pages/group/detail?id=${id}` })
+function goSeckill(itemIndex, goodsIndex) {
+  const active = props.items[itemIndex]?.active
+  const goods = active?.goods?.[goodsIndex]
+  if (!active?.id || !goods?.skuId || !goods?.goodsId) return
+  uni.navigateTo({ url: `/pages/order/checkout?skuId=${encodeRouteId(goods.skuId)}&goodsId=${encodeRouteId(goods.goodsId)}&quantity=1&activityType=seckill&activityId=${encodeRouteId(active.id)}` })
 }
 
-function goBargain(id) {
-  if (id) uni.navigateTo({ url: `/pages/bargain/detail?id=${id}` })
+function goGroup(itemIndex, rowIndex) {
+  const id = getActivityRow(itemIndex, rowIndex)?.id
+  if (id) uni.navigateTo({ url: `/pages/group/detail?id=${encodeRouteId(id)}` })
+}
+
+function goBargain(itemIndex, rowIndex) {
+  const id = getActivityRow(itemIndex, rowIndex)?.id
+  if (id) uni.navigateTo({ url: `/pages/bargain/detail?id=${encodeRouteId(id)}` })
 }
 
 async function onReceive(id) {
@@ -364,10 +375,10 @@ function submitSearch() {
         </view>
         <view class="seckill-grid" :class="'cols-' + (item.columns || 3)">
           <view
-            v-for="g in (item.active?.goods || [])"
+            v-for="(g, goodsIndex) in (item.active?.goods || [])"
             :key="g.skuId"
             class="seckill-card"
-            @click="goSeckill(item.active.id, g.skuId, g.goodsId)"
+            @click="goSeckill(idx, goodsIndex)"
           >
             <image v-if="g.image" class="seckill-img" :src="g.image" mode="aspectFill" />
             <view v-else class="seckill-img ph" />
@@ -381,7 +392,7 @@ function submitSearch() {
       </view>
 
       <view v-else-if="item.type === 'group'">
-        <view v-for="row in groupList(item)" :key="row.id" class="list-row" @click="goGroup(row.id)">
+        <view v-for="(row, rowIndex) in groupList(item)" :key="row.id" class="list-row" @click="goGroup(idx, rowIndex)">
           <image v-if="row.goodsImage" class="list-img" :src="row.goodsImage" mode="aspectFill" />
           <view v-else class="list-img ph" />
           <view class="list-body">
@@ -400,7 +411,7 @@ function submitSearch() {
       </view>
 
       <view v-else-if="item.type === 'bargain'">
-        <view v-for="row in groupList(item)" :key="row.id" class="list-row" @click="goBargain(row.id)">
+        <view v-for="(row, rowIndex) in groupList(item)" :key="row.id" class="list-row" @click="goBargain(idx, rowIndex)">
           <image v-if="row.goodsImage" class="list-img" :src="row.goodsImage" mode="aspectFill" />
           <view v-else class="list-img ph" />
           <view class="list-body">

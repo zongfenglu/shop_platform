@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { approveAfterSale, pageAfterSales, refundAfterSale, rejectAfterSale } from '@/api/afterSale'
 import { listReturnAddresses } from '@/api/operationSettings'
@@ -154,13 +154,25 @@ async function onReject() {
 }
 
 async function onRefund(row) {
-  try {
-    await refundAfterSale(row.id)
-    message.success('退款已发起')
-    await load()
-  } catch (e) {
-    // 已由拦截器提示
-  }
+  const content = row.type === 'return_refund'
+    ? '请确认已经收到买家寄回的商品。确认后将向原支付渠道发起退款。'
+    : '确认同意本次仅退款申请，并向原支付渠道发起退款？'
+  Modal.confirm({
+    title: '确认执行退款？',
+    content,
+    okText: '确认退款',
+    cancelText: '取消',
+    okType: 'danger',
+    async onOk() {
+      try {
+        await refundAfterSale(row.id)
+        message.success('退款已发起')
+        await load()
+      } catch (e) {
+        // 已由拦截器提示
+      }
+    },
+  })
 }
 </script>
 

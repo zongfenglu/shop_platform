@@ -99,6 +99,10 @@ function onAfterSale(row) {
   uni.navigateTo({ url: `/pages/afterSale/apply?orderId=${row.id}` })
 }
 
+function onAfterSaleDetail(row) {
+  uni.navigateTo({ url: `/pages/afterSale/detail?id=${row.afterSaleId}` })
+}
+
 function onComment(row) {
   uni.navigateTo({ url: `/pages/goods/comment?orderId=${row.id}` })
 }
@@ -130,12 +134,13 @@ function onComment(row) {
           </view>
           <view class="price">{{ fmtPrice(row.payPrice) }}</view>
         </view>
-        <view v-if="canCancel(row) || canAfterSale(row) || canConfirm(row) || row.orderStatus === 'finished'" class="foot" @click.stop>
+        <view v-if="canCancel(row) || canAfterSale(row) || row.afterSaleId || canConfirm(row) || row.orderStatus === 'finished'" class="foot" @click.stop>
           <text class="pay-hint" v-if="canCancel(row)">应付 {{ fmtPrice(row.payPrice) }}</text>
           <view style="flex: 1"></view>
           <button v-if="canCancel(row)" class="btn" size="mini" @click="onCancel(row)">取消订单</button>
           <button v-if="canCancel(row)" class="btn btn-primary" size="mini" @click="goDetail(row.id)">去支付</button>
           <button v-if="canAfterSale(row)" class="btn" size="mini" @click="onAfterSale(row)">申请售后</button>
+          <button v-if="row.afterSaleId" class="btn" size="mini" @click="onAfterSaleDetail(row)">售后详情</button>
           <button v-if="canConfirm(row)" class="btn btn-primary" size="mini" @click="goDetail(row.id)">确认收货</button>
           <button v-if="row.orderStatus === 'finished'" class="btn" size="mini" @click="onComment(row)">评价</button>
         </view>

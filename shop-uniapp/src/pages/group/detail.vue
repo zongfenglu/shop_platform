@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getGroupActive, getGroupRecord } from '@/api/index'
+import { decodeRouteId, encodeRouteId } from '@/utils/routeId'
 
 /**
  * 拼团详情。对应原型 h5/group-buy-detail.html。
@@ -16,9 +17,8 @@ const now = ref(Date.now())
 let timer = null
 
 onLoad(async (query) => {
-  // 雪花 ID 超出 Number.MAX_SAFE_INTEGER，路由参数必须全程保留为字符串。
-  const id = query.id ? String(query.id) : ''
-  const recordId = query.recordId ? String(query.recordId) : null
+  const id = decodeRouteId(query.id)
+  const recordId = decodeRouteId(query.recordId) || null
   try {
     active.value = await getGroupActive(id)
     const skus = active.value?.skus || []
@@ -74,10 +74,10 @@ function goCheckout(join) {
   }
   const a = active.value
   const sku = selectedSku.value
-  let url = `/pages/order/checkout?skuId=${sku.skuId}&goodsId=${a.goodsId}&quantity=1`
-    + `&activityType=group&activityId=${a.id}`
+  let url = `/pages/order/checkout?skuId=${encodeRouteId(sku.skuId)}&goodsId=${encodeRouteId(a.goodsId)}&quantity=1`
+    + `&activityType=group&activityId=${encodeRouteId(a.id)}`
   if (join && record.value?.recordId) {
-    url += `&groupRecordId=${record.value.recordId}`
+    url += `&groupRecordId=${encodeRouteId(record.value.recordId)}`
   }
   uni.navigateTo({ url })
 }

@@ -12,6 +12,8 @@ import com.shopplatform.domain.diy.entity.DiyTabbar;
 import com.shopplatform.domain.diy.service.DiyPageService;
 import com.shopplatform.domain.diy.service.DiyTabbarService;
 import com.shopplatform.domain.diy.support.DiyComponentType;
+import com.shopplatform.domain.content.entity.Article;
+import com.shopplatform.domain.content.service.ArticleService;
 import com.shopplatform.domain.goods.entity.Goods;
 import com.shopplatform.domain.goods.entity.GoodsSku;
 import com.shopplatform.domain.goods.service.GoodsService;
@@ -64,6 +66,7 @@ public class DiyRenderAppService {
     private final GroupActiveService groupActiveService;
     private final BargainActiveService bargainActiveService;
     private final OfflineStoreService offlineStoreService;
+    private final ArticleService articleService;
     private final PackageFeatureChecker packageFeatureChecker;
     private final ObjectMapper objectMapper;
 
@@ -78,6 +81,7 @@ public class DiyRenderAppService {
                                 GroupActiveService groupActiveService,
                                 BargainActiveService bargainActiveService,
                                 OfflineStoreService offlineStoreService,
+                                ArticleService articleService,
                                 PackageFeatureChecker packageFeatureChecker,
                                 ObjectMapper objectMapper) {
         this.diyPageService = diyPageService;
@@ -91,6 +95,7 @@ public class DiyRenderAppService {
         this.groupActiveService = groupActiveService;
         this.bargainActiveService = bargainActiveService;
         this.offlineStoreService = offlineStoreService;
+        this.articleService = articleService;
         this.packageFeatureChecker = packageFeatureChecker;
         this.objectMapper = objectMapper;
     }
@@ -222,8 +227,54 @@ public class DiyRenderAppService {
             case "group" -> resolveGroup(item);
             case "bargain" -> resolveBargain(item);
             case "store" -> resolveStore(item);
+            case "article" -> resolveArticle(item);
             default -> toMap(item);
         };
+    }
+
+    /** 文章浏览数会持续变化，装修数据只保存关联 id，渲染时回源刷新展示快照。 */
+    private Map<String, Object> resolveArticle(JsonNode item) {
+        Map<String, Object> base = toMap(item);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        JsonNode configured = item.get("items");
+        if (configured != null && configured.isArray()) {
+            for (JsonNode node : configured) {
+                Map<String, Object> row = toMap(node);
+                Long articleId = parseLong(node.get("articleId"));
+                if (articleId != null) {
+                    try {
+                        Article article = articleService.getByIdWithTenant(articleId);
+                        if (!"visible".equals(article.getStatus())) {
+                            continue;
+                        }
+                        row.put("articleId", String.valueOf(article.getId()));
+                        row.put("title", article.getTitle());
+                        row.put("cover", article.getCoverUrl());
+                        row.put("displayMode", article.getDisplayMode());
+                        row.put("views", valueOrZero(article.getVirtualViews()) + valueOrZero(article.getActualViews()));
+                        row.put("link", "/pages/article/detail?id=" + article.getId());
+                    } catch (Exception ignored) {
+                        continue;
+                    }
+                }
+                rows.add(row);
+            }
+        }
+        base.put("items", rows);
+        return base;
+    }
+
+    private static int valueOrZero(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    private static Long parseLong(JsonNode value) {
+        if (value == null || value.isNull()) return null;
+        try {
+            return Long.valueOf(value.asText());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private Map<String, Object> resolveGoods(JsonNode item) {
@@ -318,7 +369,7 @@ public class DiyRenderAppService {
         }
         Long resolvedActiveId = active.getId();
         Map<String, Object> av = new LinkedHashMap<>();
-        av.put("id", active.getId());
+        av.put("id", String.valueOf(active.getId()));
         av.put("name", active.getName());
         av.put("startDate", active.getStartDate());
         av.put("endDate", active.getEndDate());
@@ -363,7 +414,7 @@ public class DiyRenderAppService {
         List<Map<String, Object>> list = new ArrayList<>();
         for (GroupActive active : picked) {
             Map<String, Object> av = new LinkedHashMap<>();
-            av.put("id", active.getId());
+            av.put("id", String.valueOf(active.getId()));
             av.put("groupNum", active.getGroupNum());
             Map<Long, BigDecimal> prices = groupActiveService.parseGroupPrice(active);
             av.put("minGroupPrice", prices.values().stream().reduce(BigDecimal::min).orElse(null));
@@ -384,7 +435,7 @@ public class DiyRenderAppService {
         List<Map<String, Object>> list = new ArrayList<>();
         for (BargainActive active : picked) {
             Map<String, Object> av = new LinkedHashMap<>();
-            av.put("id", active.getId());
+            av.put("id", String.valueOf(active.getId()));
             av.put("floorPrice", active.getFloorPrice());
             av.put("helpLimit", active.getHelpLimit());
             fillGoodsCard(av, active.getGoodsId());

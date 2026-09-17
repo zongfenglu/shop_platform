@@ -2,6 +2,7 @@
 import { onShow } from '@dcloudio/uni-app'
 import { computed, onUnmounted, ref } from 'vue'
 import { getSeckillSessions, listSeckillActives, getSeckillActive } from '@/api/index'
+import { encodeRouteId } from '@/utils/routeId'
 
 /**
  * 秒杀专场。对应原型 docs/prototype/h5/seckill.html。
@@ -96,7 +97,7 @@ function buyBtnText(a, g) {
 function buy(a, g) {
   if (!canBuy(a, g)) return
   uni.navigateTo({
-    url: `/pages/order/checkout?skuId=${g.skuId}&goodsId=${g.goodsId}&quantity=1&activityType=seckill&activityId=${a.id}`,
+    url: `/pages/order/checkout?skuId=${encodeRouteId(g.skuId)}&goodsId=${encodeRouteId(g.goodsId)}&quantity=1&activityType=seckill&activityId=${encodeRouteId(a.id)}`,
   })
 }
 

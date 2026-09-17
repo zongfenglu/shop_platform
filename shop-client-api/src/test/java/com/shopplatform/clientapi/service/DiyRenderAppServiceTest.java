@@ -21,6 +21,8 @@ import com.shopplatform.domain.marketing.service.SeckillActiveService;
 import com.shopplatform.domain.marketing.service.SeckillGoodsService;
 import com.shopplatform.domain.marketing.service.SeckillStockService;
 import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
+import com.shopplatform.domain.content.service.ArticleService;
+import com.shopplatform.domain.content.entity.Article;
 import com.shopplatform.domain.shop.service.PackageFeatureChecker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,7 @@ class DiyRenderAppServiceTest {
     private GroupActiveService groupActiveService;
     private BargainActiveService bargainActiveService;
     private PackageFeatureChecker packageFeatureChecker;
+    private ArticleService articleService;
     private DiyRenderAppService service;
 
     @BeforeEach
@@ -66,12 +69,14 @@ class DiyRenderAppServiceTest {
         seckillStockService = mock(SeckillStockService.class);
         groupActiveService = mock(GroupActiveService.class);
         bargainActiveService = mock(BargainActiveService.class);
+        articleService = mock(ArticleService.class);
         packageFeatureChecker = mock(PackageFeatureChecker.class);
         when(packageFeatureChecker.hasMenu(any(), any())).thenReturn(true);
 
         service = new DiyRenderAppService(diyPageService, diyTabbarService, goodsService, goodsSkuService,
                 couponService, seckillActiveService, seckillGoodsService, seckillStockService,
                 groupActiveService, bargainActiveService, mock(OfflineStoreService.class),
+                articleService,
                 packageFeatureChecker, new ObjectMapper());
     }
 
@@ -226,6 +231,29 @@ class DiyRenderAppServiceTest {
     }
 
     @Test
+    void resolveArticle_refreshesPublishedSnapshotAndViews() {
+        String pageData = "{\"items\":[{\"type\":\"article\",\"items\":[{\"articleId\":\"31\",\"title\":\"旧标题\",\"views\":1}]}]}";
+        when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
+        Article article = new Article();
+        article.setId(31L);
+        article.setTitle("新标题");
+        article.setCoverUrl("new.jpg");
+        article.setDisplayMode("small");
+        article.setVirtualViews(200);
+        article.setActualViews(12);
+        article.setStatus("visible");
+        when(articleService.getByIdWithTenant(31L)).thenReturn(article);
+
+        Map<String, Object> result = service.renderHome(SHOP_ID);
+        Map<?, ?> component = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
+        Map<?, ?> row = (Map<?, ?>) ((List<?>) component.get("items")).get(0);
+
+        assertEquals("新标题", row.get("title"));
+        assertEquals(212, row.get("views"));
+        assertEquals("/pages/article/detail?id=31", row.get("link"));
+    }
+
+    @Test
     void resolveSeckill_activeOnSale_returnsGoodsWithRemainingStock() {
         long activeId = 209872871375908865L;
         String pageData = "{\"items\":[{\"type\":\"seckill\",\"activeId\":\"209872871375908865\"}]}";
@@ -280,7 +308,7 @@ class DiyRenderAppServiceTest {
         Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
         Map<?, ?> activeView = (Map<?, ?>) item.get("active");
 
-        assertEquals(activeId, activeView.get("id"));
+        assertEquals(String.valueOf(activeId), activeView.get("id"));
     }
 
     @Test
@@ -330,11 +358,12 @@ class DiyRenderAppServiceTest {
 
     @Test
     void resolveBargain_activeOnSale_returnsFloorPrice() {
-        String pageData = "{\"items\":[{\"type\":\"bargain\",\"activeId\":3}]}";
+        long activeId = 2097153019094523906L;
+        String pageData = "{\"items\":[{\"type\":\"bargain\",\"activeId\":\"" + activeId + "\"}]}";
         when(diyPageService.getDefaultHome(SHOP_ID)).thenReturn(pageWithData(pageData));
 
         BargainActive active = new BargainActive();
-        active.setId(3L);
+        active.setId(activeId);
         active.setGoodsId(21L);
         active.setFloorPrice(new BigDecimal("20.00"));
         when(bargainActiveService.listOnSale()).thenReturn(List.of(active));
@@ -346,6 +375,7 @@ class DiyRenderAppServiceTest {
         Map<String, Object> result = service.renderHome(SHOP_ID);
         Map<?, ?> item = (Map<?, ?>) ((List<?>) result.get("items")).get(0);
         Map<?, ?> av = (Map<?, ?>) item.get("active");
+        assertEquals("2097153019094523906", av.get("id"));
         assertEquals(new BigDecimal("20.00"), av.get("floorPrice"));
     }
 
