@@ -20,6 +20,12 @@ public interface MemberService extends TenantSafeService<Member> {
     /** 将微信授权取得的手机号绑定到当前会员。 */
     Member bindMobile(Long userId, String mobile);
 
+    /** 更新消费者自行维护的昵称。 */
+    Member updateProfile(Long userId, String nickname);
+
+    /** 保存经服务端校验并上传后的头像地址。 */
+    Member updateAvatar(Long userId, String avatarUrl);
+
     /**
      * 原子调整余额。delta 带正负号：充值+/消费-/退款+/后台调整±/佣金+。
      * 扣减后余额不可透支，否则抛业务异常。变动成功后写一条 user_balance_log，

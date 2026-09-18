@@ -92,6 +92,34 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
         return member;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Member updateProfile(Long userId, String nickname) {
+        String value = nickname == null ? "" : nickname.trim();
+        if (!StringUtils.hasText(value)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "请输入昵称");
+        }
+        if (value.length() > 32) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "昵称不能超过32个字符");
+        }
+        Member member = this.getByIdWithTenant(userId);
+        member.setNickname(value);
+        this.updateById(member);
+        return member;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Member updateAvatar(Long userId, String avatarUrl) {
+        if (!StringUtils.hasText(avatarUrl) || avatarUrl.length() > 500) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "头像地址不正确");
+        }
+        Member member = this.getByIdWithTenant(userId);
+        member.setAvatar(avatarUrl.trim());
+        this.updateById(member);
+        return member;
+    }
+
     private void initializeMember(Member member) {
         member.setStatus(1);
         member.setBalance(BigDecimal.ZERO);

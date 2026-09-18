@@ -137,6 +137,34 @@ class MemberServiceImplTest {
         assertNull(MemberServiceImpl.matchGrade(List.of(), 100));
     }
 
+    @Test
+    void updateProfile_trimsAndPersistsNickname() {
+        Member member = member(1L, BigDecimal.ZERO, 0, null);
+        doReturn(member).when(memberService).getByIdWithTenant(1L);
+
+        Member updated = memberService.updateProfile(1L, "  小苗  ");
+
+        assertEquals("小苗", updated.getNickname());
+        verify(memberMapper).updateById(member);
+    }
+
+    @Test
+    void updateAvatar_persistsValidatedStorageUrl() {
+        Member member = member(1L, BigDecimal.ZERO, 0, null);
+        doReturn(member).when(memberService).getByIdWithTenant(1L);
+
+        Member updated = memberService.updateAvatar(1L, " /uploads/999/avatar.jpg ");
+
+        assertEquals("/uploads/999/avatar.jpg", updated.getAvatar());
+        verify(memberMapper).updateById(member);
+    }
+
+    @Test
+    void updateProfile_rejectsBlankNickname() {
+        assertThrows(BusinessException.class, () -> memberService.updateProfile(1L, "   "));
+        verify(memberMapper, never()).updateById(any(Member.class));
+    }
+
     private Member member(Long id, BigDecimal balance, Integer points, Long gradeId) {
         Member m = new Member();
         m.setId(id);

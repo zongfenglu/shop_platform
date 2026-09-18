@@ -1,4 +1,4 @@
-import { get, post, put, del } from '@/utils/request'
+import { get, post, put, del, uploadFile } from '@/utils/request'
 
 /**
  * 消费者端接口。对应 shop-client-api 的 /api/**。
@@ -181,6 +181,16 @@ export function closeAfterSale(id) {
 /** 我的资料与资产（余额/积分/成长值/等级/消费统计） */
 export function getMyProfile() {
   return get('/api/member/me')
+}
+
+/** 修改当前会员昵称。 */
+export function updateMyProfile(payload) {
+  return put('/api/member/me', payload)
+}
+
+/** 上传并保存当前会员头像。 */
+export function uploadMyAvatar(filePath) {
+  return uploadFile('/api/member/me/avatar', filePath)
 }
 
 /** 我的余额变动明细 */

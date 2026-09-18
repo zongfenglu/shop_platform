@@ -330,6 +330,68 @@ export function request(options) {
   })
 }
 
+/** multipart 文件上传；身份与租户头保持和普通 request 完全一致。 */
+export function uploadFile(url, filePath, name = 'file') {
+  const header = {}
+  const token = getToken()
+  if (token) header.Authorization = `Bearer ${token}`
+
+  // #ifndef H5
+  const miniAppId = getMiniAppId()
+  if (miniAppId) {
+    header['X-Mini-AppId'] = miniAppId
+  } else {
+    const shopId = getShopId()
+    if (shopId) header['X-Shop-Id'] = shopId
+  }
+  // #endif
+  // #ifdef H5
+  const previewShopId = getH5PreviewShopId()
+  if (previewShopId) {
+    header['X-Shop-Id'] = previewShopId
+  } else if (h5NeedsManualShopId()) {
+    const shopId = getShopId()
+    if (shopId) header['X-Shop-Id'] = shopId
+  }
+  // #endif
+
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: baseUrl() + url,
+      filePath,
+      name,
+      header,
+      timeout: 30000,
+      success(res) {
+        let body
+        try {
+          body = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+        } catch (e) {
+          uni.showToast({ title: '上传响应格式不正确', icon: 'none' })
+          reject(e)
+          return
+        }
+        if (res.statusCode === 401 || body?.code === ErrorCode.UNAUTHORIZED) {
+          clearToken()
+          redirectToLogin()
+          reject(new Error(body?.msg || '登录已过期'))
+          return
+        }
+        if (body?.code === ErrorCode.OK) {
+          resolve(normalizeMediaUrls(body.data))
+          return
+        }
+        uni.showToast({ title: body?.msg || '上传失败', icon: 'none' })
+        reject(Object.assign(new Error(body?.msg || '上传失败'), { code: body?.code }))
+      },
+      fail(err) {
+        uni.showToast({ title: '头像上传失败，请重试', icon: 'none' })
+        reject(err)
+      },
+    })
+  })
+}
+
 function redirectToLogin() {
   const pages = getCurrentPages()
   const current = pages[pages.length - 1]

@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.common.result.Result;
+import com.shopplatform.clientapi.dto.UpdateMemberProfileRequest;
+import com.shopplatform.domain.file.service.StorageService;
 import com.shopplatform.domain.member.entity.Member;
 import com.shopplatform.domain.member.entity.UserBalanceLog;
 import com.shopplatform.domain.member.entity.UserGrade;
@@ -13,7 +15,10 @@ import com.shopplatform.domain.member.service.UserBalanceLogService;
 import com.shopplatform.domain.member.service.UserGradeService;
 import com.shopplatform.domain.member.service.UserPointsLogService;
 import com.shopplatform.framework.security.LoginUserContext;
+import com.shopplatform.framework.tenant.TenantContext;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -30,15 +35,18 @@ public class ConsumerMemberController {
     private final UserBalanceLogService balanceLogService;
     private final UserPointsLogService pointsLogService;
     private final UserGradeService userGradeService;
+    private final StorageService storageService;
 
     public ConsumerMemberController(MemberService memberService,
                                       UserBalanceLogService balanceLogService,
                                       UserPointsLogService pointsLogService,
-                                      UserGradeService userGradeService) {
+                                      UserGradeService userGradeService,
+                                      StorageService storageService) {
         this.memberService = memberService;
         this.balanceLogService = balanceLogService;
         this.pointsLogService = pointsLogService;
         this.userGradeService = userGradeService;
+        this.storageService = storageService;
     }
 
     /** 我的资料与资产（余额/积分/成长值/等级/消费统计）。 */
@@ -48,6 +56,20 @@ public class ConsumerMemberController {
         Member member = memberService.getByIdWithTenant(userId);
         UserGrade grade = member.getGradeId() == null ? null : findGrade(member.getGradeId());
         return Result.ok(Map.of("member", member, "grade", grade == null ? Map.of() : grade));
+    }
+
+    /** 修改当前会员昵称。 */
+    @PutMapping("/me")
+    public Result<Member> updateMe(@Valid @RequestBody UpdateMemberProfileRequest request) {
+        return Result.ok(memberService.updateProfile(requireLoginUserId(), request.nickname()));
+    }
+
+    /** 微信 chooseAvatar/相册选择后的头像上传；文件类型与大小由 StorageService 服务端校验。 */
+    @PostMapping("/me/avatar")
+    public Result<Member> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        Long userId = requireLoginUserId();
+        StorageService.StoredFile stored = storageService.storeImage(file, TenantContext.getRequired());
+        return Result.ok(memberService.updateAvatar(userId, stored.url()));
     }
 
     /** 我的余额变动明细。 */

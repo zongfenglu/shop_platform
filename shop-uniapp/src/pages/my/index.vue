@@ -26,7 +26,13 @@ async function loadProfile() {
     const data = await getMyProfile()
     profile.value = data
     if (data?.member?.nickname) {
-      const cached = { ...(user.value || {}), nickname: data.member.nickname, userId: data.member.id }
+      const cached = {
+        ...(user.value || {}),
+        nickname: data.member.nickname,
+        userId: data.member.id,
+        mobile: data.member.mobile || '',
+        avatar: data.member.avatar || '',
+      }
       setLoginUser(cached)
       user.value = cached
     }
@@ -93,7 +99,7 @@ function money(v) { return Number(v || 0).toFixed(2) }
 <template>
   <view class="page">
     <view class="hero">
-      <view class="user-row" @click="loggedIn ? null : onLogin()">
+      <view class="user-row" @click="loggedIn ? go('/pages/my/profile') : onLogin()">
         <image v-if="loggedIn && profile?.member?.avatar" class="avatar avatar-image" :src="profile.member.avatar" mode="aspectFill" />
         <view v-else class="avatar"><AppIcon name="user-round-white" :size="30" /></view>
         <view class="info">
@@ -131,6 +137,10 @@ function money(v) { return Number(v || 0).toFixed(2) }
     </view>
 
     <view class="section list-section">
+      <view v-if="loggedIn" class="cell" @click="go('/pages/my/profile')">
+        <view class="cell-main"><view class="cell-icon violet"><AppIcon name="user-round-white" :size="20" /></view><text>个人资料</text></view>
+        <view class="cell-side"><text>头像与昵称</text><AppIcon name="chevron-right-muted" :size="18" /></view>
+      </view>
       <!-- #ifdef MP-WEIXIN -->
       <button
         v-if="loggedIn && !profile?.member?.mobile"
