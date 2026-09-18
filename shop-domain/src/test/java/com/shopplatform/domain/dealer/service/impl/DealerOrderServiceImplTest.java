@@ -38,6 +38,7 @@ class DealerOrderServiceImplTest {
     private DealerUserService dealerUserService;
     private OrderGoodsService orderGoodsService;
     private GoodsService goodsService;
+    private DealerOrderMapper dealerOrderMapper;
     private DealerOrderServiceImpl service;
 
     private static final Long SHOP_ID = 999L;
@@ -56,12 +57,14 @@ class DealerOrderServiceImplTest {
         dealerUserService = mock(DealerUserService.class);
         orderGoodsService = mock(OrderGoodsService.class);
         goodsService = mock(GoodsService.class);
+        dealerOrderMapper = mock(DealerOrderMapper.class);
 
         DealerOrderServiceImpl impl = new DealerOrderServiceImpl(
                 dealerSettingService, dealerUserService, orderGoodsService, goodsService, new ObjectMapper());
-        ReflectionTestUtils.setField(impl, "baseMapper", mock(DealerOrderMapper.class));
+        ReflectionTestUtils.setField(impl, "baseMapper", dealerOrderMapper);
         service = spy(impl);
         doReturn(true).when(service).save(any(DealerOrder.class));
+        when(dealerOrderMapper.freezeCommission(anyLong(), any(BigDecimal.class))).thenReturn(1);
 
         TenantContext.set(SHOP_ID);
     }
@@ -128,6 +131,7 @@ class DealerOrderServiceImplTest {
         assertEquals(new BigDecimal("20.00"), saved.getCommissionAmount());
         assertEquals(PARENT_DEALER_ID, saved.getDealerUserId());
         assertEquals("pending", saved.getStatus());
+        verify(dealerOrderMapper).freezeCommission(PARENT_DEALER_ID, new BigDecimal("20.00"));
         // 整单模式完全不查订单行
         verifyNoInteractions(orderGoodsService, goodsService);
     }

@@ -13,6 +13,9 @@ public interface DealerOrderService extends TenantSafeService<DealerOrder> {
      */
     void createPending(Long orderId, Long userId, java.math.BigDecimal orderTotal);
 
+    /** 将一笔待结算佣金原子转为已结算，并同步分销商余额。 */
+    boolean settlePending(Long dealerOrderId);
+
     /** 按分销商查询佣金记录。 */
     List<DealerOrder> listByDealer(Long dealerUserId, String status);
 

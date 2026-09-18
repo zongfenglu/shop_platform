@@ -133,7 +133,7 @@ public class ActivityPriceHandler implements PriceHandler {
     }
 
     private void handleGroup(PriceContext ctx, PriceWorkingState state) {
-        GroupActive active = groupActiveService.getByIdWithTenant(ctx.activityId());
+        GroupActive active = groupActiveService.getByCompatibleIdWithTenant(ctx.activityId());
         if (!"on".equals(active.getStatus())) {
             throw new BusinessException(ErrorCode.GROUP_EXPIRED, "拼团活动已结束");
         }

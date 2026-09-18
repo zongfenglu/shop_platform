@@ -2,10 +2,7 @@ package com.shopplatform.job.dealer;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shopplatform.domain.dealer.entity.DealerOrder;
-import com.shopplatform.domain.dealer.entity.DealerUser;
-import com.shopplatform.domain.dealer.mapper.DealerOrderMapper;
 import com.shopplatform.domain.dealer.service.DealerOrderService;
-import com.shopplatform.domain.dealer.service.DealerUserService;
 import com.shopplatform.domain.shop.service.ShopService;
 import com.shopplatform.framework.tenant.TenantContext;
 import org.slf4j.Logger;
@@ -13,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,17 +25,11 @@ public class DealerSettleJob {
 
     private final ShopService shopService;
     private final DealerOrderService dealerOrderService;
-    private final DealerUserService dealerUserService;
-    private final DealerOrderMapper dealerOrderMapper;
 
     public DealerSettleJob(ShopService shopService,
-                            DealerOrderService dealerOrderService,
-                            DealerUserService dealerUserService,
-                            DealerOrderMapper dealerOrderMapper) {
+                            DealerOrderService dealerOrderService) {
         this.shopService = shopService;
         this.dealerOrderService = dealerOrderService;
-        this.dealerUserService = dealerUserService;
-        this.dealerOrderMapper = dealerOrderMapper;
     }
 
     @Scheduled(cron = "${shop.job.dealer-settle-cron:0 */30 * * * ?}")
@@ -69,18 +59,9 @@ public class DealerSettleJob {
                 // 完整实现需要查 order 表的 confirm_receipt_time + after_sale 表判断售后期
                 LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
                 if (dOrder.getCreateTime() != null && dOrder.getCreateTime().isBefore(sevenDaysAgo)) {
-                    dOrder.setStatus("settled");
-                    dOrder.setSettleTime(LocalDateTime.now());
-                    dealerOrderService.updateById(dOrder);
-
-                    // 累加可提现佣金
-                    DealerUser du = dealerUserService.getByIdWithTenant(dOrder.getDealerUserId());
-                    if (du != null) {
-                        du.setAvailableCommission(du.getAvailableCommission().add(dOrder.getCommissionAmount()));
-                        du.setFrozenCommission(du.getFrozenCommission().subtract(dOrder.getCommissionAmount()));
-                        dealerUserService.updateById(du);
+                    if (dealerOrderService.settlePending(dOrder.getId())) {
+                        settled++;
                     }
-                    settled++;
                 }
             } catch (Exception e) {
                 log.error("结算单条佣金失败 dealerOrderId={}", dOrder.getId(), e);

@@ -138,7 +138,7 @@ onMounted(() => { loadSettings(); loadDealerUsers(); loadDealerOrders(); loadWit
       <button class="btn" @click="loadDealerUsers">查询</button>
     </div>
     <table class="table">
-      <thead><tr><th>用户ID</th><th>姓名</th><th>手机号</th><th>上级ID</th><th>累计佣金</th><th>可提现</th><th>状态</th><th>操作</th></tr></thead>
+      <thead><tr><th>用户ID</th><th>姓名</th><th>手机号</th><th>上级ID</th><th>累计佣金</th><th>待结算</th><th>可提现</th><th>状态</th><th>操作</th></tr></thead>
       <tbody>
         <tr v-for="u in dealerUsers" :key="u.id">
           <td>{{ u.userId }}</td>
@@ -146,6 +146,7 @@ onMounted(() => { loadSettings(); loadDealerUsers(); loadDealerOrders(); loadWit
           <td>{{ u.mobile || '-' }}</td>
           <td>{{ u.parentId || '一级' }}</td>
           <td style="color:var(--price);font-weight:600">¥{{ Number(u.totalCommission || 0).toFixed(2) }}</td>
+          <td style="color:var(--status-warning-text);font-weight:600">¥{{ Number(u.frozenCommission || 0).toFixed(2) }}</td>
           <td>¥{{ Number(u.availableCommission || 0).toFixed(2) }}</td>
           <td><span class="tag" :class="u.status === 'active' ? 'tag-good' : u.status === 'applying' ? 'tag-warning' : u.status === 'disabled' ? 'tag-critical' : 'tag-muted'">{{ { applying: '申请中', active: '已通过', disabled: '已禁用', rejected: '已拒绝' }[u.status] || u.status }}</span></td>
           <td>
@@ -155,7 +156,7 @@ onMounted(() => { loadSettings(); loadDealerUsers(); loadDealerOrders(); loadWit
             <button v-if="u.status === 'disabled'" class="btn btn-sm btn-primary" @click="onEnable(u.id)">恢复正常</button>
           </td>
         </tr>
-        <tr v-if="!dealerUsers.length"><td colspan="8" style="text-align:center;color:var(--text-muted)">暂无分销商</td></tr>
+        <tr v-if="!dealerUsers.length"><td colspan="9" style="text-align:center;color:var(--text-muted)">暂无分销商</td></tr>
       </tbody>
     </table>
   </div>

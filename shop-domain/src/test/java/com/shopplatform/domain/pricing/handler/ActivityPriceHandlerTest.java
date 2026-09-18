@@ -248,7 +248,7 @@ class ActivityPriceHandlerTest {
         SeckillGoodsService gs = mock(SeckillGoodsService.class);
         SeckillTimeService ts = mock(SeckillTimeService.class);
         GroupActiveService groupService = mock(GroupActiveService.class);
-        when(groupService.getByIdWithTenant(1L)).thenReturn(groupActive(1100L, "{\"11\":80.00}"));
+        when(groupService.getByCompatibleIdWithTenant(1L)).thenReturn(groupActive(1100L, "{\"11\":80.00}"));
         when(groupService.parseGroupPrice(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(java.util.Map.of(11L, new BigDecimal("80.00")));
 
@@ -276,7 +276,7 @@ class ActivityPriceHandlerTest {
         GroupActiveService groupService = mock(GroupActiveService.class);
         com.shopplatform.domain.marketing.entity.GroupActive a = groupActive(1100L, "{\"11\":80.00}");
         a.setStatus("off");
-        when(groupService.getByIdWithTenant(1L)).thenReturn(a);
+        when(groupService.getByCompatibleIdWithTenant(1L)).thenReturn(a);
 
         PriceCalculator calculator = new PriceCalculator(List.of(
                 new BasePriceHandler(),

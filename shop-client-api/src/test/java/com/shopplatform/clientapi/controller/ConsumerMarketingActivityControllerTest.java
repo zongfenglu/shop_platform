@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -46,8 +47,10 @@ class ConsumerMarketingActivityControllerTest {
         active.setId(actualId);
         active.setStatus("on");
         active.setGoodsId(21L);
+        active.setStartTime(LocalDateTime.now().minusHours(1));
+        active.setEndTime(LocalDateTime.now().plusHours(1));
         GroupActiveService activeService = mock(GroupActiveService.class);
-        when(activeService.listOnSale()).thenReturn(List.of(active));
+        when(activeService.getByCompatibleIdWithTenant(roundedId)).thenReturn(active);
         when(activeService.parseGroupPrice(active)).thenReturn(Map.of());
         ConsumerGroupController controller = new ConsumerGroupController(
                 activeService, mock(GroupRecordService.class), mock(GoodsService.class),

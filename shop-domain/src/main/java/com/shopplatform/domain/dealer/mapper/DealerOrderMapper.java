@@ -11,6 +11,11 @@ import java.math.BigDecimal;
 @Mapper
 public interface DealerOrderMapper extends BaseMapper<DealerOrder> {
 
+    /** 新佣金单进入售后观察期时，原子增加待结算佣金。 */
+    @Update("UPDATE dealer_user SET frozen_commission = frozen_commission + #{amount} " +
+            "WHERE id = #{dealerId} AND status = 'active'")
+    int freezeCommission(@Param("dealerId") Long dealerId, @Param("amount") BigDecimal amount);
+
     /** 原子增加可提现佣金（settle 时调用），同时累加 total。 */
     @Update("UPDATE dealer_user SET available_commission = available_commission + #{amount}, " +
             "total_commission = total_commission + #{amount}, frozen_commission = frozen_commission - #{amount} " +

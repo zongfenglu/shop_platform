@@ -12,6 +12,8 @@ import com.shopplatform.domain.goods.service.GoodsSkuService;
 import com.shopplatform.domain.goods.service.GoodsSpecValueService;
 import com.shopplatform.domain.marketing.entity.SeckillActive;
 import com.shopplatform.domain.marketing.entity.SeckillGoods;
+import com.shopplatform.domain.marketing.entity.GroupActive;
+import com.shopplatform.domain.marketing.entity.GroupRecord;
 import com.shopplatform.domain.marketing.service.SeckillActiveService;
 import com.shopplatform.domain.marketing.service.SeckillGoodsService;
 import com.shopplatform.domain.marketing.service.SeckillStockService;
@@ -58,6 +60,8 @@ class CheckoutAppServiceTest {
     private SeckillActiveService seckillActiveService;
     private SeckillGoodsService seckillGoodsService;
     private SeckillStockService seckillStockService;
+    private GroupActiveService groupActiveService;
+    private GroupRecordService groupRecordService;
     private CheckoutAppService service;
 
     @BeforeEach
@@ -71,11 +75,13 @@ class CheckoutAppServiceTest {
         seckillActiveService = mock(SeckillActiveService.class);
         seckillGoodsService = mock(SeckillGoodsService.class);
         seckillStockService = mock(SeckillStockService.class);
+        groupActiveService = mock(GroupActiveService.class);
+        groupRecordService = mock(GroupRecordService.class);
 
         service = new CheckoutAppService(goodsService, goodsSkuService, goodsSpecValueService,
                 priceCalculator, orderService, cartService,
                 seckillActiveService, seckillGoodsService, seckillStockService,
-                mock(GroupActiveService.class), mock(GroupRecordService.class),
+                groupActiveService, groupRecordService,
                 mock(BargainRecordService.class), new ObjectMapper());
 
         TenantContext.set(1001L);
@@ -193,6 +199,34 @@ class CheckoutAppServiceTest {
 
         verify(orderService, never()).createOrder(any());
         verify(seckillGoodsService, never()).incrSold(any(), anyInt());
+    }
+
+    @Test
+    void submit_groupWithRoundedId_usesCanonicalActivityId() {
+        long actualId = 2100397277727244290L;
+        long roundedId = 2100397277727244300L;
+        GroupActive active = new GroupActive();
+        active.setId(actualId);
+        active.setValidHours(24);
+        when(groupActiveService.getByCompatibleIdWithTenant(roundedId)).thenReturn(active);
+        GroupRecord record = new GroupRecord();
+        record.setId(88L);
+        when(groupRecordService.openGroup(actualId, 9L, null, 24)).thenReturn(record);
+        Order created = new Order();
+        created.setId(99L);
+        when(orderService.createOrder(any())).thenReturn(created);
+        CheckoutRequest request = new CheckoutRequest(List.of(new CartItemRequest(11L, 1)),
+                "express", null, null, null, null, "group", roundedId,
+                null, null, null, List.of());
+
+        service.submit(request);
+
+        ArgumentCaptor<OrderService.CreateOrderCommand> captor =
+                ArgumentCaptor.forClass(OrderService.CreateOrderCommand.class);
+        verify(orderService).createOrder(captor.capture());
+        assertEquals(actualId, captor.getValue().activityId());
+        assertEquals(88L, captor.getValue().groupRecordId());
+        verify(groupRecordService).setLeaderOrder(88L, 99L);
     }
 
     @Test

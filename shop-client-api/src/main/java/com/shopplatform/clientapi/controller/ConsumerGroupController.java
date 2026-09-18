@@ -136,23 +136,14 @@ public class ConsumerGroupController {
 
     /** 兼容旧端把雪花 ID 舍入后的链接；仅在当前租户上架活动中唯一匹配时恢复。 */
     private GroupActive requireOnSaleActive(Long requestedId) {
-        if (requestedId == null) {
+        GroupActive active = groupActiveService.getByCompatibleIdWithTenant(requestedId);
+        LocalDateTime now = LocalDateTime.now();
+        if (!"on".equals(active.getStatus())
+                || now.isBefore(active.getStartTime())
+                || now.isAfter(active.getEndTime())) {
             throw new BusinessException(ErrorCode.GROUP_NOT_FOUND, "拼团活动不存在或已结束");
         }
-        List<GroupActive> onSale = groupActiveService.listOnSale();
-        GroupActive exact = onSale.stream()
-                .filter(active -> active.getId().equals(requestedId))
-                .findFirst().orElse(null);
-        if (exact != null) {
-            return exact;
-        }
-        List<GroupActive> compatible = onSale.stream()
-                .filter(active -> active.getId().doubleValue() == requestedId.doubleValue())
-                .toList();
-        if (compatible.size() == 1) {
-            return compatible.get(0);
-        }
-        throw new BusinessException(ErrorCode.GROUP_NOT_FOUND, "拼团活动不存在或已结束");
+        return active;
     }
 
     private String firstImage(String imagesJson) {

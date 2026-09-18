@@ -13,6 +13,8 @@ import com.shopplatform.domain.goods.entity.Goods;
 import com.shopplatform.domain.goods.service.GoodsService;
 import com.shopplatform.domain.order.entity.OrderGoods;
 import com.shopplatform.domain.order.service.OrderGoodsService;
+import com.shopplatform.common.exception.BusinessException;
+import com.shopplatform.common.result.ErrorCode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,6 +94,27 @@ public class DealerOrderServiceImpl extends ServiceImpl<DealerOrderMapper, Deale
         dOrder.setCommissionAmount(amount);
         dOrder.setStatus("pending");
         save(dOrder);
+        if (baseMapper.freezeCommission(beneficiary.getId(), amount) != 1) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "待结算佣金更新失败");
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean settlePending(Long dealerOrderId) {
+        DealerOrder dOrder = getByIdWithTenant(dealerOrderId);
+        if (!"pending".equals(dOrder.getStatus())) {
+            return false;
+        }
+        if (baseMapper.settleCommission(dOrder.getDealerUserId(), dOrder.getCommissionAmount()) != 1) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "佣金余额结算失败");
+        }
+        dOrder.setStatus("settled");
+        dOrder.setSettleTime(LocalDateTime.now());
+        if (!updateById(dOrder)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "佣金记录结算失败");
+        }
+        return true;
     }
 
     /** 整单佣金：订单实付 × 店铺统一比例 */

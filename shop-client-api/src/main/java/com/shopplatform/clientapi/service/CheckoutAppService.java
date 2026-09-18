@@ -123,7 +123,8 @@ public class CheckoutAppService {
         try {
             Order order = orderService.createOrder(new OrderService.CreateOrderCommand(
                     loginUser.userId(), items, request.deliveryType(), request.pickupStoreId(), null,
-                    request.couponId(), request.pointsToUse(), request.activityType(), request.activityId(),
+                    request.couponId(), request.pointsToUse(), request.activityType(),
+                    groupCtx == null ? request.activityId() : groupCtx.activeId(),
                     groupCtx == null ? null : groupCtx.recordId(),
                     "h5", request.buyerRemark(), addressInfo));
 
@@ -162,24 +163,27 @@ public class CheckoutAppService {
 
     /** 拼团预处理：开团创建 pending 记录；参团 actual_num+1（已成团/已结束抛异常）。返回记录 id 与是否团长。 */
     private GroupContext prepareGroup(CheckoutRequest request, Long userId) {
+        GroupActive requestedActive = groupActiveService.getByCompatibleIdWithTenant(request.activityId());
         if (request.groupRecordId() == null) {
             // 开团
-            GroupActive active = groupActiveService.getByIdWithTenant(request.activityId());
-            GroupRecord rec = groupRecordService.openGroup(active.getId(), userId, null,
-                    active.getValidHours() == null ? 24 : active.getValidHours());
-            return new GroupContext(rec.getId(), true);
+            GroupRecord rec = groupRecordService.openGroup(requestedActive.getId(), userId, null,
+                    requestedActive.getValidHours() == null ? 24 : requestedActive.getValidHours());
+            return new GroupContext(rec.getId(), true, requestedActive.getId());
         }
         // 参团
         GroupRecord rec = groupRecordService.getByIdWithTenant(request.groupRecordId());
         GroupActive active = groupActiveService.getByIdWithTenant(rec.getActiveId());
+        if (!active.getId().equals(requestedActive.getId())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "拼团记录与活动不匹配");
+        }
         GroupRecord updated = groupRecordService.joinGroup(rec.getId(), active.getGroupNum());
         if (updated == null) {
             throw new BusinessException(ErrorCode.GROUP_FULL, "拼团已满或已结束");
         }
-        return new GroupContext(rec.getId(), false);
+        return new GroupContext(rec.getId(), false, active.getId());
     }
 
-    private record GroupContext(Long recordId, boolean isLeader) {
+    private record GroupContext(Long recordId, boolean isLeader, Long activeId) {
     }
 
     /** 是否走秒杀预扣：activityType=seckill 且活动 time_ids 非空（限时折扣不预扣）。 */
