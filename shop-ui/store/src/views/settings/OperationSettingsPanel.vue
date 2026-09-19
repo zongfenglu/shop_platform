@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import { Modal, message } from 'ant-design-vue'
 import { pcaTextArr } from 'element-china-area-data'
+import MapLocationPicker from '@/components/MapLocationPicker.vue'
 import {
   createExpressCompany, createPrinter, createReturnAddress, createSmsChannel,
   deleteExpressCompany, deletePrinter, deleteReturnAddress, deleteSmsChannel,
@@ -18,17 +19,37 @@ const rows = ref([])
 const operations = ref(null)
 const modalOpen = ref(false)
 const editingId = ref(null)
+const locationPickerOpen = ref(false)
 
 const expressForm = reactive({ name: '', code: '', sort: 100, enabled: true })
 const addressForm = reactive({
   contactName: '', phone: '', province: '', city: '', district: '', detail: '',
-  postalCode: '', isDefault: false, sort: 100, enabled: true,
+  longitude: '', latitude: '', postalCode: '', isDefault: false, sort: 100, enabled: true,
 })
 const returnRegionParts = ref([])
 
 function onReturnRegionChange(values) {
   const [province = '', city = '', district = ''] = values || []
   Object.assign(addressForm, { province, city, district })
+}
+
+function onReturnLocationConfirm(location) {
+  addressForm.longitude = location.longitude
+  addressForm.latitude = location.latitude
+  locationPickerOpen.value = false
+}
+
+function clearReturnLocation() {
+  addressForm.longitude = ''
+  addressForm.latitude = ''
+}
+
+function openMap(row) {
+  const latitude = Number(row.latitude)
+  const longitude = Number(row.longitude)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return message.warning('该地址尚未设置地图位置')
+  const name = encodeURIComponent(`${row.contactName || ''} 退货地址`.trim())
+  window.open(`https://uri.amap.com/marker?position=${longitude},${latitude}&name=${name}&coordinate=gaode&callnative=1`, '_blank', 'noopener')
 }
 const printerForm = reactive({
   name: '', provider: 'feie', deviceNo: '', accessKey: '', accessSecret: '',
@@ -113,7 +134,7 @@ function openCreate() {
   if (props.section === 'express') Object.assign(expressForm, { name: '', code: '', sort: 100, enabled: true })
   if (props.section === 'returns') Object.assign(addressForm, {
     contactName: '', phone: '', province: '', city: '', district: '', detail: '',
-    postalCode: '', isDefault: rows.value.length === 0, sort: 100, enabled: true,
+    longitude: '', latitude: '', postalCode: '', isDefault: rows.value.length === 0, sort: 100, enabled: true,
   })
   if (props.section === 'returns') returnRegionParts.value = []
   if (props.section === 'printers') Object.assign(printerForm, {
@@ -133,6 +154,7 @@ function openEdit(row) {
   if (props.section === 'returns') Object.assign(addressForm, {
     contactName: row.contactName, phone: row.phone, province: row.province, city: row.city,
     district: row.district, detail: row.detail, postalCode: row.postalCode || '',
+    longitude: row.longitude ?? '', latitude: row.latitude ?? '',
     isDefault: !!row.isDefault, sort: row.sort, enabled: row.status === 'enabled',
   })
   if (props.section === 'returns') {
@@ -292,7 +314,7 @@ function modalTitle() {
 
       <div v-else-if="section === 'returns'" class="card">
         <table v-if="rows.length" class="table"><thead><tr><th>联系人</th><th>联系电话</th><th>退货地址</th><th>状态</th><th>操作</th></tr></thead><tbody>
-          <tr v-for="row in rows" :key="row.id"><td class="strong">{{ row.contactName }} <span v-if="row.isDefault" class="tag tag-primary">默认</span></td><td>{{ row.phone }}</td><td>{{ row.province }}{{ row.city }}{{ row.district }}{{ row.detail }}</td><td><span class="tag" :class="row.status === 'enabled' ? 'tag-good' : 'tag-muted'">{{ row.status === 'enabled' ? '启用' : '停用' }}</span></td><td><button v-if="!row.isDefault" class="btn btn-sm" @click="makeDefault(row)">设为默认</button><button class="btn btn-sm" @click="openEdit(row)">编辑</button><button class="btn btn-sm btn-danger-outline" @click="confirmDelete(row)">删除</button></td></tr>
+          <tr v-for="row in rows" :key="row.id"><td class="strong">{{ row.contactName }} <span v-if="row.isDefault" class="tag tag-primary">默认</span></td><td>{{ row.phone }}</td><td>{{ row.province }}{{ row.city }}{{ row.district }}{{ row.detail }}</td><td><span class="tag" :class="row.status === 'enabled' ? 'tag-good' : 'tag-muted'">{{ row.status === 'enabled' ? '启用' : '停用' }}</span></td><td><button v-if="row.latitude != null && row.longitude != null" class="btn btn-sm" @click="openMap(row)">地图</button><button v-if="!row.isDefault" class="btn btn-sm" @click="makeDefault(row)">设为默认</button><button class="btn btn-sm" @click="openEdit(row)">编辑</button><button class="btn btn-sm btn-danger-outline" @click="confirmDelete(row)">删除</button></td></tr>
         </tbody></table>
         <div v-else class="empty-state">暂无退货地址</div>
       </div>
@@ -327,10 +349,38 @@ function modalTitle() {
 
     <a-modal v-model:open="modalOpen" :title="modalTitle()" :confirm-loading="submitting" ok-text="保存" cancel-text="取消" width="620px" @ok="saveModal">
       <template v-if="section === 'express'"><div class="form-row form-item"><div><label class="form-label">物流公司名称</label><input v-model.trim="expressForm.name" class="form-input" /></div><div><label class="form-label">物流公司代码</label><input v-model.trim="expressForm.code" class="form-input" placeholder="如 shunfeng" /></div></div><div class="form-row form-item"><div><label class="form-label">排序</label><input v-model.number="expressForm.sort" type="number" min="0" class="form-input" /></div><label class="switch-line"><input v-model="expressForm.enabled" type="checkbox" /><span>启用</span></label></div></template>
-      <template v-else-if="section === 'returns'"><div class="form-row form-item"><div><label class="form-label">联系人</label><input v-model.trim="addressForm.contactName" class="form-input" /></div><div><label class="form-label">联系电话</label><input v-model.trim="addressForm.phone" class="form-input" /></div></div><div class="form-item"><label class="form-label">省 / 市 / 区</label><a-cascader v-model:value="returnRegionParts" :options="pcaTextArr" placeholder="请选择省 / 市 / 区" style="width: 100%" @change="onReturnRegionChange" /><div v-if="addressForm.province && !returnRegionParts.length" class="form-hint">当前保存值：{{ addressForm.province }}{{ addressForm.city }}{{ addressForm.district }}（重新选择后覆盖）</div></div><div class="form-item"><label class="form-label">详细地址</label><input v-model.trim="addressForm.detail" class="form-input" /></div><div class="form-row form-item"><div><label class="form-label">邮政编码</label><input v-model.trim="addressForm.postalCode" class="form-input" /></div><div><label class="form-label">排序</label><input v-model.number="addressForm.sort" type="number" min="0" class="form-input" /></div></div><div class="toggle-row"><label class="switch-line"><input v-model="addressForm.isDefault" type="checkbox" /><span>默认地址</span></label><label class="switch-line"><input v-model="addressForm.enabled" type="checkbox" /><span>启用</span></label></div></template>
+      <template v-else-if="section === 'returns'">
+        <div class="form-row form-item"><div><label class="form-label">联系人</label><input v-model.trim="addressForm.contactName" class="form-input" /></div><div><label class="form-label">联系电话</label><input v-model.trim="addressForm.phone" class="form-input" /></div></div>
+        <div class="form-item"><label class="form-label">省 / 市 / 区</label><a-cascader v-model:value="returnRegionParts" :options="pcaTextArr" placeholder="请选择省 / 市 / 区" style="width: 100%" @change="onReturnRegionChange" /><div v-if="addressForm.province && !returnRegionParts.length" class="form-hint">当前保存值：{{ addressForm.province }}{{ addressForm.city }}{{ addressForm.district }}（重新选择后覆盖）</div></div>
+        <div class="form-item"><label class="form-label">详细地址</label><input v-model.trim="addressForm.detail" class="form-input" /></div>
+        <div class="form-item">
+          <label class="form-label">地图位置</label>
+          <div class="location-field">
+            <div class="location-value">
+              <template v-if="addressForm.latitude !== '' && addressForm.longitude !== ''">纬度 {{ addressForm.latitude }} · 经度 {{ addressForm.longitude }}</template>
+              <template v-else>尚未选择位置</template>
+            </div>
+            <button class="btn" type="button" @click="locationPickerOpen = true">地图选点</button>
+            <button v-if="addressForm.latitude !== '' && addressForm.longitude !== ''" class="btn" type="button" @click="clearReturnLocation">清除</button>
+          </div>
+          <div class="form-hint">坐标会随售后退货地址快照保存，便于查看位置和导航。</div>
+        </div>
+        <div class="form-row form-item"><div><label class="form-label">邮政编码</label><input v-model.trim="addressForm.postalCode" class="form-input" /></div><div><label class="form-label">排序</label><input v-model.number="addressForm.sort" type="number" min="0" class="form-input" /></div></div>
+        <div class="toggle-row"><label class="switch-line"><input v-model="addressForm.isDefault" type="checkbox" /><span>默认地址</span></label><label class="switch-line"><input v-model="addressForm.enabled" type="checkbox" /><span>启用</span></label></div>
+      </template>
       <template v-else-if="section === 'printers'"><div class="form-row form-item"><div><label class="form-label">打印机名称</label><input v-model.trim="printerForm.name" class="form-input" /></div><div><label class="form-label">打印渠道</label><select v-model="printerForm.provider" class="form-select"><option value="feie">飞鹅云</option><option value="yilianyun">易联云</option><option value="cloud">通用云打印</option><option value="custom_http">自定义 HTTP</option></select></div></div><div class="form-item"><label class="form-label">终端编号</label><input v-model.trim="printerForm.deviceNo" class="form-input" /></div><div class="form-row form-item"><div><label class="form-label">用户密钥 / Key</label><input v-model.trim="printerForm.accessKey" type="password" class="form-input" autocomplete="new-password" /></div><div><label class="form-label">应用密钥 / Secret</label><input v-model.trim="printerForm.accessSecret" type="password" class="form-input" autocomplete="new-password" /></div></div><div v-if="printerForm.provider === 'custom_http'" class="form-item"><label class="form-label">接口地址</label><input v-model.trim="printerForm.endpoint" class="form-input" /></div><div class="toggle-row"><label class="switch-line"><input v-model="printerForm.enabled" type="checkbox" /><span>启用</span></label><div class="compact"><label class="form-label">排序</label><input v-model.number="printerForm.sort" type="number" min="0" class="form-input" /></div></div></template>
       <template v-else-if="section === 'sms'"><div class="form-row form-item"><div><label class="form-label">渠道名称</label><input v-model.trim="smsForm.name" class="form-input" /></div><div><label class="form-label">服务商</label><select v-model="smsForm.provider" class="form-select"><option value="aliyun">阿里云</option><option value="tencent">腾讯云</option><option value="huawei">华为云</option><option value="yunpian">云片</option><option value="custom_http">自定义 HTTP</option></select></div></div><div class="form-row form-item"><div><label class="form-label">App ID</label><input v-model.trim="smsForm.appId" class="form-input" /></div><div><label class="form-label">短信签名</label><input v-model.trim="smsForm.signName" class="form-input" /></div></div><div class="form-row form-item"><div><label class="form-label">AccessKey ID</label><input v-model.trim="smsForm.accessKeyId" type="password" class="form-input" autocomplete="new-password" /></div><div><label class="form-label">AccessKey Secret</label><input v-model.trim="smsForm.accessKeySecret" type="password" class="form-input" autocomplete="new-password" /></div></div><div v-if="smsForm.provider === 'custom_http'" class="form-item"><label class="form-label">接口地址</label><input v-model.trim="smsForm.endpoint" class="form-input" placeholder="https://..." /></div><div class="toggle-row"><label class="switch-line"><input v-model="smsForm.enabled" type="checkbox" /><span>启用</span></label><div class="compact"><label class="form-label">优先级</label><input v-model.number="smsForm.priority" type="number" min="0" class="form-input" /></div></div></template>
     </a-modal>
+
+    <MapLocationPicker
+      v-if="locationPickerOpen"
+      title="选择退货地址位置"
+      description="点击地图选点，坐标会随退货地址及售后快照保存"
+      :latitude="addressForm.latitude"
+      :longitude="addressForm.longitude"
+      @confirm="onReturnLocationConfirm"
+      @close="locationPickerOpen = false"
+    />
   </div>
 </template>
 
@@ -348,6 +398,8 @@ function modalTitle() {
 .compact { width: 140px; }
 .actions { display: flex; justify-content: flex-end; border-top: 1px solid var(--gridline); padding-top: 18px; margin-top: 22px; }
 .secret-state { color: var(--text-muted); font-size: 12px; }
+.location-field { display: flex; align-items: center; gap: 8px; }
+.location-value { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); background: var(--surface-2); font-size: 13px; }
 .empty-state { padding: 48px 20px; text-align: center; color: var(--text-muted); }
 table { min-width: 680px; }
 code { background: var(--surface-subtle); padding: 2px 5px; border-radius: 4px; }

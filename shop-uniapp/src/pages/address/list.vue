@@ -46,6 +46,21 @@ function onCreate() {
   uni.navigateTo({ url: '/pages/address/edit' })
 }
 
+function onNavigate(row) {
+  const latitude = Number(row.latitude)
+  const longitude = Number(row.longitude)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    uni.showToast({ title: '该地址尚未地图选点', icon: 'none' })
+    return
+  }
+  uni.openLocation({
+    latitude,
+    longitude,
+    name: `${row.name}的收货地址`,
+    address: `${row.province || ''}${row.city || ''}${row.region || ''}${row.detail || ''}`,
+  })
+}
+
 function chooseWechatAddress() {
   return new Promise((resolve, reject) => {
     uni.chooseAddress({ success: resolve, fail: reject })
@@ -168,6 +183,7 @@ function onDelete(row) {
           </view>
         </view>
         <view class="ops">
+          <text v-if="row.latitude != null && row.longitude != null" class="op map-op" @click="onNavigate(row)">地图</text>
           <text class="op" @click="onSetDefault(row)">{{ row.isDefault ? '已是默认' : '设为默认' }}</text>
           <text class="op" @click="onEdit(row)">编辑</text>
           <text class="op danger" @click="onDelete(row)">删除</text>

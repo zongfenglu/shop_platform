@@ -102,9 +102,15 @@ public class CheckoutAppService {
 
         List<PriceContext.PriceItem> items = buildPriceContext(request).items();
 
+        if (request.address() != null
+                && ((request.address().longitude() == null) != (request.address().latitude() == null))) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "地址经纬度必须同时设置");
+        }
+
         OrderService.AddressInfo addressInfo = request.address() == null ? null : new OrderService.AddressInfo(
                 request.address().name(), request.address().phone(), request.address().province(),
-                request.address().city(), request.address().region(), request.address().detail());
+                request.address().city(), request.address().region(), request.address().detail(),
+                request.address().longitude(), request.address().latitude());
 
         // 秒杀（time_ids 非空）：先 Redis 原子预扣限量+限购，拦掉绝大部分流量；限时折扣（time_ids 空）走普通库存不预扣。
         boolean seckill = isSeckillMode(request);

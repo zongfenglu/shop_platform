@@ -21,6 +21,8 @@ const form = ref({
   city: '',
   region: '',
   detail: '',
+  longitude: null,
+  latitude: null,
   isDefault: false,
 })
 const editingId = ref('')
@@ -78,6 +80,8 @@ onLoad(async (query) => {
       city: data.city || '',
       region: data.region || '',
       detail: data.detail || '',
+      longitude: data.longitude ?? null,
+      latitude: data.latitude ?? null,
       isDefault: !!data.isDefault,
     }
     // #ifdef H5
@@ -94,6 +98,47 @@ function onRegionChange(e) {
   form.value.province = province
   form.value.city = city
   form.value.region = region
+}
+
+function locationDetail(location) {
+  let detail = String(location.address || location.name || '').trim()
+  for (const part of [form.value.province, form.value.city, form.value.region]) {
+    if (part && detail.startsWith(part)) detail = detail.slice(part.length)
+  }
+  const name = String(location.name || '').trim()
+  if (name && !detail.includes(name)) detail += name
+  return detail || form.value.detail
+}
+
+function onChooseLocation() {
+  uni.chooseLocation({
+    latitude: form.value.latitude == null ? undefined : Number(form.value.latitude),
+    longitude: form.value.longitude == null ? undefined : Number(form.value.longitude),
+    success(location) {
+      form.value.latitude = Number(Number(location.latitude).toFixed(6))
+      form.value.longitude = Number(Number(location.longitude).toFixed(6))
+      form.value.detail = locationDetail(location)
+    },
+    fail(error) {
+      const text = String(error?.errMsg || '')
+      if (text.includes('cancel')) return
+      if (text.includes('auth deny') || text.includes('authorize:fail')) {
+        uni.showModal({
+          title: '需要位置权限',
+          content: '请在小程序设置中允许使用位置信息后再选择地址。',
+          confirmText: '去设置',
+          success: (result) => { if (result.confirm) uni.openSetting() },
+        })
+        return
+      }
+      uni.showToast({ title: '暂时无法打开地图，请稍后重试', icon: 'none' })
+    },
+  })
+}
+
+function clearLocation() {
+  form.value.longitude = null
+  form.value.latitude = null
 }
 
 function validate() {
@@ -119,6 +164,8 @@ async function onSave() {
     city: form.value.city || undefined,
     region: form.value.region || undefined,
     detail: form.value.detail.trim(),
+    longitude: form.value.longitude == null ? undefined : Number(form.value.longitude),
+    latitude: form.value.latitude == null ? undefined : Number(form.value.latitude),
     isDefault: form.value.isDefault,
   }
   try {
@@ -182,6 +229,18 @@ async function onSave() {
         <text class="label">详细地址</text>
         <textarea v-model="form.detail" class="textarea" placeholder="街道、楼牌号等" maxlength="255" />
       </view>
+      <view class="field location-field">
+        <text class="label">地图位置</text>
+        <view class="location-body">
+          <text class="location-text">
+            {{ form.latitude == null ? '选点后可精准定位和导航' : `已定位：${form.latitude}, ${form.longitude}` }}
+          </text>
+          <view class="location-actions">
+            <button class="location-btn" type="default" @click="onChooseLocation">地图选点</button>
+            <button v-if="form.latitude != null" class="location-btn subtle" type="default" @click="clearLocation">清除</button>
+          </view>
+        </view>
+      </view>
       <view class="field">
         <text class="label">设为默认</text>
         <switch :checked="form.isDefault" :disabled="lockDefault" @change="form.isDefault = $event.detail.value" />
@@ -236,6 +295,13 @@ async function onSave() {
   height: 140rpx;
   width: 100%;
 }
+.location-field { align-items: flex-start; }
+.location-body { flex: 1; min-width: 0; }
+.location-text { display: block; color: #898781; font-size: 23rpx; line-height: 1.5; word-break: break-all; }
+.location-actions { display: flex; gap: 14rpx; margin-top: 14rpx; }
+.location-btn { width: auto; min-width: 150rpx; height: 60rpx; margin: 0; padding: 0 22rpx; border: 0; border-radius: 8rpx; background: #2a78d6; color: #fff; font-size: 24rpx; line-height: 60rpx; }
+.location-btn::after { border: 0; }
+.location-btn.subtle { background: #f1f1ee; color: #4a4844; }
 .arrow {
   color: #b5b3ad;
   font-size: 32rpx;

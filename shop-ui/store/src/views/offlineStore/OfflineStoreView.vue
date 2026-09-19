@@ -93,6 +93,14 @@ function onLocationConfirm(location) {
   locationPickerOpen.value = false
 }
 
+function openMap(store) {
+  const latitude = Number(store.latitude)
+  const longitude = Number(store.longitude)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return message.warning('该门店尚未设置地图位置')
+  const name = encodeURIComponent(store.name || '门店')
+  window.open(`https://uri.amap.com/marker?position=${longitude},${latitude}&name=${name}&coordinate=gaode&callnative=1`, '_blank', 'noopener')
+}
+
 async function save() {
   if (!form.name.trim()) return message.error('请输入门店名称')
   const hasLongitude = form.longitude !== '' && form.longitude != null
@@ -184,6 +192,7 @@ function dateText(value) {
               <td><span class="tag" :class="item.status === 'enabled' ? 'tag-good' : 'tag-muted'">{{ item.status === 'enabled' ? '营业中' : '已停用' }}</span></td>
               <td>
                 <button class="btn btn-sm" @click="openEdit(item)">编辑</button>
+                <button v-if="item.latitude != null && item.longitude != null" class="btn btn-sm" @click="openMap(item)">查看地图</button>
                 <button class="btn btn-sm" @click="toggleStatus(item)">{{ item.status === 'enabled' ? '停用' : '启用' }}</button>
               </td>
             </tr>

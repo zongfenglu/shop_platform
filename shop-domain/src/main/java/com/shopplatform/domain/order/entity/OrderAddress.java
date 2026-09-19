@@ -3,6 +3,8 @@ package com.shopplatform.domain.order.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shopplatform.framework.mybatis.BaseEntity;
 
+import java.math.BigDecimal;
+
 /**
  * 订单收货地址快照。见文档三 §3.3。
  * 下单时从用户地址簿复制一份，用户之后修改地址簿不影响已下单订单的收货信息。
@@ -25,6 +27,10 @@ public class OrderAddress extends BaseEntity {
     private String region;
 
     private String detail;
+
+    private BigDecimal longitude;
+
+    private BigDecimal latitude;
 
     public Long getShopId() {
         return shopId;
@@ -88,5 +94,21 @@ public class OrderAddress extends BaseEntity {
 
     public void setDetail(String detail) {
         this.detail = detail;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude) {
+        this.longitude = longitude;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude) {
+        this.latitude = latitude;
     }
 }

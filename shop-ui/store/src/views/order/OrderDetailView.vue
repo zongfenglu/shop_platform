@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { cancelOrder, getOrder } from '@/api/order'
 
 /**
@@ -129,6 +129,13 @@ function onCancel() {
     },
   })
 }
+
+function openMap(target, name) {
+  const latitude = Number(target?.latitude)
+  const longitude = Number(target?.longitude)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return message.warning('该地址尚未设置地图位置')
+  window.open(`https://uri.amap.com/marker?position=${longitude},${latitude}&name=${encodeURIComponent(name)}&coordinate=gaode&callnative=1`, '_blank', 'noopener')
+}
 </script>
 
 <template>
@@ -164,12 +171,14 @@ function onCancel() {
           <div class="kv-row"><div class="k">自提门店</div><div class="v">{{ data.pickupStore?.name || '自提门店' }}</div></div>
           <div class="kv-row"><div class="k">门店地址</div><div class="v">{{ `${data.pickupStore?.region || ''}${data.pickupStore?.detail || ''}` || '—' }}</div></div>
           <div class="kv-row"><div class="k">核销码</div><div class="v">{{ data.order.pickupCode || '—' }}</div></div>
+          <button v-if="data.pickupStore?.latitude != null && data.pickupStore?.longitude != null" class="btn btn-sm" style="margin-top: 12px" @click="openMap(data.pickupStore, data.pickupStore.name || '自提门店')">查看门店地图</button>
           <div style="margin-top: 12px; color: var(--text-muted); font-size: 13px">自提订单无需发货。买家到店后，请在“门店 → 核销记录”输入核销码完成交付。</div>
           <button class="btn btn-sm" style="margin-top: 12px" @click="router.push({ name: 'offline-stores' })">前往门店核销</button>
         </template>
         <template v-else-if="data.address && data.address.name">
           <div class="kv-row"><div class="k">收货人</div><div class="v">{{ data.address.name }} {{ data.address.phone }}</div></div>
           <div class="kv-row"><div class="k">收货地址</div><div class="v">{{ data.address.province }}{{ data.address.city }}{{ data.address.region }}{{ data.address.detail }}</div></div>
+          <button v-if="data.address.latitude != null && data.address.longitude != null" class="btn btn-sm" style="margin-top: 12px" @click="openMap(data.address, `${data.address.name}的收货地址`)">查看地图</button>
         </template>
         <div v-else-if="data.order.deliveryType !== 'pickup'" style="color: var(--text-muted); font-size: 13px">虚拟商品，无收货地址</div>
       </div>

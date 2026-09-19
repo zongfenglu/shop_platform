@@ -1,8 +1,12 @@
 package com.shopplatform.clientapi.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
 
 /**
  * 地址簿的新增/修改请求。与 {@link AddressRequest}（下单时直接提交的地址快照）不是一回事：
@@ -15,6 +19,8 @@ public record SaveAddressRequest(
         @Size(max = 32) String city,
         @Size(max = 32) String region,
         @NotBlank @Size(max = 255) String detail,
+        @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
+        @DecimalMin("-90.0") @DecimalMax("90.0") BigDecimal latitude,
         Boolean isDefault
 ) {
 }

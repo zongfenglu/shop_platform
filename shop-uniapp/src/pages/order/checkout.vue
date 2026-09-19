@@ -160,6 +160,8 @@ function buildPayload() {
           city: address.value.city,
           region: address.value.region,
           detail: address.value.detail,
+          longitude: address.value.longitude,
+          latitude: address.value.latitude,
         }
       : undefined,
     cartIds: cartIds.value.length ? cartIds.value : undefined,

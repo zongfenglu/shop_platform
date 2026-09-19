@@ -16,6 +16,8 @@ import com.shopplatform.domain.setting.service.StoreOperationSettingService;
 import com.shopplatform.framework.crypto.AesGcmEncryptor;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Set;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/store/settings")
@@ -272,12 +275,17 @@ public class StoreOperationSettingController {
     }
 
     private void applyReturnAddress(ReturnAddress item, ReturnAddressRequest request) {
+        if ((request.longitude() == null) != (request.latitude() == null)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "地址经纬度必须同时设置");
+        }
         item.setContactName(request.contactName().trim());
         item.setPhone(request.phone().trim());
         item.setProvince(request.province().trim());
         item.setCity(request.city().trim());
         item.setDistrict(request.district().trim());
         item.setDetail(request.detail().trim());
+        item.setLongitude(request.longitude());
+        item.setLatitude(request.latitude());
         item.setPostalCode(trimToNull(request.postalCode()));
         item.setIsDefault(request.isDefault());
         item.setSort(request.sort());
@@ -392,6 +400,8 @@ public class StoreOperationSettingController {
             @NotBlank @Size(max = 32) String city,
             @NotBlank @Size(max = 32) String district,
             @NotBlank @Size(max = 255) String detail,
+            @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
+            @DecimalMin("-90.0") @DecimalMax("90.0") BigDecimal latitude,
             @Size(max = 12) String postalCode,
             boolean isDefault,
             @NotNull @Min(0) @Max(9999) Integer sort,

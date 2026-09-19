@@ -32,6 +32,12 @@
             "es6" : true,
             "minified" : true
         },
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "用于选择收货地址位置和门店导航"
+            }
+        },
+        "requiredPrivateInfos" : [ "chooseLocation" ],
         "usingComponents" : true
     },
     "mp-alipay" : {

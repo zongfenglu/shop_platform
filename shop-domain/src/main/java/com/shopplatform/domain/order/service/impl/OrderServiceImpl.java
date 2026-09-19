@@ -177,6 +177,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             address.setCity(cmd.address().city());
             address.setRegion(cmd.address().region());
             address.setDetail(cmd.address().detail());
+            address.setLongitude(cmd.address().longitude());
+            address.setLatitude(cmd.address().latitude());
             orderAddressService.save(address);
         }
 

@@ -78,11 +78,17 @@ public class StoreAfterSaleController {
 
     private String toAddressSnapshot(ReturnAddress address) {
         try {
-            return objectMapper.writeValueAsString(java.util.Map.of(
-                    "contactName", address.getContactName(), "phone", address.getPhone(),
-                    "province", address.getProvince(), "city", address.getCity(),
-                    "district", address.getDistrict(), "detail", address.getDetail(),
-                    "postalCode", address.getPostalCode() == null ? "" : address.getPostalCode()));
+            java.util.Map<String, Object> snapshot = new java.util.LinkedHashMap<>();
+            snapshot.put("contactName", address.getContactName());
+            snapshot.put("phone", address.getPhone());
+            snapshot.put("province", address.getProvince());
+            snapshot.put("city", address.getCity());
+            snapshot.put("district", address.getDistrict());
+            snapshot.put("detail", address.getDetail());
+            snapshot.put("longitude", address.getLongitude());
+            snapshot.put("latitude", address.getLatitude());
+            snapshot.put("postalCode", address.getPostalCode() == null ? "" : address.getPostalCode());
+            return objectMapper.writeValueAsString(snapshot);
         } catch (JsonProcessingException e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "退货地址快照保存失败");
         }

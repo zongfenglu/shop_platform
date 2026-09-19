@@ -70,6 +70,22 @@ function returnAddress() {
   }
 }
 
+function navigateReturnAddress() {
+  const address = returnAddress()
+  const latitude = Number(address?.latitude)
+  const longitude = Number(address?.longitude)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    uni.showToast({ title: '商家未配置地图位置', icon: 'none' })
+    return
+  }
+  uni.openLocation({
+    latitude,
+    longitude,
+    name: '商家退货地址',
+    address: `${address.province || ''}${address.city || ''}${address.district || ''}${address.detail || ''}`,
+  })
+}
+
 function canClose() {
   return data.value?.status === 'applying'
 }
@@ -186,6 +202,7 @@ async function onSubmitShip() {
       <view class="card-title">寄回地址</view>
       <view class="address-name">{{ returnAddress().contactName }} {{ returnAddress().phone }}</view>
       <view class="address-detail">{{ returnAddress().province }}{{ returnAddress().city }}{{ returnAddress().district }}{{ returnAddress().detail }}</view>
+      <button v-if="returnAddress().latitude != null && returnAddress().longitude != null" class="address-map-btn" @click="navigateReturnAddress">地图导航</button>
     </view>
 
     <view v-if="data" class="bottom-bar">
@@ -254,6 +271,8 @@ async function onSubmitShip() {
 .address-block { margin-top: 18rpx; padding-top: 18rpx; border-top: 1rpx solid #eceeeb; font-size: 23rpx; font-weight: 600; }
 .address-name { font-size: 26rpx; font-weight: 600; margin-bottom: 8rpx; }
 .address-detail { font-size: 24rpx; color: #52514e; line-height: 1.55; }
+.address-map-btn { width: auto; height: 60rpx; margin: 18rpx 0 0; padding: 0 24rpx; border: 0; border-radius: 8rpx; background: #2a78d6; color: #fff; font-size: 24rpx; line-height: 60rpx; }
+.address-map-btn::after { border: 0; }
 .kv-row {
   display: flex;
   justify-content: space-between;

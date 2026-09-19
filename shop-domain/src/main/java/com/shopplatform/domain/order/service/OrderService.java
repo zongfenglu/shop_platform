@@ -97,7 +97,9 @@ public interface OrderService extends TenantSafeService<Order> {
             String province,
             String city,
             String region,
-            String detail
+            String detail,
+            java.math.BigDecimal longitude,
+            java.math.BigDecimal latitude
     ) {
     }
 }

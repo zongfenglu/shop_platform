@@ -68,6 +68,9 @@ public class ConsumerAddressController {
     }
 
     private UserAddress toEntity(SaveAddressRequest request, Long id) {
+        if ((request.longitude() == null) != (request.latitude() == null)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "地址经纬度必须同时设置");
+        }
         UserAddress address = new UserAddress();
         address.setId(id);
         address.setName(request.name());
@@ -76,6 +79,8 @@ public class ConsumerAddressController {
         address.setCity(request.city());
         address.setRegion(request.region());
         address.setDetail(request.detail());
+        address.setLongitude(request.longitude());
+        address.setLatitude(request.latitude());
         address.setIsDefault(Boolean.TRUE.equals(request.isDefault()));
         return address;
     }

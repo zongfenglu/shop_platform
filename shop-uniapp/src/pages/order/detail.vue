@@ -110,6 +110,16 @@ function canConfirm() {
   return o?.orderStatus === 'normal' && o?.payStatus === 'paid' && o?.deliveryStatus === 'shipped'
 }
 
+function openMap(target, name, address) {
+  const latitude = Number(target?.latitude)
+  const longitude = Number(target?.longitude)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    uni.showToast({ title: '该地址尚未地图选点', icon: 'none' })
+    return
+  }
+  uni.openLocation({ latitude, longitude, name, address })
+}
+
 function hasBottomActions() {
   return canCancel() || canAfterSale() || canConfirm() || data.value?.order?.orderStatus === 'finished'
 }
@@ -258,6 +268,7 @@ function packageGoodsText(pkg) {
         <view class="row">
           <view class="addr-name">{{ data.pickupStore?.name || '自提门店' }}</view>
           <view class="addr-detail">{{ [data.pickupStore?.region, data.pickupStore?.detail].filter(Boolean).join(' ') || '门店地址待完善' }}</view>
+          <button v-if="data.pickupStore?.latitude != null && data.pickupStore?.longitude != null" class="map-btn" @click="openMap(data.pickupStore, data.pickupStore.name || '自提门店', [data.pickupStore.region, data.pickupStore.detail].filter(Boolean).join(' '))">门店导航</button>
         </view>
         <view v-if="data.order.payStatus === 'paid' && data.order.deliveryStatus === 'pending'" class="pickup-code-box">
           <view class="pickup-code-label">自提核销码</view>
@@ -269,6 +280,7 @@ function packageGoodsText(pkg) {
         <view class="row" v-if="data.address && data.address.name">
           <view class="addr-name">{{ data.address.name }} {{ data.address.phone }}</view>
           <view class="addr-detail">{{ data.address.province }}{{ data.address.city }}{{ data.address.region }}{{ data.address.detail }}</view>
+          <button v-if="data.address.latitude != null && data.address.longitude != null" class="map-btn" @click="openMap(data.address, `${data.address.name}的收货地址`, `${data.address.province || ''}${data.address.city || ''}${data.address.region || ''}${data.address.detail || ''}`)">查看地图</button>
         </view>
         <view v-else class="row muted">门店自提或虚拟商品，无收货地址</view>
       </template>
@@ -384,6 +396,8 @@ function packageGoodsText(pkg) {
   color: #52514e;
   margin-top: 6rpx;
 }
+.map-btn { width: auto; height: 60rpx; margin: 18rpx 0 0; padding: 0 24rpx; border: 0; border-radius: 8rpx; background: #2a78d6; color: #fff; font-size: 24rpx; line-height: 60rpx; }
+.map-btn::after { border: 0; }
 .pickup-code-box {
   margin-top: 20rpx;
   padding: 24rpx;

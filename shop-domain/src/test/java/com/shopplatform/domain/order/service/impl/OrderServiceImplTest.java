@@ -391,7 +391,7 @@ class OrderServiceImplTest {
 
     private OrderService.CreateOrderCommand commandWithCoupon(Long couponId) {
         OrderService.AddressInfo address = new OrderService.AddressInfo(
-                "张三", "13800000000", "广东", "深圳", "南山区", "科技园");
+                "张三", "13800000000", "广东", "深圳", "南山区", "科技园", null, null);
         return new OrderService.CreateOrderCommand(
                 100L,
                 List.of(new PriceContext.PriceItem(10L, 101L, "测试商品", "默认", "img.jpg",

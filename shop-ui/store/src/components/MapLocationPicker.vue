@@ -7,6 +7,8 @@ import 'leaflet/dist/leaflet.css'
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
   longitude: { type: [Number, String], default: null },
+  title: { type: String, default: '选择地图位置' },
+  description: { type: String, default: '点击地图放置定位点，保存后可直接发起导航' },
 })
 const emit = defineEmits(['confirm', 'close'])
 
@@ -17,15 +19,55 @@ const selectedLongitude = ref(toCoordinate(props.longitude, -180, 180))
 let map = null
 let marker = null
 
+function outsideChina(latitude, longitude) {
+  return longitude < 72.004 || longitude > 137.8347 || latitude < 0.8293 || latitude > 55.8271
+}
+
+function transformLatitude(x, y) {
+  let result = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x))
+  result += (20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2 / 3
+  result += (20 * Math.sin(y * Math.PI) + 40 * Math.sin(y / 3 * Math.PI)) * 2 / 3
+  result += (160 * Math.sin(y / 12 * Math.PI) + 320 * Math.sin(y * Math.PI / 30)) * 2 / 3
+  return result
+}
+
+function transformLongitude(x, y) {
+  let result = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x))
+  result += (20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2 / 3
+  result += (20 * Math.sin(x * Math.PI) + 40 * Math.sin(x / 3 * Math.PI)) * 2 / 3
+  result += (150 * Math.sin(x / 12 * Math.PI) + 300 * Math.sin(x / 30 * Math.PI)) * 2 / 3
+  return result
+}
+
+function wgs84ToGcj02(latitude, longitude) {
+  if (outsideChina(latitude, longitude)) return [latitude, longitude]
+  const radLat = latitude / 180 * Math.PI
+  let magic = Math.sin(radLat)
+  magic = 1 - 0.006693421622965943 * magic * magic
+  const sqrtMagic = Math.sqrt(magic)
+  const deltaLat = transformLatitude(longitude - 105, latitude - 35) * 180
+    / ((6378245 * (1 - 0.006693421622965943)) / (magic * sqrtMagic) * Math.PI)
+  const deltaLng = transformLongitude(longitude - 105, latitude - 35) * 180
+    / (6378245 / sqrtMagic * Math.cos(radLat) * Math.PI)
+  return [latitude + deltaLat, longitude + deltaLng]
+}
+
+function gcj02ToWgs84(latitude, longitude) {
+  if (outsideChina(latitude, longitude)) return [latitude, longitude]
+  const converted = wgs84ToGcj02(latitude, longitude)
+  return [latitude * 2 - converted[0], longitude * 2 - converted[1]]
+}
+
 function toCoordinate(value, min, max) {
   if (value == null || value === '') return null
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null
 }
 
-function setPoint(latitude, longitude, zoom = 16) {
-  selectedLatitude.value = Number(latitude.toFixed(6))
-  selectedLongitude.value = Number(longitude.toFixed(6))
+function setMapPoint(latitude, longitude, zoom = 16) {
+  const [navigationLatitude, navigationLongitude] = wgs84ToGcj02(latitude, longitude)
+  selectedLatitude.value = Number(navigationLatitude.toFixed(6))
+  selectedLongitude.value = Number(navigationLongitude.toFixed(6))
   if (!marker) {
     marker = L.marker([latitude, longitude], {
       icon: L.divIcon({ className: 'map-pin-marker', html: '<span></span>', iconSize: [24, 34], iconAnchor: [12, 34] }),
@@ -45,7 +87,7 @@ function locateCurrent() {
   navigator.geolocation.getCurrentPosition(
     (position) => {
       locating.value = false
-      setPoint(position.coords.latitude, position.coords.longitude)
+      setMapPoint(position.coords.latitude, position.coords.longitude)
     },
     () => {
       locating.value = false
@@ -57,7 +99,7 @@ function locateCurrent() {
 
 function confirm() {
   if (selectedLatitude.value == null || selectedLongitude.value == null) {
-    message.warning('请先在地图上选择门店位置')
+    message.warning('请先在地图上选择位置')
     return
   }
   emit('confirm', { latitude: selectedLatitude.value, longitude: selectedLongitude.value })
@@ -65,14 +107,16 @@ function confirm() {
 
 onMounted(async () => {
   const hasPoint = selectedLatitude.value != null && selectedLongitude.value != null
-  const center = hasPoint ? [selectedLatitude.value, selectedLongitude.value] : [35.8617, 104.1954]
+  const center = hasPoint
+    ? gcj02ToWgs84(selectedLatitude.value, selectedLongitude.value)
+    : [35.8617, 104.1954]
   map = L.map(mapEl.value, { zoomControl: true }).setView(center, hasPoint ? 16 : 4)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
-  map.on('click', (event) => setPoint(event.latlng.lat, event.latlng.lng, Math.max(map.getZoom(), 15)))
-  if (hasPoint) setPoint(selectedLatitude.value, selectedLongitude.value)
+  map.on('click', (event) => setMapPoint(event.latlng.lat, event.latlng.lng, Math.max(map.getZoom(), 15)))
+  if (hasPoint) setMapPoint(center[0], center[1])
   await nextTick()
   map.invalidateSize()
 })
@@ -87,7 +131,7 @@ onBeforeUnmount(() => {
     <div class="map-picker-mask" @click.self="emit('close')">
       <div class="map-picker-dialog">
         <div class="map-picker-header">
-          <div><div class="map-picker-title">选择门店位置</div><div class="map-picker-sub">点击地图放置定位点，小程序导航将使用此坐标</div></div>
+          <div><div class="map-picker-title">{{ title }}</div><div class="map-picker-sub">{{ description }}</div></div>
           <button class="map-picker-close" type="button" title="关闭" @click="emit('close')">×</button>
         </div>
         <div ref="mapEl" class="location-map" />
