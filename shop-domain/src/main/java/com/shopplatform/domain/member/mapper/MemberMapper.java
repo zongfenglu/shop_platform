@@ -25,19 +25,25 @@ public interface MemberMapper extends BaseMapper<Member> {
                           @Param("shopId") Long shopId);
 
     /** 主账号已有同日签到时，删除被合并账号的重复签到记录。 */
-    @Delete("DELETE source FROM sign_record source "
+    @Delete("DELETE FROM sign_record WHERE id IN ("
+            + "SELECT duplicate_ids.id FROM ("
+            + "SELECT source.id FROM sign_record source "
             + "JOIN sign_record target ON target.shop_id = source.shop_id "
             + "AND target.user_id = #{targetId} AND target.sign_date = source.sign_date "
-            + "WHERE source.shop_id = #{shopId} AND source.user_id = #{sourceId}")
+            + "WHERE source.shop_id = #{shopId} AND source.user_id = #{sourceId}"
+            + ") duplicate_ids)")
     int deleteDuplicateSignRecords(@Param("sourceId") Long sourceId,
                                    @Param("targetId") Long targetId,
                                    @Param("shopId") Long shopId);
 
     /** 主账号已有同一砍价活动记录时，删除被合并账号的重复记录。 */
-    @Delete("DELETE source FROM bargain_record source "
+    @Delete("DELETE FROM bargain_record WHERE id IN ("
+            + "SELECT duplicate_ids.id FROM ("
+            + "SELECT source.id FROM bargain_record source "
             + "JOIN bargain_record target ON target.shop_id = source.shop_id "
             + "AND target.user_id = #{targetId} AND target.active_id = source.active_id "
-            + "WHERE source.shop_id = #{shopId} AND source.user_id = #{sourceId}")
+            + "WHERE source.shop_id = #{shopId} AND source.user_id = #{sourceId}"
+            + ") duplicate_ids)")
     int deleteDuplicateBargainRecords(@Param("sourceId") Long sourceId,
                                       @Param("targetId") Long targetId,
                                       @Param("shopId") Long shopId);
@@ -85,10 +91,11 @@ public interface MemberMapper extends BaseMapper<Member> {
 
     /** 主账号没有分销档案时，直接把被合并账号的档案改挂到主账号。 */
     @Update("UPDATE dealer_user source "
+            + "LEFT JOIN dealer_user target ON target.shop_id = source.shop_id "
+            + "AND target.user_id = #{targetId} "
             + "SET source.user_id = #{targetId} "
             + "WHERE source.shop_id = #{shopId} AND source.user_id = #{sourceId} "
-            + "AND NOT EXISTS (SELECT 1 FROM dealer_user target "
-            + "WHERE target.shop_id = source.shop_id AND target.user_id = #{targetId})")
+            + "AND target.id IS NULL")
     int moveDealerUserWhenTargetMissing(@Param("sourceId") Long sourceId,
                                         @Param("targetId") Long targetId,
                                         @Param("shopId") Long shopId);
