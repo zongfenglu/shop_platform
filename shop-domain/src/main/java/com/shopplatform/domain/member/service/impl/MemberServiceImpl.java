@@ -13,6 +13,7 @@ import com.shopplatform.domain.member.service.MemberService;
 import com.shopplatform.domain.member.service.UserBalanceLogService;
 import com.shopplatform.domain.member.service.UserGradeService;
 import com.shopplatform.domain.member.service.UserPointsLogService;
+import com.shopplatform.framework.tenant.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -24,6 +25,13 @@ import java.util.Objects;
 
 @Service
 public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> implements MemberService {
+
+    /** 用户合并时需要迁移的直接 user_id 关联表。 */
+    private static final List<String> USER_REFERENCE_TABLES = List.of(
+            "cart", "user_address", "user_balance_log", "user_points_log", "recharge_order",
+            "user_coupon", "after_sale", "goods_comment", "sign_record", "exchange_record",
+            "`order`", "bargain_record", "dealer_withdraw"
+    );
 
     private final UserBalanceLogService balanceLogService;
     private final UserPointsLogService pointsLogService;
@@ -85,11 +93,69 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
         Member member = this.getByIdWithTenant(userId);
         Member occupied = this.getOne(Wrappers.<Member>lambdaQuery().eq(Member::getMobile, mobile));
         if (occupied != null && !occupied.getId().equals(userId)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "该手机号已绑定其他账号");
+            return mergeWechatAccount(member, occupied, mobile);
         }
         member.setMobile(mobile);
         this.updateById(member);
         return member;
+    }
+
+    /**
+     * 微信账号授权手机号已存在时，以手机号账号为主账号完成合并。
+     * 这样 H5 端已有的订单、积分、余额、地址等历史数据不会被新建的微信账号割裂。
+     */
+    private Member mergeWechatAccount(Member wechatMember, Member mobileMember, String mobile) {
+        if (StringUtils.hasText(mobileMember.getOpenId())
+                && StringUtils.hasText(wechatMember.getOpenId())
+                && !Objects.equals(mobileMember.getOpenId(), wechatMember.getOpenId())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "该手机号已绑定其他微信账号");
+        }
+
+        Long sourceId = wechatMember.getId();
+        Long targetId = mobileMember.getId();
+        Long shopId = TenantContext.getRequired();
+        for (String table : USER_REFERENCE_TABLES) {
+            getBaseMapper().moveUserReference(table, "user_id", sourceId, targetId, shopId);
+        }
+        // 拼团团长字段不是 user_id，订单与营销记录仍必须归并到主账号。
+        getBaseMapper().moveUserReference("group_record", "leader_user_id", sourceId, targetId, shopId);
+        getBaseMapper().mergeDealerTotals(sourceId, targetId, shopId);
+        getBaseMapper().moveDealerOrders(sourceId, targetId, shopId);
+        getBaseMapper().moveDealerWithdraws(sourceId, targetId, shopId);
+        getBaseMapper().deleteMergedDealerUser(sourceId, targetId, shopId);
+        getBaseMapper().moveDealerUserWhenTargetMissing(sourceId, targetId, shopId);
+
+        mobileMember.setMobile(mobile);
+        if (!StringUtils.hasText(mobileMember.getOpenId())) {
+            mobileMember.setOpenId(wechatMember.getOpenId());
+            mobileMember.setUnionId(wechatMember.getUnionId());
+            mobileMember.setPlatform("mp");
+        }
+        if (!StringUtils.hasText(mobileMember.getAvatar()) && StringUtils.hasText(wechatMember.getAvatar())) {
+            mobileMember.setAvatar(wechatMember.getAvatar());
+        }
+        if (!StringUtils.hasText(mobileMember.getNickname())
+                || mobileMember.getNickname().startsWith("用户")) {
+            mobileMember.setNickname(wechatMember.getNickname());
+        }
+        mobileMember.setBalance(safeAmount(mobileMember.getBalance()).add(safeAmount(wechatMember.getBalance())));
+        mobileMember.setPoints(safeInt(mobileMember.getPoints()) + safeInt(wechatMember.getPoints()));
+        mobileMember.setGrowthValue(safeInt(mobileMember.getGrowthValue()) + safeInt(wechatMember.getGrowthValue()));
+        mobileMember.setPayMoney(safeAmount(mobileMember.getPayMoney()).add(safeAmount(wechatMember.getPayMoney())));
+        mobileMember.setPayCount(safeInt(mobileMember.getPayCount()) + safeInt(wechatMember.getPayCount()));
+        mobileMember.setIsBlack(Math.max(safeInt(mobileMember.getIsBlack()), safeInt(wechatMember.getIsBlack())));
+        mobileMember.setLastLoginTime(LocalDateTime.now());
+        this.updateById(mobileMember);
+        this.removeById(sourceId);
+        return mobileMember;
+    }
+
+    private BigDecimal safeAmount(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private int safeInt(Integer value) {
+        return value == null ? 0 : value;
     }
 
     @Override

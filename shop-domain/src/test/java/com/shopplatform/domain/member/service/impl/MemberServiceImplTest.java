@@ -160,6 +160,41 @@ class MemberServiceImplTest {
     }
 
     @Test
+    void bindMobile_mergesWechatAccountIntoExistingMobileAccount() {
+        Member wechat = member(20L, BigDecimal.ZERO, 8, null);
+        wechat.setOpenId("wx-open-id");
+        wechat.setUnionId("wx-union-id");
+        wechat.setNickname("微信用户");
+        wechat.setBalance(new BigDecimal("12.00"));
+        wechat.setPayMoney(new BigDecimal("20.00"));
+        wechat.setPayCount(1);
+
+        Member mobile = member(30L, new BigDecimal("10.00"), 5, null);
+        mobile.setMobile("13800138000");
+        mobile.setNickname("用户8000");
+        mobile.setGrowthValue(3);
+        mobile.setPayMoney(new BigDecimal("100.00"));
+        mobile.setPayCount(2);
+
+        doReturn(wechat).when(memberService).getByIdWithTenant(20L);
+        when(memberMapper.selectOne(any(), anyBoolean())).thenReturn(mobile);
+
+        Member merged = memberService.bindMobile(20L, "13800138000");
+
+        assertSame(mobile, merged);
+        assertEquals("wx-open-id", mobile.getOpenId());
+        assertEquals("wx-union-id", mobile.getUnionId());
+        assertEquals(new BigDecimal("22.00"), mobile.getBalance());
+        assertEquals(13, mobile.getPoints());
+        assertEquals(3, mobile.getGrowthValue());
+        assertEquals(new BigDecimal("120.00"), mobile.getPayMoney());
+        assertEquals(3, mobile.getPayCount());
+        verify(memberMapper, atLeast(14)).moveUserReference(anyString(), anyString(), eq(20L), eq(30L), eq(999L));
+        verify(memberMapper).updateById(mobile);
+        verify(memberMapper).deleteById(20L);
+    }
+
+    @Test
     void updateProfile_rejectsBlankNickname() {
         assertThrows(BusinessException.class, () -> memberService.updateProfile(1L, "   "));
         verify(memberMapper, never()).updateById(any(Member.class));
