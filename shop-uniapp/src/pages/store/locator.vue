@@ -1,7 +1,10 @@
 <script setup>
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { listOfflineStores } from '@/api'
+import ShareButton from '@/components/ShareButton.vue'
+
+onShareAppMessage(() => ({ title: '附近门店与自提点', path: '/pages/store/locator' }))
 
 /**
  * 门店列表。对应原型 docs/prototype/h5/store-locator.html。
@@ -84,6 +87,7 @@ function onNavigate(store) {
 
 <template>
   <view class="page" :class="{ 'has-bar': selectMode }">
+    <view v-if="!selectMode" class="page-share"><ShareButton title="附近门店与自提点" path="/pages/store/locator" /></view>
     <view v-if="loading" class="empty">加载中…</view>
     <view v-else-if="!stores.length" class="empty">暂无可用自提门店</view>
     <view
@@ -121,6 +125,7 @@ function onNavigate(store) {
   padding: 16rpx 0 40rpx;
   min-height: 100vh;
 }
+.page-share { display: flex; justify-content: flex-end; margin: 8rpx 28rpx 14rpx; }
 .page.has-bar {
   padding-bottom: 160rpx;
 }

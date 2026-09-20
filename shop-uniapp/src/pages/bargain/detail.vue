@@ -1,8 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import { getBargainActive, startBargain, helpBargain, getBargainRecord } from '@/api/index'
 import { decodeRouteId, encodeRouteId } from '@/utils/routeId'
+import ShareButton from '@/components/ShareButton.vue'
 
 /**
  * 砍价详情。对应原型 h5/bargain-detail.html。
@@ -18,11 +19,13 @@ const loading = ref(true)
 const helping = ref(false)
 const starting = ref(false)
 const now = ref(Date.now())
+const activeId = ref('')
 let timer = null
 
 onLoad(async (query) => {
   const id = decodeRouteId(query.id)
   const recordId = decodeRouteId(query.recordId) || null
+  activeId.value = String(id || '')
   try {
     active.value = await getBargainActive(id)
     const skus = active.value?.skus || []
@@ -35,6 +38,11 @@ onLoad(async (query) => {
     loading.value = false
   }
 })
+
+onShareAppMessage(() => ({
+  title: record.value ? '帮我砍一刀，好友一起享优惠' : (active.value?.goodsName || '邀请你一起参与砍价'),
+  path: `/pages/bargain/detail?id=${encodeRouteId(activeId.value)}${record.value?.recordId ? `&recordId=${encodeRouteId(record.value.recordId)}` : ''}`,
+}))
 
 onShow(() => { now.value = Date.now() })
 
@@ -151,6 +159,7 @@ function goCheckout() {
             <text class="badge">{{ active.validHours }}小时有效</text>
             <text v-if="active.helpLimit > 0" class="badge">最多 {{ active.helpLimit }} 刀</text>
           </view>
+          <ShareButton compact :title="record ? '帮我砍一刀，好友一起享优惠' : (active.goodsName || '邀请你一起参与砍价')" :path="`/pages/bargain/detail?id=${encodeRouteId(activeId)}${record?.recordId ? `&recordId=${encodeRouteId(record.recordId)}` : ''}`" />
         </view>
       </view>
 

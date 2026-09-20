@@ -1,9 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { addToCart, getGoodsComments, getGoodsDetail } from '@/api'
 import { getToken } from '@/utils/request'
 import { encodeRouteId } from '@/utils/routeId'
+import ShareButton from '@/components/ShareButton.vue'
 
 /**
  * 商品详情。对应原型 docs/prototype/h5/goods-detail.html。
@@ -26,6 +27,7 @@ const quantity = ref(1)
 const specPopupVisible = ref(false)
 /** 'cart' 加购 / 'buy' 立即购买——弹层确认后走哪条路 */
 const specAction = ref('cart')
+const goodsId = ref('')
 
 const isMultiSpec = computed(() => (goods.value?.specs?.length || 0) > 0)
 
@@ -82,6 +84,7 @@ function isValueAvailable(specIndex, valueId) {
 onLoad(async (query) => {
   // query.id 来自 URL，本来就是字符串，保持原样传给接口。
   const id = query?.id
+  goodsId.value = String(id || '')
   if (!id) {
     uni.showToast({ title: '缺少商品参数', icon: 'none' })
     loading.value = false
@@ -97,6 +100,11 @@ onLoad(async (query) => {
     loading.value = false
   }
 })
+
+onShareAppMessage(() => ({
+  title: goods.value?.name || '发现一个好商品',
+  path: `/pages/goods/detail?id=${encodeRouteId(goodsId.value)}`,
+}))
 
 function onSelectValue(specIndex, valueId) {
   if (!isValueAvailable(specIndex, valueId)) return
@@ -194,6 +202,7 @@ function fmtPrice(v) {
           <text class="meta">库存 {{ displayStock ?? 0 }}</text>
           <text v-if="goods.isVirtual" class="meta">虚拟商品 · 无需物流</text>
         </view>
+        <ShareButton :title="goods.name || '发现一个好商品'" :path="`/pages/goods/detail?id=${encodeRouteId(goodsId)}`" />
       </view>
 
       <view v-if="isMultiSpec" class="block tap-row" @click="openSpec('cart')">

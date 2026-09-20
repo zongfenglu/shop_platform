@@ -190,6 +190,12 @@
       }
     },
     {
+      "path": "pages/my/share",
+      "style": {
+        "navigationBarTitleText": "分享好物"
+      }
+    },
+    {
       "path": "pages/diy/custom",
       "style": {
         "navigationBarTitleText": "自定义页面",

@@ -1,8 +1,11 @@
 <script setup>
-import { onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import { computed, onUnmounted, ref } from 'vue'
 import { getSeckillSessions, listSeckillActives, getSeckillActive } from '@/api/index'
 import { encodeRouteId } from '@/utils/routeId'
+import ShareButton from '@/components/ShareButton.vue'
+
+onShareAppMessage(() => ({ title: '限时秒杀，先到先得', path: '/pages/seckill/index?from=share' }))
 
 /**
  * 秒杀专场。对应原型 docs/prototype/h5/seckill.html。
@@ -115,6 +118,7 @@ function fmtPrice(v) { return Number(v ?? 0).toFixed(2) }
       <!-- Hero -->
       <view class="hero">
         <view class="hero-title">秒杀专场</view>
+        <ShareButton compact title="限时秒杀，先到先得" path="/pages/seckill/index?from=share" />
         <view class="hero-sub">
           <view v-if="ongoingSession" class="hero-sub-row">
             <text class="hero-session">{{ ongoingSession.name }} 抢购中</text>

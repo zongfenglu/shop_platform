@@ -111,9 +111,11 @@ onMounted(async () => {
     ? gcj02ToWgs84(selectedLatitude.value, selectedLongitude.value)
     : [35.8617, 104.1954]
   map = L.map(mapEl.value, { zoomControl: true }).setView(center, hasPoint ? 16 : 4)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // 高德底图采用 GCJ-02，选点后转换为 GCJ-02 坐标保存，供微信地图直接导航。
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?style=7&x={x}&y={y}&z={z}', {
+    subdomains: ['1', '2', '3', '4'],
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors',
+    attribution: '&copy; 高德地图',
   }).addTo(map)
   map.on('click', (event) => setMapPoint(event.latlng.lat, event.latlng.lng, Math.max(map.getZoom(), 15)))
   if (hasPoint) setMapPoint(center[0], center[1])

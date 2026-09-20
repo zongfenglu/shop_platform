@@ -1,8 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import { getGroupActive, getGroupRecord } from '@/api/index'
 import { decodeRouteId, encodeRouteId } from '@/utils/routeId'
+import ShareButton from '@/components/ShareButton.vue'
 
 /**
  * 拼团详情。对应原型 h5/group-buy-detail.html。
@@ -14,23 +15,32 @@ const record = ref(null)
 const selectedSkuId = ref(null)
 const loading = ref(true)
 const now = ref(Date.now())
+const activeId = ref('')
+const recordId = ref('')
 let timer = null
 
 onLoad(async (query) => {
   const id = decodeRouteId(query.id)
-  const recordId = decodeRouteId(query.recordId) || null
+  const queryRecordId = decodeRouteId(query.recordId) || null
+  activeId.value = String(id || '')
+  recordId.value = String(queryRecordId || '')
   try {
     active.value = await getGroupActive(id)
     const skus = active.value?.skus || []
     if (skus.length) selectedSkuId.value = skus[0].skuId
-    if (recordId) {
-      record.value = await getGroupRecord(recordId).catch(() => null)
+    if (queryRecordId) {
+      record.value = await getGroupRecord(queryRecordId).catch(() => null)
       startClock()
     }
   } finally {
     loading.value = false
   }
 })
+
+onShareAppMessage(() => ({
+  title: active.value?.goodsName ? `一起拼团：${active.value.goodsName}` : '邀请你一起拼团',
+  path: `/pages/group/detail?id=${encodeRouteId(activeId.value)}${recordId.value ? `&recordId=${encodeRouteId(recordId.value)}` : ''}`,
+}))
 
 onShow(() => { now.value = Date.now() })
 
@@ -101,6 +111,7 @@ function goCheckout(join) {
             <text class="badge">{{ active.groupNum }}人团</text>
             <text class="badge">{{ active.validHours }}小时成团</text>
           </view>
+          <ShareButton compact :title="active.goodsName ? `一起拼团：${active.goodsName}` : '邀请你一起拼团'" :path="`/pages/group/detail?id=${encodeRouteId(activeId)}${recordId ? `&recordId=${encodeRouteId(recordId)}` : ''}`" />
         </view>
       </view>
 

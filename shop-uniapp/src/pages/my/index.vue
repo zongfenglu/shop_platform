@@ -161,6 +161,7 @@ function money(v) { return Number(v || 0).toFixed(2) }
       <view class="cell" @click="go('/pages/my/sign-in')"><view class="cell-main"><view class="cell-icon green"><AppIcon name="calendar-check-2-green" :size="20" /></view><text>每日签到</text></view><view class="cell-side"><text>签到领积分</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/points-mall/index')"><view class="cell-main"><view class="cell-icon amber"><AppIcon name="gift-amber" :size="20" /></view><text>积分商城</text></view><view class="cell-side"><text>兑换好物</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/my/dealer')"><view class="cell-main"><view class="cell-icon coral"><AppIcon name="share-2-coral" :size="20" /></view><text>我的分销</text></view><view class="cell-side"><text>分销中心</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
+      <view class="cell" @click="go('/pages/my/share')"><view class="cell-main"><view class="cell-icon coral"><AppIcon name="share-2-coral" :size="20" /></view><text>分享赚钱</text></view><view class="cell-side"><text>分享商城好物</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/coupon/mine')"><view class="cell-main"><view class="cell-icon violet"><AppIcon name="badge-percent-violet" :size="20" /></view><text>我的优惠券</text></view><view class="cell-side"><AppIcon name="chevron-right-muted" :size="18" /></view></view>
     </view>
     <!-- #ifndef MP-WEIXIN -->
