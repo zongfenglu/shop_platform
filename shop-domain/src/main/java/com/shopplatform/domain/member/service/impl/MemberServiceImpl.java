@@ -114,6 +114,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
         Long sourceId = wechatMember.getId();
         Long targetId = mobileMember.getId();
         Long shopId = TenantContext.getRequired();
+        // 先清理唯一索引冲突，主账号已有的签到/砍价记录优先保留。
+        getBaseMapper().deleteDuplicateSignRecords(sourceId, targetId, shopId);
+        getBaseMapper().deleteDuplicateBargainRecords(sourceId, targetId, shopId);
         for (String table : USER_REFERENCE_TABLES) {
             getBaseMapper().moveUserReference(table, "user_id", sourceId, targetId, shopId);
         }

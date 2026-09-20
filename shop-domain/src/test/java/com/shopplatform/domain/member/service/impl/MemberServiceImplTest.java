@@ -189,6 +189,8 @@ class MemberServiceImplTest {
         assertEquals(3, mobile.getGrowthValue());
         assertEquals(new BigDecimal("120.00"), mobile.getPayMoney());
         assertEquals(3, mobile.getPayCount());
+        verify(memberMapper).deleteDuplicateSignRecords(20L, 30L, 999L);
+        verify(memberMapper).deleteDuplicateBargainRecords(20L, 30L, 999L);
         verify(memberMapper, atLeast(14)).moveUserReference(anyString(), anyString(), eq(20L), eq(30L), eq(999L));
         verify(memberMapper).updateById(mobile);
         verify(memberMapper).deleteById(20L);

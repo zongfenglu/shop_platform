@@ -24,6 +24,24 @@ public interface MemberMapper extends BaseMapper<Member> {
                           @Param("targetId") Long targetId,
                           @Param("shopId") Long shopId);
 
+    /** 主账号已有同日签到时，删除被合并账号的重复签到记录。 */
+    @Delete("DELETE source FROM sign_record source "
+            + "JOIN sign_record target ON target.shop_id = source.shop_id "
+            + "AND target.user_id = #{targetId} AND target.sign_date = source.sign_date "
+            + "WHERE source.shop_id = #{shopId} AND source.user_id = #{sourceId}")
+    int deleteDuplicateSignRecords(@Param("sourceId") Long sourceId,
+                                   @Param("targetId") Long targetId,
+                                   @Param("shopId") Long shopId);
+
+    /** 主账号已有同一砍价活动记录时，删除被合并账号的重复记录。 */
+    @Delete("DELETE source FROM bargain_record source "
+            + "JOIN bargain_record target ON target.shop_id = source.shop_id "
+            + "AND target.user_id = #{targetId} AND target.active_id = source.active_id "
+            + "WHERE source.shop_id = #{shopId} AND source.user_id = #{sourceId}")
+    int deleteDuplicateBargainRecords(@Param("sourceId") Long sourceId,
+                                      @Param("targetId") Long targetId,
+                                      @Param("shopId") Long shopId);
+
     /** 将两个账号的分销订单归并到主账号的分销商记录。 */
     @Update("UPDATE dealer_order o "
             + "JOIN dealer_user source ON source.shop_id = o.shop_id AND source.id = o.dealer_user_id "
