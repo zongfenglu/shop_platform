@@ -24,6 +24,12 @@ public interface MemberMapper extends BaseMapper<Member> {
                           @Param("targetId") Long targetId,
                           @Param("shopId") Long shopId);
 
+    /** 转移微信身份前先释放源账号的 open_id 唯一键。 */
+    @Update("UPDATE `user` SET open_id = NULL "
+            + "WHERE shop_id = #{shopId} AND id = #{sourceId}")
+    int clearOpenId(@Param("sourceId") Long sourceId,
+                    @Param("shopId") Long shopId);
+
     /** 主账号已有同日签到时，删除被合并账号的重复签到记录。 */
     @Delete("DELETE FROM sign_record WHERE id IN ("
             + "SELECT duplicate_ids.id FROM ("

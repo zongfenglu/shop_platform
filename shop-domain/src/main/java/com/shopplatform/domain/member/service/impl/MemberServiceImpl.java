@@ -130,6 +130,8 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
         mobileMember.setMobile(mobile);
         if (!StringUtils.hasText(mobileMember.getOpenId())) {
+            // 目标账号写入同一个 open_id 前，先释放源账号的唯一索引。
+            getBaseMapper().clearOpenId(sourceId, shopId);
             mobileMember.setOpenId(wechatMember.getOpenId());
             mobileMember.setUnionId(wechatMember.getUnionId());
             mobileMember.setPlatform("mp");
