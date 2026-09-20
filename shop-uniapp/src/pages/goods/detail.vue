@@ -235,11 +235,16 @@ function fmtPrice(v) {
       <view class="bottom-spacer" />
 
       <view class="action-bar">
+        <!-- #ifdef MP-WEIXIN -->
+        <button class="share-entry bottom-share" open-type="share">分享</button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <ShareButton
           class="bottom-share"
           :title="goods.name || '发现一个好商品'"
           :path="`/pages/goods/detail?id=${encodeRouteId(goodsId)}`"
         />
+        <!-- #endif -->
         <view class="action-ico" @click="goCart">
           <text class="action-ico-txt">购物车</text>
         </view>
@@ -457,6 +462,21 @@ function fmtPrice(v) {
   height: 80rpx;
   line-height: 80rpx;
   border-radius: 40rpx;
+}
+.share-entry {
+  flex: 0 0 auto;
+  min-width: 128rpx;
+  height: 80rpx;
+  padding: 0 22rpx;
+  border: 0;
+  border-radius: 40rpx;
+  background: #fff0ed;
+  color: #c94d45;
+  font-size: 23rpx;
+  line-height: 80rpx;
+}
+.share-entry::after {
+  border: 0;
 }
 .action-btn {
   flex: 1;
