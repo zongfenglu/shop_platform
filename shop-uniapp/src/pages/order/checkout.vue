@@ -2,9 +2,11 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import {
+  bindWechatPhone,
   getDefaultAddress,
   getGoodsDetail,
   getMyCoupons,
+  getMyProfile,
   listCart,
   listOfflineStores,
   previewCheckout,
@@ -12,6 +14,7 @@ import {
 } from '@/api'
 import { formatDateTime } from '@/utils/dateTime'
 import { decodeRouteId } from '@/utils/routeId'
+import { getLoginUser, setLoginUser, setToken } from '@/utils/request'
 
 /**
  * 确认订单。对应原型 docs/prototype/h5/checkout.html。
@@ -31,6 +34,8 @@ const buyerRemark = ref('')
 const priceResult = ref(null)
 const loading = ref(true)
 const submitting = ref(false)
+const bindingPhone = ref(false)
+const memberMobile = ref('')
 
 // 门店自提：express快递配送（默认）/ pickup门店自提，见 OrderServiceImpl#createOrder 的校验规则
 const deliveryType = ref('express')
@@ -55,6 +60,8 @@ const goodsTotal = computed(() =>
 
 onLoad(async (query) => {
   try {
+    const profile = await getMyProfile().catch(() => null)
+    memberMobile.value = profile?.member?.mobile || getLoginUser()?.mobile || ''
     // 秒杀/限时折扣进入时携带活动信息（单 sku 行）
     if (query?.activityType) activityType.value = query.activityType
     if (query?.activityId) activityId.value = decodeRouteId(query.activityId)
@@ -100,6 +107,34 @@ onLoad(async (query) => {
     loading.value = false
   }
 })
+
+async function onGetPhoneNumber(event) {
+  const code = event?.detail?.code
+  if (!code) {
+    if (!String(event?.detail?.errMsg || '').includes('deny')) {
+      uni.showToast({ title: '未取得手机号授权', icon: 'none' })
+    }
+    return
+  }
+  if (bindingPhone.value) return
+  bindingPhone.value = true
+  try {
+    const data = await bindWechatPhone(code)
+    setToken(data.token)
+    setLoginUser({
+      ...(getLoginUser() || {}),
+      userId: data.userId,
+      nickname: data.nickname,
+      mobile: data.mobile || '',
+    })
+    memberMobile.value = data.mobile || ''
+    await onSubmit()
+  } catch (e) {
+    // request.js 已统一提示
+  } finally {
+    bindingPhone.value = false
+  }
+}
 
 async function loadMyCoupons() {
   try {
@@ -367,9 +402,23 @@ function fmtPrice(v) {
           <text class="bar-label">应付</text>
           <text class="bar-price">¥{{ fmtPrice(priceResult?.payPrice ?? goodsTotal) }}</text>
         </view>
+        <!-- #ifdef MP-WEIXIN -->
+        <button
+          v-if="!memberMobile"
+          class="bar-btn"
+          :disabled="submitting || bindingPhone"
+          open-type="getPhoneNumber"
+          @getphonenumber="onGetPhoneNumber"
+        >{{ bindingPhone ? '授权中…' : '提交订单' }}</button>
+        <button v-else class="bar-btn" :disabled="submitting" @click="onSubmit">
+          {{ submitting ? '提交中…' : '提交订单' }}
+        </button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <button class="bar-btn" :disabled="submitting" @click="onSubmit">
           {{ submitting ? '提交中…' : '提交订单' }}
         </button>
+        <!-- #endif -->
       </view>
     </template>
   </view>

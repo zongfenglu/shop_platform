@@ -2,14 +2,13 @@
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
-import { clearToken, getLoginUser, getToken, setLoginUser, setToken } from '@/utils/request'
-import { bindWechatPhone, getMyProfile } from '@/api/index'
+import { clearToken, getLoginUser, getToken, setLoginUser } from '@/utils/request'
+import { getMyProfile } from '@/api/index'
 import { ensureWechatLogin } from '@/utils/wechatAuth'
 
 const loggedIn = ref(false)
 const user = ref(null)
 const profile = ref(null)
-const bindingPhone = ref(false)
 
 onShow(async () => {
   // #ifdef MP-WEIXIN
@@ -39,35 +38,6 @@ async function loadProfile() {
   } catch (e) {
     // 请求层已提示
   }
-}
-
-async function onGetPhoneNumber(event) {
-  const code = event?.detail?.code
-  if (!code) {
-    if (!String(event?.detail?.errMsg || '').includes('deny')) {
-      uni.showToast({ title: '未取得手机号授权', icon: 'none' })
-    }
-    return
-  }
-  if (bindingPhone.value) return
-  bindingPhone.value = true
-  try {
-    const data = await bindWechatPhone(code)
-    setToken(data.token)
-    const cached = { ...(user.value || {}), userId: data.userId, nickname: data.nickname, mobile: data.mobile || '' }
-    setLoginUser(cached)
-    user.value = cached
-    await loadProfile()
-    uni.showToast({ title: '手机号已绑定', icon: 'success' })
-  } catch (e) {
-    // 请求层已提示
-  } finally {
-    bindingPhone.value = false
-  }
-}
-
-function maskMobile(mobile) {
-  return String(mobile || '').replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')
 }
 
 function onLogin() { uni.navigateTo({ url: '/pages/my/login' }) }
@@ -137,26 +107,6 @@ function money(v) { return Number(v || 0).toFixed(2) }
     </view>
 
     <view class="section list-section">
-      <view v-if="loggedIn" class="cell" @click="go('/pages/my/profile')">
-        <view class="cell-main"><view class="cell-icon violet"><AppIcon name="user-round-white" :size="20" /></view><text>个人资料</text></view>
-        <view class="cell-side"><text>头像与昵称</text><AppIcon name="chevron-right-muted" :size="18" /></view>
-      </view>
-      <!-- #ifdef MP-WEIXIN -->
-      <button
-        v-if="loggedIn && !profile?.member?.mobile"
-        class="cell phone-cell"
-        open-type="getPhoneNumber"
-        :disabled="bindingPhone"
-        @getphonenumber="onGetPhoneNumber"
-      >
-        <view class="cell-main"><view class="cell-icon green"><AppIcon name="phone-green" :size="20" /></view><text>绑定手机号</text></view>
-        <view class="cell-side"><text>{{ bindingPhone ? '绑定中...' : '微信授权获取' }}</text><AppIcon name="chevron-right-muted" :size="18" /></view>
-      </button>
-      <view v-else-if="loggedIn && profile?.member?.mobile" class="cell">
-        <view class="cell-main"><view class="cell-icon green"><AppIcon name="phone-green" :size="20" /></view><text>手机号</text></view>
-        <view class="cell-side"><text>{{ maskMobile(profile.member.mobile) }}</text></view>
-      </view>
-      <!-- #endif -->
       <view class="cell" @tap="openNearbyStores"><view class="cell-main"><view class="cell-icon blue"><AppIcon name="store-blue" :size="20" /></view><text>附近门店</text></view><view class="cell-side"><text>查看自提点</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/my/sign-in')"><view class="cell-main"><view class="cell-icon green"><AppIcon name="calendar-check-2-green" :size="20" /></view><text>每日签到</text></view><view class="cell-side"><text>签到领积分</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
       <view class="cell" @click="go('/pages/points-mall/index')"><view class="cell-main"><view class="cell-icon amber"><AppIcon name="gift-amber" :size="20" /></view><text>积分商城</text></view><view class="cell-side"><text>兑换好物</text><AppIcon name="chevron-right-muted" :size="18" /></view></view>
@@ -195,8 +145,6 @@ function money(v) { return Number(v || 0).toFixed(2) }
 .service-item { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 12rpx; color: #454b50; font-size: 21rpx; }
 .list-section { padding: 0 26rpx; }
 .cell { min-height: 94rpx; display: flex; justify-content: space-between; align-items: center; border-bottom: 1rpx solid #eceeeb; }
-.phone-cell { width: 100%; padding: 0; border-radius: 0; background: transparent; color: inherit; font-size: inherit; text-align: left; }
-.phone-cell::after { border: 0; }
 .cell:last-child { border-bottom: 0; }
 .cell-main, .cell-side { display: flex; align-items: center; }
 .cell-main { gap: 18rpx; font-size: 25rpx; font-weight: 500; }.cell-side { gap: 5rpx; color: #969ca0; font-size: 21rpx; }
