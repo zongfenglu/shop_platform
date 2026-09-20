@@ -235,6 +235,11 @@ function fmtPrice(v) {
       <view class="bottom-spacer" />
 
       <view class="action-bar">
+        <ShareButton
+          class="bottom-share"
+          :title="goods.name || '发现一个好商品'"
+          :path="`/pages/goods/detail?id=${encodeRouteId(goodsId)}`"
+        />
         <view class="action-ico" @click="goCart">
           <text class="action-ico-txt">购物车</text>
         </view>
@@ -446,6 +451,12 @@ function fmtPrice(v) {
 .action-ico-txt {
   font-size: 22rpx;
   color: #4a4844;
+}
+:deep(.bottom-share.share-button) {
+  flex: 0 0 auto;
+  height: 80rpx;
+  line-height: 80rpx;
+  border-radius: 40rpx;
 }
 .action-btn {
   flex: 1;
