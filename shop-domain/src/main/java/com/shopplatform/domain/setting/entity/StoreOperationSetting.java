@@ -26,6 +26,10 @@ public class StoreOperationSetting extends BaseEntity {
     private String smsShippedTemplate;
     private String smsRefundTemplate;
     private String smsNotifyPhones;
+    private String shareTitle;
+    private String shareSubtitle;
+    private String shareBrand;
+    private String shareImageUrl;
 
     public Long getShopId() { return shopId; }
     public void setShopId(Long shopId) { this.shopId = shopId; }
@@ -69,4 +73,12 @@ public class StoreOperationSetting extends BaseEntity {
     public void setSmsRefundTemplate(String v) { this.smsRefundTemplate = v; }
     public String getSmsNotifyPhones() { return smsNotifyPhones; }
     public void setSmsNotifyPhones(String v) { this.smsNotifyPhones = v; }
+    public String getShareTitle() { return shareTitle; }
+    public void setShareTitle(String v) { this.shareTitle = v; }
+    public String getShareSubtitle() { return shareSubtitle; }
+    public void setShareSubtitle(String v) { this.shareSubtitle = v; }
+    public String getShareBrand() { return shareBrand; }
+    public void setShareBrand(String v) { this.shareBrand = v; }
+    public String getShareImageUrl() { return shareImageUrl; }
+    public void setShareImageUrl(String v) { this.shareImageUrl = v; }
 }

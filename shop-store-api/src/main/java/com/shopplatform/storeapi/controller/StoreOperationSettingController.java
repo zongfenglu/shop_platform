@@ -267,6 +267,21 @@ public class StoreOperationSettingController {
         return Result.ok(operationView(item));
     }
 
+    @PutMapping("/share")
+    public Result<OperationSettingView> saveShareSetting(@Valid @RequestBody ShareSettingRequest request) {
+        StoreOperationSetting item = settingService.getOrCreate();
+        item.setShareTitle(trimToNull(request.title()));
+        item.setShareSubtitle(trimToNull(request.subtitle()));
+        item.setShareBrand(trimToNull(request.brand()));
+        String imageUrl = trimToNull(request.imageUrl());
+        if (imageUrl != null && !imageUrl.matches("^(https?://|/uploads/)[^\\s]+$")) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "分享图片必须来自素材库或以 http(s):// 开头");
+        }
+        item.setShareImageUrl(imageUrl);
+        settingService.updateById(item);
+        return Result.ok(operationView(item));
+    }
+
     private void applyExpress(ExpressCompany item, ExpressRequest request) {
         item.setName(request.name().trim());
         item.setCode(request.code().trim().toLowerCase());
@@ -337,7 +352,8 @@ public class StoreOperationSettingController {
                 StringUtils.hasText(item.getUploadAccessKeySecretEncrypted()), item.getPrintEnabled(),
                 item.getPrintPrinterId(), item.getPrintOnPaid(), item.getPrintOnRefund(), item.getPrintCopies(),
                 item.getSmsEnabled(), item.getSmsNewOrderTemplate(), item.getSmsPaidTemplate(),
-                item.getSmsShippedTemplate(), item.getSmsRefundTemplate(), item.getSmsNotifyPhones());
+                item.getSmsShippedTemplate(), item.getSmsRefundTemplate(), item.getSmsNotifyPhones(),
+                item.getShareTitle(), item.getShareSubtitle(), item.getShareBrand(), item.getShareImageUrl());
     }
 
     private static String trimToNull(String value) {
@@ -454,6 +470,12 @@ public class StoreOperationSettingController {
             @Size(max = 128) String refundTemplate,
             @Size(max = 512) String notifyPhones) {}
 
+    public record ShareSettingRequest(
+            @Size(max = 64) String title,
+            @Size(max = 128) String subtitle,
+            @Size(max = 64) String brand,
+            @Size(max = 512) String imageUrl) {}
+
     public record PrinterView(Long id, String name, String provider, String deviceNo, String endpoint,
                               Integer sort, String status, boolean accessKeySet, boolean accessSecretSet,
                               java.time.LocalDateTime createTime) {}
@@ -469,5 +491,7 @@ public class StoreOperationSettingController {
                                        Long printPrinterId, Boolean printOnPaid, Boolean printOnRefund,
                                        Integer printCopies, Boolean smsEnabled, String smsNewOrderTemplate,
                                        String smsPaidTemplate, String smsShippedTemplate,
-                                       String smsRefundTemplate, String smsNotifyPhones) {}
+                                       String smsRefundTemplate, String smsNotifyPhones,
+                                       String shareTitle, String shareSubtitle, String shareBrand,
+                                       String shareImageUrl) {}
 }

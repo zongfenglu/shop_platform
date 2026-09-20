@@ -344,6 +344,7 @@ function maskMchId(id) {
         <button class="settings-item" :class="{ active: activeTab === 'upload' }" @click="activeTab = 'upload'">文件上传</button>
         <button class="settings-item" :class="{ active: activeTab === 'printers' }" @click="activeTab = 'printers'">小票打印</button>
         <button class="settings-item" :class="{ active: activeTab === 'sms' }" @click="activeTab = 'sms'">短信通知</button>
+        <button class="settings-item" :class="{ active: activeTab === 'share' }" @click="activeTab = 'share'">分享设置</button>
         <div class="group-title">收款</div>
         <button class="settings-item" :class="{ active: activeTab === 'pay' }" @click="activeTab = 'pay'">支付设置</button>
         <button class="settings-item" :class="{ active: activeTab === 'mini' }" @click="activeTab = 'mini'">小程序设置</button>
@@ -377,7 +378,7 @@ function maskMchId(id) {
       </div>
 
       <OperationSettingsPanel
-        v-else-if="['express', 'returns', 'upload', 'printers', 'sms'].includes(activeTab)"
+        v-else-if="['express', 'returns', 'upload', 'printers', 'sms', 'share'].includes(activeTab)"
         :section="activeTab"
       />
 

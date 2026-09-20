@@ -390,6 +390,11 @@ export function getDiyCategoryPage() {
   return get('/api/diy/category-page')
 }
 
+/** 分享页配置；未设置分享图时返回 null，由页面使用默认海报。 */
+export function getShareConfig() {
+  return get('/api/share/config')
+}
+
 // ---- 内容文章 ----
 
 export function pageArticles(params) {

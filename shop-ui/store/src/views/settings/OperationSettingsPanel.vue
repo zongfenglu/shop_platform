@@ -3,11 +3,12 @@ import { reactive, ref, watch } from 'vue'
 import { Modal, message } from 'ant-design-vue'
 import { pcaTextArr } from 'element-china-area-data'
 import MapLocationPicker from '@/components/MapLocationPicker.vue'
+import ImageField from '@/components/ImageField.vue'
 import {
   createExpressCompany, createPrinter, createReturnAddress, createSmsChannel,
   deleteExpressCompany, deletePrinter, deleteReturnAddress, deleteSmsChannel,
   getOperationSettings, listExpressCompanies, listPrinters, listReturnAddresses,
-  listSmsChannels, savePrintRules, saveSmsRules, saveUploadSettings,
+  listSmsChannels, savePrintRules, saveShareSettings, saveSmsRules, saveUploadSettings,
   setDefaultReturnAddress, updateExpressCompany, updatePrinter,
   updateReturnAddress, updateSmsChannel,
 } from '@/api/operationSettings'
@@ -68,6 +69,7 @@ const smsRulesForm = reactive({
   enabled: false, newOrderTemplate: '', paidTemplate: '', shippedTemplate: '',
   refundTemplate: '', notifyPhones: '',
 })
+const shareForm = reactive({ title: '', subtitle: '', brand: '', imageUrl: '' })
 
 const titles = {
   express: ['物流公司', '维护发货时可选择的承运商'],
@@ -75,6 +77,7 @@ const titles = {
   upload: ['文件上传', '设置文件限制与访问域名'],
   printers: ['小票打印', '管理云打印机和订单自动打印规则'],
   sms: ['短信通知', '配置短信渠道、优先级和通知模板'],
+  share: ['分享设置', '配置分享页文案与小程序分享海报'],
 }
 
 const providerLabel = (provider) => ({
@@ -118,6 +121,14 @@ async function load() {
         region: setting.uploadRegion || '', endpoint: setting.uploadEndpoint || '',
         domain: setting.uploadDomain || '', accessKeyId: '', accessKeySecret: '',
         imageMaxMb: setting.imageMaxMb || 5, videoMaxMb: setting.videoMaxMb || 50,
+      })
+    }
+    if (props.section === 'share') {
+      const setting = await getOperationSettings()
+      operations.value = setting
+      Object.assign(shareForm, {
+        title: setting.shareTitle || '', subtitle: setting.shareSubtitle || '',
+        brand: setting.shareBrand || '', imageUrl: setting.shareImageUrl || '',
       })
     }
   } catch (e) {
@@ -292,6 +303,17 @@ async function saveSmsRulesForm() {
   } finally { submitting.value = false }
 }
 
+async function saveShare() {
+  submitting.value = true
+  try {
+    operations.value = await saveShareSettings({
+      title: shareForm.title.trim(), subtitle: shareForm.subtitle.trim(),
+      brand: shareForm.brand.trim(), imageUrl: shareForm.imageUrl || '',
+    })
+    message.success('分享设置已保存')
+  } finally { submitting.value = false }
+}
+
 function modalTitle() {
   const noun = { express: '物流公司', returns: '退货地址', printers: '打印机', sms: '短信渠道' }[props.section]
   return `${editingId.value ? '编辑' : '新增'}${noun}`
@@ -330,6 +352,14 @@ function modalTitle() {
         <div class="form-row form-item"><div><label class="form-label">图片大小上限（MB）</label><input v-model.number="uploadForm.imageMaxMb" type="number" min="1" max="20" class="form-input" /></div><div><label class="form-label">视频大小上限（MB）</label><input v-model.number="uploadForm.videoMaxMb" type="number" min="1" max="50" class="form-input" /></div></div>
         <div class="secret-state">{{ uploadForm.provider === 'local' ? '访问域名留空时使用系统的 /uploads 地址。' : '访问域名留空时使用存储桶默认域名；存储桶需允许公开读取，生产环境建议配置 CDN 或自定义域名。' }}</div>
         <div class="actions"><button class="btn btn-primary" :disabled="submitting" @click="saveUpload">保存</button></div>
+      </div>
+
+      <div v-else-if="section === 'share'" class="card card-pad form-panel share-settings">
+        <div class="share-setting-intro"><div class="share-setting-icon">↗</div><div><div class="card-title">分享好物</div><div class="card-sub">分享页和小程序转发卡片共用这组配置。图片留空时使用内置默认海报。</div></div></div>
+        <div class="form-row form-item"><div><label class="form-label">分享页标题</label><input v-model.trim="shareForm.title" class="form-input" maxlength="64" placeholder="分享好物" /></div><div><label class="form-label">品牌文案</label><input v-model.trim="shareForm.brand" class="form-input" maxlength="64" placeholder="商城精选" /></div></div>
+        <div class="form-item"><label class="form-label">分享页副标题</label><input v-model.trim="shareForm.subtitle" class="form-input" maxlength="128" placeholder="把商品、活动分享给朋友，一起享受优惠" /></div>
+        <div class="form-item"><label class="form-label">分享图片</label><ImageField v-model="shareForm.imageUrl" /><div class="form-hint">建议使用 750 × 560 的品牌海报，图片会用于分享页顶部和小程序转发卡片。</div></div>
+        <div class="actions"><button class="btn btn-primary" :disabled="submitting" @click="saveShare">保存分享设置</button></div>
       </div>
 
       <template v-else-if="section === 'printers'">
