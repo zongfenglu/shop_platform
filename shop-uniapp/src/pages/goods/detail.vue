@@ -4,7 +4,6 @@ import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { addToCart, getGoodsComments, getGoodsDetail } from '@/api'
 import { getToken } from '@/utils/request'
 import { encodeRouteId } from '@/utils/routeId'
-import ShareButton from '@/components/ShareButton.vue'
 import ShareSheet from '@/components/ShareSheet.vue'
 
 /**
@@ -204,7 +203,6 @@ function fmtPrice(v) {
           <text class="meta">库存 {{ displayStock ?? 0 }}</text>
           <text v-if="goods.isVirtual" class="meta">虚拟商品 · 无需物流</text>
         </view>
-        <ShareButton :title="goods.name || '发现一个好商品'" :path="`/pages/goods/detail?id=${encodeRouteId(goodsId)}`" />
       </view>
 
       <view v-if="isMultiSpec" class="block tap-row" @click="openSpec('cart')">
