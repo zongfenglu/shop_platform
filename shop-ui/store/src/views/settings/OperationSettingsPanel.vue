@@ -79,6 +79,7 @@ const titles = {
   printers: ['小票打印', '管理云打印机和订单自动打印规则'],
   sms: ['短信通知', '配置短信渠道、优先级和通知模板'],
   share: ['分享设置', '配置分享页文案与小程序分享海报'],
+  map: ['地图设置', '配置后台地图选点使用的地图服务商和 API Key'],
 }
 
 const providerLabel = (provider) => ({
