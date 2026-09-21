@@ -3,85 +3,23 @@ import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { getShareConfig } from '@/api'
 import ShareButton from '@/components/ShareButton.vue'
-
-const config = ref({
-  title: '分享好物',
-  subtitle: '把商品、活动分享给朋友，一起享受优惠',
-  brand: '商城精选',
-  imageUrl: '',
-})
+const config = ref({ title: '分享好友 赚取佣金', subtitle: '好物推荐，轻松赚佣金', brand: '商城精选', imageUrl: '' })
 const shareImage = computed(() => config.value.imageUrl || '')
-
-onLoad(async () => {
-  try {
-    const data = await getShareConfig()
-    if (data) config.value = { ...config.value, ...data }
-  } catch (e) {
-    // 使用内置默认海报，不阻断分享页展示。
-  }
-})
-
-onShareAppMessage(() => ({
-  title: config.value.title || '分享好物',
-  path: '/pages/index/index?from=share',
-  ...(shareImage.value ? { imageUrl: shareImage.value } : {}),
-}))
+const features = [['精选商品', '品质保障'], ['一键分享', '操作简单'], ['多重收益', '持续赚钱'], ['提现快速', '安全可靠']]
+onLoad(async () => { try { const data = await getShareConfig(); if (data) config.value = { ...config.value, ...data } } catch (e) {} })
+function join() { uni.navigateTo({ url: '/pages/my/dealer' }) }
+function rules() { uni.navigateTo({ url: '/pages/my/rules' }) }
+onShareAppMessage(() => ({ title: config.value.title, path: '/pages/my/share', ...(shareImage.value ? { imageUrl: shareImage.value } : {}) }))
 </script>
-
 <template>
   <view class="page">
-    <view class="hero">
-      <view class="hero-copy">
-        <view class="eyebrow">GOOD THINGS TO SHARE</view>
-        <view class="hero-title">{{ config.title || '分享好物' }}</view>
-        <view class="hero-sub">{{ config.subtitle || '把商品、活动分享给朋友，一起享受优惠' }}</view>
-      </view>
-      <image v-if="shareImage" class="hero-image" :src="shareImage" mode="aspectFill" />
-      <view v-else class="default-art" aria-hidden="true">
-        <view class="art-card art-card-back" />
-        <view class="art-card art-card-front"><view class="art-dot" /><view class="art-line short" /><view class="art-line" /><view class="art-price">¥</view></view>
-      </view>
-    </view>
-    <view class="poster-card">
-      <view class="poster-label">本店推荐</view>
-      <view class="poster-brand">{{ config.brand || '商城精选' }}</view>
-      <view class="poster-divider" />
-      <view class="poster-copy">发现好商品<text>邀请朋友一起逛商城</text></view>
-      <view class="poster-hint"><text class="hint-dot" />点击下方分享按钮，发送给微信好友</view>
-    </view>
-    <view class="actions">
-      <ShareButton :title="config.title || '分享好物'" path="/pages/index/index?from=share" />
-      <view class="action-note">分享链接会打开商城首页 · 好物一起挑</view>
-    </view>
+    <view class="hero"><view class="hero-title">{{ config.title }}</view><view class="hero-sub">{{ config.subtitle }}</view><image v-if="shareImage" :src="shareImage" mode="aspectFill" /><view v-else class="hero-art"><view class="coin">¥</view><view class="gift" /></view></view>
+    <view class="card benefits"><view class="section-title">分享好友 赚取佣金</view><view class="section-sub">邀请好友一起逛商城</view><view class="feature-grid"><view v-for="item in features" :key="item[0]" class="feature"><view class="feature-icon">✓</view><view class="feature-name">{{ item[0] }}</view><view class="feature-sub">{{ item[1] }}</view></view></view></view>
+    <view class="card steps"><view class="card-title">如何成为分销员</view><view class="step"><view class="step-num">1</view><view><view class="step-title">点击下方“立即加入”</view><view class="step-sub">申请成为分销员</view></view></view><view class="step"><view class="step-num">2</view><view><view class="step-title">分享商品链接或图片</view><view class="step-sub">让好友通过你的分享购买</view></view></view><view class="step"><view class="step-num">3</view><view><view class="step-title">订单确认收货</view><view class="step-sub">获得相应的佣金</view></view></view></view>
+    <button class="join" @click="join">立即加入分销</button><view class="rule-link" @click="rules">加入即表示同意《分销协议》 · 查看分销规则</view>
+    <view class="quick-share"><ShareButton :title="config.title" path="/pages/my/share" /></view>
   </view>
 </template>
-
 <style scoped>
-.page { min-height: 100vh; box-sizing: border-box; background: #f5f6f4; padding-bottom: 56rpx; }
-.hero { position: relative; min-height: 300rpx; overflow: hidden; padding: 52rpx 36rpx 62rpx; color: #fff; background: #e85b49; }
-.hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14rpx; background: #f6b56c; opacity: .8; }
-.hero-copy { position: relative; z-index: 2; max-width: 55%; }
-.eyebrow { margin-bottom: 20rpx; color: rgba(255, 255, 255, .75); font-size: 18rpx; letter-spacing: 3rpx; }
-.hero-title { font-size: 48rpx; font-weight: 800; line-height: 1.25; }
-.hero-sub { margin-top: 18rpx; font-size: 24rpx; line-height: 1.6; opacity: .92; }
-.hero-image { position: absolute; z-index: 1; top: 34rpx; right: 28rpx; width: 250rpx; height: 250rpx; border: 8rpx solid rgba(255, 255, 255, .8); border-radius: 18rpx; box-shadow: 0 16rpx 32rpx rgba(110, 39, 27, .2); transform: rotate(4deg); }
-.default-art { position: absolute; z-index: 1; top: 30rpx; right: 34rpx; width: 240rpx; height: 242rpx; transform: rotate(4deg); }
-.art-card { position: absolute; width: 172rpx; height: 214rpx; border-radius: 14rpx; box-shadow: 0 16rpx 30rpx rgba(110, 39, 27, .2); }
-.art-card-back { top: 4rpx; right: 0; background: #f8bd73; transform: rotate(9deg); }
-.art-card-front { top: 20rpx; left: 18rpx; box-sizing: border-box; padding: 28rpx 22rpx; background: #fff9ee; transform: rotate(-7deg); }
-.art-dot { width: 62rpx; height: 62rpx; margin-bottom: 24rpx; border-radius: 50%; background: #ef7651; }
-.art-line { width: 100%; height: 9rpx; margin-top: 12rpx; border-radius: 6rpx; background: #f0b58c; }
-.art-line.short { width: 64%; background: #e85b49; }
-.art-price { margin-top: 20rpx; color: #e85b49; font-size: 40rpx; font-weight: 800; }
-.poster-card { position: relative; margin: -28rpx 28rpx 28rpx; padding: 40rpx 34rpx 42rpx; border: 1rpx solid rgba(220, 205, 193, .7); border-radius: 24rpx; background: #fff; box-shadow: 0 14rpx 36rpx rgba(55, 45, 35, .08); }
-.poster-label { display: inline-flex; align-items: center; height: 40rpx; padding: 0 14rpx; border-radius: 20rpx; color: #bf503b; background: #fff0e8; font-size: 20rpx; }
-.poster-brand { margin-top: 20rpx; color: #20262e; font-size: 42rpx; font-weight: 800; letter-spacing: 3rpx; }
-.poster-divider { width: 100%; height: 3rpx; margin: 26rpx 0 30rpx; background: #f1ddd2; }
-.poster-copy { display: flex; flex-direction: column; color: #20262e; font-size: 38rpx; font-weight: 800; line-height: 1.4; }
-.poster-copy text { margin-top: 10rpx; color: #8d8f8c; font-size: 25rpx; font-weight: 400; }
-.poster-hint { display: flex; align-items: center; margin-top: 40rpx; color: #8d8f8c; font-size: 22rpx; }
-.hint-dot { width: 10rpx; height: 10rpx; margin-right: 10rpx; border-radius: 50%; background: #ef7651; }
-.actions { display: flex; flex-direction: column; align-items: center; gap: 16rpx; }
-.actions :deep(.share-button) { min-width: 220rpx; height: 76rpx; border-radius: 38rpx; background: #e85b49; color: #fff; box-shadow: 0 10rpx 22rpx rgba(232, 91, 73, .22); font-size: 26rpx; }
-.action-note { color: #999b98; font-size: 22rpx; }
+.page { min-height: 100vh; box-sizing: border-box; padding-bottom: 42rpx; background: #f5f8fa; color: #20262e; }.hero { position: relative; overflow: hidden; min-height: 280rpx; padding: 44rpx 34rpx; color: #fff; background: linear-gradient(135deg,#ff5b3f,#f54c2d); }.hero-title { font-size: 44rpx; font-weight: 800; }.hero-sub { margin-top: 14rpx; font-size: 23rpx; opacity: .9; }.hero image { position: absolute; right: 28rpx; bottom: 20rpx; width: 190rpx; height: 190rpx; border: 8rpx solid rgba(255,255,255,.8); border-radius: 18rpx; transform: rotate(5deg); }.hero-art { position: absolute; right: 45rpx; bottom: 22rpx; width: 210rpx; height: 190rpx; }.coin { position: absolute; top: 0; right: 22rpx; width: 66rpx; height: 66rpx; border-radius: 50%; color: #e78a17; background: #ffd56d; text-align: center; line-height: 66rpx; font-size: 32rpx; }.gift { position: absolute; right: 42rpx; bottom: 8rpx; width: 125rpx; height: 95rpx; border-radius: 16rpx; background: #ffbe4d; box-shadow: -45rpx -22rpx 0 -8rpx #ff8c33; transform: rotate(-8deg); }.card { margin: -30rpx 24rpx 20rpx; padding: 30rpx; border-radius: 22rpx; background: #fff; box-shadow: 0 8rpx 24rpx rgba(66,68,76,.06); }.benefits { position: relative; z-index: 1; }.section-title { color: #d94825; font-size: 34rpx; font-weight: 800; }.section-sub { margin-top: 8rpx; color: #9a9ea1; font-size: 22rpx; }.feature-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; margin-top: 28rpx; }.feature { text-align: center; }.feature-icon { margin: auto; width: 58rpx; height: 58rpx; border-radius: 50%; color: #ff633e; background: #fff0eb; line-height: 58rpx; font-size: 26rpx; font-weight: 800; }.feature-name { margin-top: 10rpx; font-size: 21rpx; font-weight: 650; }.feature-sub { margin-top: 5rpx; color: #9aa0a4; font-size: 18rpx; }.steps { margin-top: 20rpx; }.card-title { margin-bottom: 12rpx; font-size: 29rpx; font-weight: 750; }.step { display: flex; align-items: center; gap: 18rpx; padding: 18rpx 0; border-top: 1rpx solid #f0f1f1; }.step-num { width: 44rpx; height: 44rpx; border-radius: 50%; color: #fff; background: #ff6a4a; text-align: center; line-height: 44rpx; font-size: 22rpx; font-weight: 700; }.step-title { font-size: 23rpx; font-weight: 650; }.step-sub { margin-top: 5rpx; color: #9a9ea1; font-size: 19rpx; }.join { margin: 28rpx 30rpx 0; width: calc(100% - 60rpx); height: 78rpx; border: 0; border-radius: 39rpx; color: #fff; background: #ff4d36; font-size: 27rpx; line-height: 78rpx; }.join::after { border: 0; }.rule-link { margin-top: 16rpx; text-align: center; color: #8d969c; font-size: 19rpx; }.quick-share { display: flex; justify-content: center; margin-top: 18rpx; }.quick-share :deep(.share-button) { min-width: 200rpx; height: 68rpx; border-radius: 34rpx; background: #e8f3ff; color: #2677d8; font-size: 23rpx; }
 </style>

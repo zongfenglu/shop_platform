@@ -196,6 +196,24 @@
       }
     },
     {
+      "path": "pages/share/link",
+      "style": {
+        "navigationBarTitleText": "分享链接"
+      }
+    },
+    {
+      "path": "pages/share/image",
+      "style": {
+        "navigationBarTitleText": "分享图片"
+      }
+    },
+    {
+      "path": "pages/my/rules",
+      "style": {
+        "navigationBarTitleText": "分销规则"
+      }
+    },
+    {
       "path": "pages/diy/custom",
       "style": {
         "navigationBarTitleText": "自定义页面",

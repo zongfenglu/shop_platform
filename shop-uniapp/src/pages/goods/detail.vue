@@ -5,6 +5,7 @@ import { addToCart, getGoodsComments, getGoodsDetail } from '@/api'
 import { getToken } from '@/utils/request'
 import { encodeRouteId } from '@/utils/routeId'
 import ShareButton from '@/components/ShareButton.vue'
+import ShareSheet from '@/components/ShareSheet.vue'
 
 /**
  * 商品详情。对应原型 docs/prototype/h5/goods-detail.html。
@@ -28,6 +29,7 @@ const specPopupVisible = ref(false)
 /** 'cart' 加购 / 'buy' 立即购买——弹层确认后走哪条路 */
 const specAction = ref('cart')
 const goodsId = ref('')
+const shareSheetVisible = ref(false)
 
 const isMultiSpec = computed(() => (goods.value?.specs?.length || 0) > 0)
 
@@ -235,22 +237,15 @@ function fmtPrice(v) {
       <view class="bottom-spacer" />
 
       <view class="action-bar">
-        <!-- #ifdef MP-WEIXIN -->
-        <button class="share-entry bottom-share" open-type="share">分享</button>
-        <!-- #endif -->
-        <!-- #ifndef MP-WEIXIN -->
-        <ShareButton
-          class="bottom-share"
-          :title="goods.name || '发现一个好商品'"
-          :path="`/pages/goods/detail?id=${encodeRouteId(goodsId)}`"
-        />
-        <!-- #endif -->
+        <button class="share-entry bottom-share" @click="shareSheetVisible = true">分享</button>
         <view class="action-ico" @click="goCart">
           <text class="action-ico-txt">购物车</text>
         </view>
         <button class="action-btn cart" @click="openSpec('cart')">加入购物车</button>
         <button class="action-btn buy" @click="openSpec('buy')">立即购买</button>
       </view>
+
+      <ShareSheet :visible="shareSheetVisible" :goods="goods" @close="shareSheetVisible = false" />
 
       <!-- 规格选择弹层 -->
       <view v-if="specPopupVisible" class="mask" @click="specPopupVisible = false" />
