@@ -28,6 +28,8 @@ const statusText = computed(() => {
   const statuses = { none: '未开通', applying: '审核中', active: '已开通', disabled: '已停用', rejected: '未通过' }
   return statuses[dealer.value?.status || 'none'] || dealer.value?.status
 })
+// 接口在“尚未申请分销”时可能返回 null，模板统一通过这个状态值渲染，避免直接读取 null.status。
+const dealerStatus = computed(() => dealer.value?.status || 'none')
 const totalCommission = computed(() => money(dealer.value?.totalCommission))
 const availableCommission = computed(() => money(dealer.value?.availableCommission))
 const frozenCommission = computed(() => money(dealer.value?.frozenCommission))
@@ -80,21 +82,21 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
       <button class="primary-btn" @click="goLogin">去登录</button>
     </view>
 
-    <template v-else-if="!dealer || ['none', 'applying', 'rejected'].includes(dealer.status)">
+    <template v-else-if="['none', 'applying', 'rejected'].includes(dealerStatus)">
       <view class="apply-hero">
         <view class="status-mark"><AppIcon v-if="dealer?.status === 'applying'" name="clock-3-green" :size="30" /><AppIcon v-else name="check-circle-2-green" :size="30" /></view>
         <view class="apply-status">{{ statusText }}</view>
-        <button v-if="!dealer || dealer.status === 'none' || dealer.status === 'rejected'" class="primary-btn" @click="onApply">申请成为分销商</button>
+        <button v-if="['none', 'rejected'].includes(dealerStatus)" class="primary-btn" @click="onApply">申请成为分销商</button>
       </view>
     </template>
 
-    <view v-else-if="dealer.status === 'disabled'" class="login-state">
+    <view v-else-if="dealerStatus === 'disabled'" class="login-state">
       <AppIcon name="wallet-cards-muted" :size="40" />
       <view class="login-title">分销账户已停用</view>
       <view class="disabled-hint">如需恢复，请联系平台管理员</view>
     </view>
 
-    <template v-else-if="dealer.status === 'active'">
+    <template v-else-if="dealerStatus === 'active'">
       <view class="dealer-profile"><view class="profile-avatar">{{ (dealer.realName || dealer.nickname || '分')[0] }}</view><view class="profile-copy"><view class="profile-name">{{ dealer.realName || dealer.nickname || '分销会员' }}</view><view class="profile-sub">分销员 <text class="profile-tag">已认证</text></view></view><text class="profile-arrow">›</text></view>
       <view class="account-hero">
         <view class="hero-top"><text>佣金账户</text><text class="status-pill">{{ statusText }}</text></view>
