@@ -282,6 +282,16 @@ public class StoreOperationSettingController {
         return Result.ok(operationView(item));
     }
 
+    @PutMapping("/map")
+    public Result<OperationSettingView> saveMapSetting(@Valid @RequestBody MapSettingRequest request) {
+        requireOneOf(request.provider(), Set.of("amap", "baidu"), "不支持的地图服务商");
+        StoreOperationSetting item = settingService.getOrCreate();
+        item.setMapProvider(request.provider());
+        item.setMapApiKey(trimToNull(request.apiKey()));
+        settingService.updateById(item);
+        return Result.ok(operationView(item));
+    }
+
     private void applyExpress(ExpressCompany item, ExpressRequest request) {
         item.setName(request.name().trim());
         item.setCode(request.code().trim().toLowerCase());
@@ -353,7 +363,8 @@ public class StoreOperationSettingController {
                 item.getPrintPrinterId(), item.getPrintOnPaid(), item.getPrintOnRefund(), item.getPrintCopies(),
                 item.getSmsEnabled(), item.getSmsNewOrderTemplate(), item.getSmsPaidTemplate(),
                 item.getSmsShippedTemplate(), item.getSmsRefundTemplate(), item.getSmsNotifyPhones(),
-                item.getShareTitle(), item.getShareSubtitle(), item.getShareBrand(), item.getShareImageUrl());
+                item.getShareTitle(), item.getShareSubtitle(), item.getShareBrand(), item.getShareImageUrl(),
+                item.getMapProvider(), item.getMapApiKey());
     }
 
     private static String trimToNull(String value) {
@@ -476,6 +487,10 @@ public class StoreOperationSettingController {
             @Size(max = 64) String brand,
             @Size(max = 512) String imageUrl) {}
 
+    public record MapSettingRequest(
+            @NotBlank String provider,
+            @Size(max = 256) String apiKey) {}
+
     public record PrinterView(Long id, String name, String provider, String deviceNo, String endpoint,
                               Integer sort, String status, boolean accessKeySet, boolean accessSecretSet,
                               java.time.LocalDateTime createTime) {}
@@ -493,5 +508,5 @@ public class StoreOperationSettingController {
                                        String smsPaidTemplate, String smsShippedTemplate,
                                        String smsRefundTemplate, String smsNotifyPhones,
                                        String shareTitle, String shareSubtitle, String shareBrand,
-                                       String shareImageUrl) {}
+                                       String shareImageUrl, String mapProvider, String mapApiKey) {}
 }

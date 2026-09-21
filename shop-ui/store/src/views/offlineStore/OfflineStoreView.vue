@@ -11,6 +11,7 @@ import {
   updateOfflineStoreStatus,
   verifyPickupCode,
 } from '@/api/offlineStore'
+import { getOperationSettings } from '@/api/operationSettings'
 
 const loading = ref(false)
 const activeTab = ref('stores')
@@ -22,6 +23,7 @@ const saving = ref(false)
 const verifyCode = ref('')
 const verifying = ref(false)
 const locationPickerOpen = ref(false)
+const mapSetting = ref({ mapProvider: 'amap', mapApiKey: '' })
 
 const form = reactive({ name: '', phone: '', region: '', detail: '', longitude: '', latitude: '', businessHours: '' })
 // 省市区级联的选中值（文本三段，如 ['四川省','成都市','武侯区']）。后端 region 是单个字符串，
@@ -43,6 +45,7 @@ async function load() {
     const [storeRows, logRows] = await Promise.all([listOfflineStores(), listVerifyLogs()])
     stores.value = storeRows || []
     logs.value = logRows || []
+    try { mapSetting.value = (await getOperationSettings()) || mapSetting.value } catch (e) { /* 地图配置缺失不影响门店列表 */ }
   } catch (e) {
     stores.value = []
     logs.value = []
@@ -270,6 +273,8 @@ function dateText(value) {
     v-if="locationPickerOpen"
     :latitude="form.latitude"
     :longitude="form.longitude"
+    :provider="mapSetting.mapProvider || 'amap'"
+    :api-key="mapSetting.mapApiKey || ''"
     @confirm="onLocationConfirm"
     @close="locationPickerOpen = false"
   />

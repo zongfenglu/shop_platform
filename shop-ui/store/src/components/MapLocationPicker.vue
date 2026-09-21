@@ -9,6 +9,8 @@ const props = defineProps({
   longitude: { type: [Number, String], default: null },
   title: { type: String, default: '选择地图位置' },
   description: { type: String, default: '点击地图放置定位点，保存后可直接发起导航' },
+  provider: { type: String, default: 'amap' },
+  apiKey: { type: String, default: '' },
 })
 const emit = defineEmits(['confirm', 'close'])
 
@@ -112,7 +114,11 @@ onMounted(async () => {
     : [35.8617, 104.1954]
   map = L.map(mapEl.value, { zoomControl: true }).setView(center, hasPoint ? 16 : 4)
   // 高德底图采用 GCJ-02，选点后转换为 GCJ-02 坐标保存，供微信地图直接导航。
-  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?style=7&x={x}&y={y}&z={z}', {
+  const tileKey = props.apiKey ? `&key=${encodeURIComponent(props.apiKey)}` : ''
+  const tileUrl = props.provider === 'baidu'
+    ? 'https://maponline0{s}.bdimg.com/tile/?qt=tile&x={x}&y={y}&z={z}&styles=pl'
+    : `https://webrd0{s}.is.autonavi.com/appmaptile?style=7&x={x}&y={y}&z={z}${tileKey}`
+  L.tileLayer(tileUrl, {
     subdomains: ['1', '2', '3', '4'],
     maxZoom: 19,
     attribution: '&copy; 高德地图',

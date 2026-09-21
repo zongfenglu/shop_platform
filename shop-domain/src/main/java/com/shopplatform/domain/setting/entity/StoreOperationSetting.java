@@ -30,6 +30,8 @@ public class StoreOperationSetting extends BaseEntity {
     private String shareSubtitle;
     private String shareBrand;
     private String shareImageUrl;
+    private String mapProvider;
+    private String mapApiKey;
 
     public Long getShopId() { return shopId; }
     public void setShopId(Long shopId) { this.shopId = shopId; }
@@ -81,4 +83,8 @@ public class StoreOperationSetting extends BaseEntity {
     public void setShareBrand(String v) { this.shareBrand = v; }
     public String getShareImageUrl() { return shareImageUrl; }
     public void setShareImageUrl(String v) { this.shareImageUrl = v; }
+    public String getMapProvider() { return mapProvider; }
+    public void setMapProvider(String v) { this.mapProvider = v; }
+    public String getMapApiKey() { return mapApiKey; }
+    public void setMapApiKey(String v) { this.mapApiKey = v; }
 }

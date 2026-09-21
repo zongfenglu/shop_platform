@@ -8,7 +8,7 @@ import {
   createExpressCompany, createPrinter, createReturnAddress, createSmsChannel,
   deleteExpressCompany, deletePrinter, deleteReturnAddress, deleteSmsChannel,
   getOperationSettings, listExpressCompanies, listPrinters, listReturnAddresses,
-  listSmsChannels, savePrintRules, saveShareSettings, saveSmsRules, saveUploadSettings,
+  listSmsChannels, saveMapSettings, savePrintRules, saveShareSettings, saveSmsRules, saveUploadSettings,
   setDefaultReturnAddress, updateExpressCompany, updatePrinter,
   updateReturnAddress, updateSmsChannel,
 } from '@/api/operationSettings'
@@ -70,6 +70,7 @@ const smsRulesForm = reactive({
   refundTemplate: '', notifyPhones: '',
 })
 const shareForm = reactive({ title: '', subtitle: '', brand: '', imageUrl: '' })
+const mapForm = reactive({ provider: 'amap', apiKey: '' })
 
 const titles = {
   express: ['物流公司', '维护发货时可选择的承运商'],
@@ -89,7 +90,10 @@ async function load() {
   loading.value = true
   try {
     if (props.section === 'express') rows.value = await listExpressCompanies()
-    if (props.section === 'returns') rows.value = await listReturnAddresses()
+    if (props.section === 'returns') {
+      rows.value = await listReturnAddresses()
+      try { operations.value = await getOperationSettings() } catch (e) { /* 地图配置缺失不影响退货地址 */ }
+    }
     if (props.section === 'printers') {
       const [items, setting] = await Promise.all([listPrinters(), getOperationSettings()])
       rows.value = items
@@ -130,6 +134,11 @@ async function load() {
         title: setting.shareTitle || '', subtitle: setting.shareSubtitle || '',
         brand: setting.shareBrand || '', imageUrl: setting.shareImageUrl || '',
       })
+    }
+    if (props.section === 'map') {
+      const setting = await getOperationSettings()
+      operations.value = setting
+      Object.assign(mapForm, { provider: setting.mapProvider || 'amap', apiKey: setting.mapApiKey || '' })
     }
   } catch (e) {
     rows.value = []
@@ -314,6 +323,14 @@ async function saveShare() {
   } finally { submitting.value = false }
 }
 
+async function saveMap() {
+  submitting.value = true
+  try {
+    operations.value = await saveMapSettings({ provider: mapForm.provider, apiKey: mapForm.apiKey.trim() })
+    message.success('地图配置已保存')
+  } finally { submitting.value = false }
+}
+
 function modalTitle() {
   const noun = { express: '物流公司', returns: '退货地址', printers: '打印机', sms: '短信渠道' }[props.section]
   return `${editingId.value ? '编辑' : '新增'}${noun}`
@@ -354,6 +371,12 @@ function modalTitle() {
         <div class="actions"><button class="btn btn-primary" :disabled="submitting" @click="saveUpload">保存</button></div>
       </div>
 
+      <div v-else-if="section === 'map'" class="card card-pad form-panel">
+        <div class="share-setting-intro"><div class="share-setting-icon">⌖</div><div><div class="card-title">地图 API 配置</div><div class="card-sub">用于平台后台门店和退货地址的地图选点。小程序端导航使用微信原生地图，不读取这里的 Key。</div></div></div>
+        <div class="form-item"><label class="form-label">地图服务商</label><select v-model="mapForm.provider" class="form-select"><option value="amap">高德地图</option><option value="baidu">百度地图</option></select></div>
+        <div class="form-item"><label class="form-label">Web API Key</label><input v-model.trim="mapForm.apiKey" class="form-input" type="password" autocomplete="new-password" placeholder="请输入地图 Web API Key" /><div class="form-hint">高德地图请在控制台创建 Web 服务或 JS API Key，并将当前平台域名加入白名单。</div></div>
+        <div class="actions"><button class="btn btn-primary" :disabled="submitting" @click="saveMap">保存地图配置</button></div>
+      </div>
       <div v-else-if="section === 'share'" class="card card-pad form-panel share-settings">
         <div class="share-setting-intro"><div class="share-setting-icon">↗</div><div><div class="card-title">分享好物</div><div class="card-sub">分享页和小程序转发卡片共用这组配置。图片留空时使用内置默认海报。</div></div></div>
         <div class="form-row form-item"><div><label class="form-label">分享页标题</label><input v-model.trim="shareForm.title" class="form-input" maxlength="64" placeholder="分享好物" /></div><div><label class="form-label">品牌文案</label><input v-model.trim="shareForm.brand" class="form-input" maxlength="64" placeholder="商城精选" /></div></div>
@@ -408,6 +431,8 @@ function modalTitle() {
       description="点击地图选点，坐标会随退货地址及售后快照保存"
       :latitude="addressForm.latitude"
       :longitude="addressForm.longitude"
+      :provider="operations?.mapProvider || 'amap'"
+      :api-key="operations?.mapApiKey || ''"
       @confirm="onReturnLocationConfirm"
       @close="locationPickerOpen = false"
     />
