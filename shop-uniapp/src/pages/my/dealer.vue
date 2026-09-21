@@ -95,6 +95,7 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
     </view>
 
     <template v-else-if="dealer.status === 'active'">
+      <view class="dealer-profile"><view class="profile-avatar">{{ (dealer.realName || dealer.nickname || '分')[0] }}</view><view class="profile-copy"><view class="profile-name">{{ dealer.realName || dealer.nickname || '分销会员' }}</view><view class="profile-sub">分销员 <text class="profile-tag">已认证</text></view></view><text class="profile-arrow">›</text></view>
       <view class="account-hero">
         <view class="hero-top"><text>佣金账户</text><text class="status-pill">{{ statusText }}</text></view>
         <view class="available-label">可提现佣金</view>
@@ -166,8 +167,9 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
 </template>
 
 <style scoped>
-.page { min-height: 100vh; background: #f4f5f3; color: #20262e; padding-bottom: 36rpx; }
-.account-hero { background: linear-gradient(135deg,#ff5d3d,#ef442e); color: #fff; padding: 34rpx 32rpx 36rpx; }
+.page { min-height: 100vh; background: linear-gradient(180deg, #edf7ff 0%, #f6f9fb 42%, #f5f7f6 100%); color: #20262e; padding-bottom: 36rpx; }
+.dealer-profile { display: flex; align-items: center; gap: 16rpx; padding: 28rpx 28rpx 20rpx; background: #fff; }.profile-avatar { width: 78rpx; height: 78rpx; border-radius: 50%; color: #4d76a5; background: #dceaf8; text-align: center; line-height: 78rpx; font-size: 30rpx; font-weight: 700; }.profile-copy { flex: 1; }.profile-name { color: #172333; font-size: 28rpx; font-weight: 700; }.profile-sub { margin-top: 7rpx; color: #8795a3; font-size: 20rpx; }.profile-tag { margin-left: 10rpx; padding: 4rpx 10rpx; border-radius: 14rpx; color: #e97737; background: #fff0dd; font-size: 17rpx; }.profile-arrow { color: #a5b0bb; font-size: 36rpx; }
+.account-hero { margin: 0 20rpx; border-radius: 22rpx; background: linear-gradient(135deg,#ff6546,#f3412e); color: #fff; padding: 34rpx 32rpx 36rpx; box-shadow: 0 12rpx 26rpx rgba(240, 74, 47, .18); }
 .hero-top { display: flex; align-items: center; justify-content: space-between; font-size: 24rpx; font-weight: 600; }
 .status-pill { padding: 5rpx 14rpx; border-radius: 8rpx; background: #2f8f6f; font-size: 19rpx; }
 .available-label { margin-top: 30rpx; color: #aeb7bd; font-size: 21rpx; }
@@ -175,12 +177,12 @@ const withdrawStatusLabel = (status) => ({ applying: '待审核', approved: '已
 .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 34rpx; padding-top: 26rpx; border-top: 1rpx solid rgba(255,255,255,.13); }
 .metric { display: flex; flex-direction: column; align-items: center; gap: 5rpx; }.metric + .metric { border-left: 1rpx solid rgba(255,255,255,.13); }
 .metric-value { font-size: 24rpx; font-weight: 650; }.metric-label { color: #aeb7bd; font-size: 19rpx; }
-.withdraw-row { margin: 20rpx 24rpx; padding: 24rpx 26rpx; border: 1rpx solid #e2e5e1; border-radius: 16rpx; background: #fff; display: flex; align-items: center; justify-content: space-between; }
+.withdraw-row { margin: 20rpx 24rpx; padding: 24rpx 26rpx; border: 1rpx solid #e2eaf2; border-radius: 18rpx; background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 7rpx 20rpx rgba(62, 99, 138, .05); }
 .withdraw-title { font-size: 25rpx; font-weight: 650; }.withdraw-sub { margin-top: 5rpx; color: #8c9397; font-size: 20rpx; }
 .withdraw-btn, .primary-btn { border: 0; background: #e35549; color: #fff; border-radius: 12rpx; }
 .withdraw-btn { margin: 0; height: 64rpx; padding: 0 22rpx; display: flex; align-items: center; gap: 8rpx; font-size: 22rpx; }
 .withdraw-btn::after, .primary-btn::after, .tab::after { border: 0; }
-.tabs { height: 82rpx; padding: 0 24rpx; display: grid; grid-template-columns: repeat(3, 1fr); background: #fff; border-top: 1rpx solid #e2e5e1; border-bottom: 1rpx solid #e2e5e1; }
+.tabs { height: 82rpx; padding: 0 24rpx; display: grid; grid-template-columns: repeat(3, 1fr); background: #fff; border-top: 1rpx solid #e2eaf2; border-bottom: 1rpx solid #e2eaf2; }
 .tab { margin: 0; padding: 0; height: 82rpx; border: 0; border-radius: 0; background: transparent; color: #858c90; display: flex; align-items: center; justify-content: center; gap: 8rpx; font-size: 22rpx; }
 .tab.active { color: #246d58; border-bottom: 4rpx solid #2f8f6f; font-weight: 650; }
 .content-section { margin-top: 16rpx; padding: 0 28rpx; background: #fff; border-top: 1rpx solid #e2e5e1; border-bottom: 1rpx solid #e2e5e1; }

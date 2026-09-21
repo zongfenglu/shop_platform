@@ -295,15 +295,20 @@ function fmtPrice(v) {
 <style scoped>
 .page {
   min-height: 100vh;
+  padding-bottom: 20rpx;
+  background: linear-gradient(180deg, #edf7ff 0%, #f8fbff 42%, #f5f8fa 100%);
 }
 .banner {
-  width: 100%;
-  height: 640rpx;
-  background: #f0efec;
+  margin: 18rpx 20rpx 0;
+  width: calc(100% - 40rpx);
+  height: 500rpx;
+  border-radius: 22rpx;
+  background: #e8eef4;
+  overflow: hidden;
 }
 .banner-img {
   width: 100%;
-  height: 640rpx;
+  height: 500rpx;
 }
 .banner-ph {
   display: flex;
@@ -313,9 +318,12 @@ function fmtPrice(v) {
   font-size: 26rpx;
 }
 .block {
-  background: #fcfcfb;
+  margin: 18rpx 20rpx;
   padding: 28rpx 24rpx;
-  margin-bottom: 18rpx;
+  border: 1rpx solid #e5edf5;
+  border-radius: 20rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 24rpx rgba(62, 99, 138, .05);
 }
 .block-title {
   font-size: 28rpx;
@@ -344,7 +352,7 @@ function fmtPrice(v) {
   gap: 12rpx;
 }
 .price {
-  color: #d4380d;
+  color: #f04432;
   font-size: 44rpx;
   font-weight: 700;
 }
@@ -357,7 +365,8 @@ function fmtPrice(v) {
   font-size: 32rpx;
   font-weight: 600;
   line-height: 1.45;
-  margin-top: 12rpx;
+  margin-top: 14rpx;
+  color: #172333;
 }
 .sub {
   font-size: 25rpx;
@@ -371,7 +380,7 @@ function fmtPrice(v) {
 }
 .meta {
   font-size: 23rpx;
-  color: #898781;
+  color: #8795a3;
 }
 .tap-row {
   display: flex;
@@ -421,7 +430,7 @@ function fmtPrice(v) {
 }
 .comment-reply {
   margin-top: 10rpx;
-  background: #f5f4f1;
+  background: #f2f7fb;
   border-radius: 10rpx;
   padding: 14rpx;
   font-size: 24rpx;
@@ -438,8 +447,9 @@ function fmtPrice(v) {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  background: #fff;
-  border-top: 2rpx solid rgba(11, 11, 11, 0.08);
+  background: rgba(255, 255, 255, .96);
+  border-top: 1rpx solid #dfe9f3;
+  box-shadow: 0 -6rpx 20rpx rgba(58, 97, 133, .08);
   padding: 16rpx 24rpx;
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
@@ -465,8 +475,8 @@ function fmtPrice(v) {
   padding: 0 22rpx;
   border: 0;
   border-radius: 40rpx;
-  background: #fff0ed;
-  color: #c94d45;
+  background: #e8f1ff;
+  color: #2574d1;
   font-size: 23rpx;
   line-height: 80rpx;
 }
@@ -483,10 +493,10 @@ function fmtPrice(v) {
   margin: 0;
 }
 .action-btn.cart {
-  background: #f0a020;
+  background: #f5a623;
 }
 .action-btn.buy {
-  background: #d4380d;
+  background: #ef3f2e;
 }
 .mask {
   position: fixed;
@@ -500,7 +510,7 @@ function fmtPrice(v) {
   right: 0;
   bottom: 0;
   max-height: 76vh;
-  background: #fff;
+  background: #f9fcff;
   border-radius: 24rpx 24rpx 0 0;
   z-index: 11;
   display: flex;
@@ -550,9 +560,9 @@ function fmtPrice(v) {
   background: #fcfcfb;
 }
 .spec-chip.active {
-  border-color: #d4380d;
-  color: #d4380d;
-  background: #fdf1ed;
+  border-color: #2574d1;
+  color: #2574d1;
+  background: #eaf3ff;
 }
 .spec-chip.disabled {
   color: #c9c7c1;
@@ -587,7 +597,7 @@ function fmtPrice(v) {
   font-size: 27rpx;
 }
 .popup-confirm {
-  background: #d4380d;
+  background: #ef3f2e;
   color: #fff;
   border-radius: 40rpx;
   height: 84rpx;
