@@ -79,9 +79,10 @@ public class DealerOrderServiceImpl extends ServiceImpl<DealerOrderMapper, Deale
             }
         }
 
-        BigDecimal amount = "goods".equals(setting.getCommissionType())
+        CommissionCalculation calculation = "goods".equals(setting.getCommissionType())
                 ? calcGoodsCommission(orderId, orderTotal, setting)
-                : calcOrderCommission(orderTotal, setting.getCommissionRate());
+                : new CommissionCalculation(calcOrderCommission(orderTotal, setting.getCommissionRate()), setting.getCommissionRate());
+        BigDecimal amount = calculation.amount();
         if (amount.signum() <= 0) {
             return; // 全部商品佣金比例为 0 时不落记录，避免一堆 0 元佣金单
         }
@@ -90,7 +91,8 @@ public class DealerOrderServiceImpl extends ServiceImpl<DealerOrderMapper, Deale
         dOrder.setOrderId(orderId);
         dOrder.setDealerUserId(beneficiary.getId());
         dOrder.setOrderTotal(orderTotal);
-        dOrder.setCommissionRate(setting.getCommissionRate());
+        // 保存实际生效比例快照，商品单独设置比例时不能继续展示店铺默认比例。
+        dOrder.setCommissionRate(calculation.effectiveRate());
         dOrder.setCommissionAmount(amount);
         dOrder.setStatus("pending");
         save(dOrder);
@@ -128,12 +130,12 @@ public class DealerOrderServiceImpl extends ServiceImpl<DealerOrderMapper, Deale
      * 回退店铺默认比例。运费不参与计佣（订单行基数天然不含运费；整单模式的基数 payPrice 含运费，
      * 这是两种模式的口径差异之一，商户文档需说明）。
      */
-    private BigDecimal calcGoodsCommission(Long orderId, BigDecimal orderTotal, DealerSetting setting) {
+    private CommissionCalculation calcGoodsCommission(Long orderId, BigDecimal orderTotal, DealerSetting setting) {
         List<OrderGoods> lines = orderGoodsService.listByOrderId(orderId);
         if (lines.isEmpty()) {
             // 查不到订单行时降级为整单口径，保证佣金不因数据异常而漏记
             log.warn("No order_goods rows for order {}, fall back to order-level commission", orderId);
-            return calcOrderCommission(orderTotal, setting.getCommissionRate());
+            return new CommissionCalculation(calcOrderCommission(orderTotal, setting.getCommissionRate()), setting.getCommissionRate());
         }
         Set<Long> goodsIds = lines.stream().map(OrderGoods::getGoodsId).collect(Collectors.toSet());
         Map<Long, BigDecimal> rateByGoods = goodsService.listByIds(goodsIds).stream()
@@ -141,6 +143,7 @@ public class DealerOrderServiceImpl extends ServiceImpl<DealerOrderMapper, Deale
                 .collect(Collectors.toMap(Goods::getId, Goods::getCommissionRate));
 
         BigDecimal total = BigDecimal.ZERO;
+        BigDecimal commissionBase = BigDecimal.ZERO;
         for (OrderGoods line : lines) {
             BigDecimal ratePercent = rateByGoods.getOrDefault(line.getGoodsId(), setting.getCommissionRate());
             if (ratePercent == null || ratePercent.signum() <= 0) {
@@ -152,10 +155,18 @@ public class DealerOrderServiceImpl extends ServiceImpl<DealerOrderMapper, Deale
             if (linePaid.signum() <= 0) {
                 continue;
             }
+            commissionBase = commissionBase.add(linePaid);
             total = total.add(linePaid.multiply(toRatio(ratePercent)).setScale(2, RoundingMode.HALF_DOWN));
         }
-        return total;
+        BigDecimal effectiveRate = commissionBase.signum() <= 0
+                ? setting.getCommissionRate()
+                : total.divide(commissionBase, 6, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"))
+                        .setScale(2, RoundingMode.HALF_UP);
+        return new CommissionCalculation(total, effectiveRate);
     }
+
+    private record CommissionCalculation(BigDecimal amount, BigDecimal effectiveRate) {}
 
     private BigDecimal sumDiscount(String discountDetailJson) {
         if (discountDetailJson == null || discountDetailJson.isBlank()) {

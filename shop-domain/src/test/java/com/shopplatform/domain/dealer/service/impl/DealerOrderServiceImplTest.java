@@ -187,7 +187,9 @@ class DealerOrderServiceImplTest {
 
         service.createPending(ORDER_ID, BUYER_ID, new BigDecimal("200.00"));
 
-        assertEquals(new BigDecimal("30.00"), captureSaved().getCommissionAmount());
+        DealerOrder saved = captureSaved();
+        assertEquals(new BigDecimal("30.00"), saved.getCommissionAmount());
+        assertEquals(new BigDecimal("15.00"), saved.getCommissionRate());
     }
 
     @Test
