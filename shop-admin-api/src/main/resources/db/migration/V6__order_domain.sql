@@ -39,7 +39,7 @@ CREATE TABLE `order` (
     transaction_id  VARCHAR(64)     NULL COMMENT '支付渠道交易号，用于回调幂等对账',
 
     delivery_type   VARCHAR(16)     NOT NULL DEFAULT 'express' COMMENT 'express快递配送 / pickup门店自提',
-    delivery_status VARCHAR(16)     NOT NULL DEFAULT 'pending' COMMENT 'pending/shipped/received',
+    delivery_status VARCHAR(16)     NOT NULL DEFAULT 'pending' COMMENT 'pending/group_pending/shipped/received',
     receipt_status  VARCHAR(16)     NOT NULL DEFAULT 'pending' COMMENT 'pending/confirmed',
 
     order_status    VARCHAR(16)     NOT NULL DEFAULT 'normal' COMMENT 'normal/cancelled/finished',

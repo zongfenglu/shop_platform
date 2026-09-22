@@ -138,6 +138,9 @@ public class CheckoutAppService {
             if (groupCtx != null && groupCtx.isLeader()) {
                 groupRecordService.setLeaderOrder(groupCtx.recordId(), order.getId());
             }
+            if (groupCtx != null && groupCtx.success()) {
+                orderService.releaseGroupOrders(groupCtx.recordId());
+            }
 
             // 砍价下单：把砍价记录置为 ordered 并关联订单（ActivityPriceHandler 已校验记录可用）
             if ("bargain".equals(request.activityType()) && request.activityId() != null) {
@@ -174,7 +177,7 @@ public class CheckoutAppService {
             // 开团
             GroupRecord rec = groupRecordService.openGroup(requestedActive.getId(), userId, null,
                     requestedActive.getValidHours() == null ? 24 : requestedActive.getValidHours());
-            return new GroupContext(rec.getId(), true, requestedActive.getId());
+            return new GroupContext(rec.getId(), true, false, requestedActive.getId());
         }
         // 参团
         GroupRecord rec = groupRecordService.getByIdWithTenant(request.groupRecordId());
@@ -186,10 +189,10 @@ public class CheckoutAppService {
         if (updated == null) {
             throw new BusinessException(ErrorCode.GROUP_FULL, "拼团已满或已结束");
         }
-        return new GroupContext(rec.getId(), false, active.getId());
+        return new GroupContext(rec.getId(), false, "success".equals(updated.getStatus()), active.getId());
     }
 
-    private record GroupContext(Long recordId, boolean isLeader, Long activeId) {
+    private record GroupContext(Long recordId, boolean isLeader, boolean success, Long activeId) {
     }
 
     /** 是否走秒杀预扣：activityType=seckill 且活动 time_ids 非空（限时折扣不预扣）。 */

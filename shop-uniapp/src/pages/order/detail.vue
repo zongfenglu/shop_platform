@@ -58,6 +58,7 @@ function statusText() {
   if (o.orderStatus === 'finished') return '已完成'
   if (o.payStatus === 'unpaid') return '待付款'
   if (o.deliveryType === 'pickup' && o.deliveryStatus === 'pending') return '待自提'
+  if (o.deliveryStatus === 'group_pending') return '待成团'
   if (o.deliveryStatus === 'pending') return '待发货'
   if (o.deliveryStatus === 'shipped') return '待收货'
   return '处理中'

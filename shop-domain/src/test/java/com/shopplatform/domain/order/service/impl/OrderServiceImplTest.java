@@ -122,6 +122,23 @@ class OrderServiceImplTest {
     }
 
     @Test
+    void createOrder_groupOrder_staysPendingUntilGroupSucceeds() {
+        stubPriceResult();
+        when(goodsSkuService.deductStock(101L, 2)).thenReturn(true);
+
+        OrderService.CreateOrderCommand groupCommand = new OrderService.CreateOrderCommand(
+                100L,
+                List.of(new PriceContext.PriceItem(10L, 101L, "测试商品", "默认", "img.jpg",
+                        new BigDecimal("50.00"), new BigDecimal("60.00"), 2, null)),
+                "express", null, null, null, null, "group", 12L, 88L, "mp", null,
+                new OrderService.AddressInfo("张三", "13800000000", "广东", "深圳", "南山区", "科技园", null, null));
+
+        Order order = orderService.createOrder(groupCommand);
+
+        assertEquals("group_pending", order.getDeliveryStatus());
+    }
+
+    @Test
     void createOrder_stockInsufficient_throwsAndNeverPersistsOrder() {
         stubPriceResult();
         when(goodsSkuService.deductStock(101L, 2)).thenReturn(false);

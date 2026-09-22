@@ -87,6 +87,7 @@ function statusOf(row) {
   if (row.orderStatus === 'cancelled') return { text: '已取消', cls: 'tag-muted' }
   if (row.orderStatus === 'finished') return { text: '已完成', cls: 'tag-good' }
   if (row.payStatus === 'unpaid') return { text: '待付款', cls: 'tag-warning' }
+  if (row.deliveryStatus === 'group_pending') return { text: '待成团', cls: 'tag-warning' }
   if (row.deliveryStatus === 'pending') return { text: '待发货', cls: 'tag-warning' }
   if (row.deliveryStatus === 'shipped') return { text: '待收货', cls: 'tag-warning' }
   return PAY_STATUS_META[row.payStatus] || { text: row.payStatus, cls: 'tag-muted' }

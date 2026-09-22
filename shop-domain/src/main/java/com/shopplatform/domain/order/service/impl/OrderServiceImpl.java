@@ -128,7 +128,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             // 核销时也会连带校验 payStatus=paid 与 deliveryStatus=pending，撞码订单核销后立刻从候选集里消失。
             order.setPickupCode(String.format("%06d", ThreadLocalRandom.current().nextInt(1000000)));
         }
-        order.setDeliveryStatus("pending");
+        // 拼团未成团前不能进入商家待发货或门店待核销队列；成团后由 CheckoutAppService 统一释放。
+        order.setDeliveryStatus("group".equals(cmd.activityType()) ? "group_pending" : "pending");
         order.setReceiptStatus("pending");
         order.setOrderStatus("normal");
         order.setOrderSource(cmd.orderSource() == null ? "mp" : cmd.orderSource());
@@ -247,6 +248,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (!"paid".equals(order.getPayStatus())) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单尚未支付，不能发货");
         }
+        if ("group_pending".equals(order.getDeliveryStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "拼团尚未成团，不能发货");
+        }
         if ("received".equals(order.getDeliveryStatus())) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单已确认收货，不能再次发货");
         }
@@ -292,6 +296,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 .eq(Order::getId, orderId)
                 .eq(Order::getDeliveryStatus, "pending")
                 .set(Order::getDeliveryStatus, "shipped"));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void releaseGroupOrders(Long groupRecordId) {
+        if (groupRecordId == null) {
+            return;
+        }
+        this.update(Wrappers.<Order>lambdaUpdate()
+                .eq(Order::getGroupRecordId, groupRecordId)
+                .eq(Order::getDeliveryStatus, "group_pending")
+                .set(Order::getDeliveryStatus, "pending"));
     }
 
     @Override

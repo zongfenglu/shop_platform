@@ -49,6 +49,7 @@ function statusText(row) {
   if (row.orderStatus === 'cancelled') return { text: '已取消', cls: 'good' }
   if (row.orderStatus === 'finished') return { text: '已完成', cls: 'good' }
   if (row.payStatus === 'unpaid') return { text: '待付款', cls: 'warning' }
+  if (row.deliveryStatus === 'group_pending') return { text: '待成团', cls: 'warning' }
   if (row.deliveryStatus === 'pending') return { text: '待发货', cls: '' }
   if (row.deliveryStatus === 'shipped') return { text: '待收货', cls: '' }
   return { text: '进行中', cls: '' }

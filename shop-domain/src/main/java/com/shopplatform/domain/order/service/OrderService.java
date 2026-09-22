@@ -42,6 +42,9 @@ public interface OrderService extends TenantSafeService<Order> {
      */
     void ship(Long orderId, ShipCommand command);
 
+    /** 拼团成团后释放该团订单，允许进入待发货/待自提状态。 */
+    void releaseGroupOrders(Long groupRecordId);
+
     /** 确认收货：{@code delivery_status='shipped' -> 'received'}，{@code receipt_status -> 'confirmed'}，订单进入 finished。 */
     void confirmReceipt(Long orderId);
 

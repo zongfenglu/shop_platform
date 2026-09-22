@@ -80,6 +80,7 @@ function canShip() {
   return o
     && o.payStatus === 'paid'
     && o.deliveryType !== 'pickup'
+    && o.deliveryStatus !== 'group_pending'
     && o.deliveryStatus !== 'received'
     && o.orderStatus !== 'cancelled'
     && o.orderStatus !== 'finished'

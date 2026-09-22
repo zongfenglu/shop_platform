@@ -230,6 +230,38 @@ class CheckoutAppServiceTest {
     }
 
     @Test
+    void submit_groupJoin_success_releasesOrdersAfterCreatingFinalMemberOrder() {
+        GroupActive active = new GroupActive();
+        active.setId(12L);
+        active.setGroupNum(2);
+        active.setValidHours(24);
+        when(groupActiveService.getByCompatibleIdWithTenant(12L)).thenReturn(active);
+        when(groupActiveService.getByIdWithTenant(12L)).thenReturn(active);
+
+        GroupRecord existing = new GroupRecord();
+        existing.setId(88L);
+        existing.setActiveId(12L);
+        existing.setStatus("pending");
+        when(groupRecordService.getByIdWithTenant(88L)).thenReturn(existing);
+        GroupRecord completed = new GroupRecord();
+        completed.setId(88L);
+        completed.setActiveId(12L);
+        completed.setStatus("success");
+        when(groupRecordService.joinGroup(88L, 2)).thenReturn(completed);
+
+        Order created = new Order();
+        created.setId(99L);
+        when(orderService.createOrder(any())).thenReturn(created);
+        CheckoutRequest request = new CheckoutRequest(List.of(new CartItemRequest(11L, 1)),
+                "express", null, null, null, null, "group", 12L,
+                88L, null, null, List.of());
+
+        service.submit(request);
+
+        verify(orderService).releaseGroupOrders(88L);
+    }
+
+    @Test
     void preview_usesFreightTemplateFromServerSideGoods() {
         CheckoutRequest request = new CheckoutRequest(List.of(new CartItemRequest(11L, 1)), "express", null, 999L,
                 null, null, "none", null, null, null, null, List.of());

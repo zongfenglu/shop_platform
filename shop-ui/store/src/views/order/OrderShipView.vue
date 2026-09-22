@@ -37,6 +37,7 @@ const canShip = computed(() => {
   const order = data.value?.order
   return order && order.payStatus === 'paid' && order.deliveryType !== 'pickup'
     && !['cancelled', 'finished'].includes(order.orderStatus)
+    && order.deliveryStatus !== 'group_pending'
     && order.deliveryStatus !== 'received' && unshippedGoods.value.length > 0
 })
 
