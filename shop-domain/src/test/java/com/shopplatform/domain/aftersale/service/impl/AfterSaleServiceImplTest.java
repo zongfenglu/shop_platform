@@ -91,6 +91,16 @@ class AfterSaleServiceImplTest {
     }
 
     @Test
+    void apply_finishedOrder_rejectsAfterSale() {
+        when(orderService.getByIdWithTenant(10L)).thenReturn(order("paid", "finished", "received"));
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> service.apply(command("refund_only")));
+
+        assertEquals("订单已完成，不能申请售后", error.getMessage());
+    }
+
+    @Test
     void apply_unpaidOrder_rejectsAfterSale() {
         when(orderService.getByIdWithTenant(10L)).thenReturn(order("unpaid", "normal", "pending"));
 

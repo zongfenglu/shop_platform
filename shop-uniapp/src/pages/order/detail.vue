@@ -72,6 +72,7 @@ function canAfterSale() {
   const o = data.value?.order
   return o
     && o.orderStatus !== 'cancelled'
+    && o.orderStatus !== 'finished'
     && o.payStatus === 'paid'
     && o.deliveryStatus !== 'shipped'
     && (data.value?.goodsList || []).some((goods) => goods.refundStatus === 'none')

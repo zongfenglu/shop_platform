@@ -43,7 +43,15 @@ const form = reactive({
 const REASON_OPTIONS = ['拍错/多拍/不想要', '商品破损/质量问题', '与描述不符', '商家发错货', '其他原因']
 const canReturn = computed(() => order.value?.order?.deliveryStatus === 'received')
 const eligibleGoods = computed(() => (order.value?.goodsList || [])
-  .filter((goods) => goods.refundStatus === 'none' && order.value?.order?.deliveryStatus !== 'shipped'))
+  .filter((goods) => goods.refundStatus === 'none'
+    && order.value?.order?.orderStatus !== 'finished'
+    && order.value?.order?.deliveryStatus !== 'shipped'))
+
+const unavailableMessage = computed(() => {
+  if (order.value?.order?.orderStatus === 'finished') return '订单已完成，暂不支持申请售后'
+  if (order.value?.order?.deliveryStatus === 'shipped') return '商品运输中，请确认收货后再申请售后'
+  return '该订单暂无可申请售后的商品'
+})
 
 function onSelectGoods(g) {
   form.orderGoodsId = g.id
@@ -100,7 +108,7 @@ async function onSubmit() {
         </view>
         <view class="check" v-if="form.orderGoodsId === g.id">✓</view>
       </view>
-      <view v-if="eligibleGoods.length === 0" class="empty-goods">该订单暂无可申请售后的商品</view>
+      <view v-if="eligibleGoods.length === 0" class="empty-goods">{{ unavailableMessage }}</view>
     </view>
 
     <view v-if="eligibleGoods.length" class="card">

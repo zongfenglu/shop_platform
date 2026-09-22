@@ -94,7 +94,9 @@ public class ConsumerOrderController {
             List<OrderGoods> goods = goodsByOrder.getOrDefault(order.getId(), List.of());
             OrderGoods first = goods.isEmpty() ? null : goods.get(0);
             int goodsCount = goods.stream().mapToInt(g -> g.getTotalNum() == null ? 0 : g.getTotalNum()).sum();
-            boolean deliveryAllowsAfterSale = !"shipped".equals(order.getDeliveryStatus());
+            // 已完成订单不再开放新的售后入口，避免进入申请页后没有可选商品。
+            boolean deliveryAllowsAfterSale = !"shipped".equals(order.getDeliveryStatus())
+                    && !"finished".equals(order.getOrderStatus());
             boolean canApplyAfterSale = deliveryAllowsAfterSale
                     && goods.stream().anyMatch(g -> "none".equals(g.getRefundStatus()));
             AfterSale latestAfterSale = latestAfterSaleByOrder.get(order.getId());
