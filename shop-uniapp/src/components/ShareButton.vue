@@ -6,6 +6,7 @@ const props = defineProps({
   title: { type: String, default: '发现一个好商品' },
   path: { type: String, default: '/pages/index/index' },
   compact: { type: Boolean, default: false },
+  label: { type: String, default: '分享' },
 })
 
 const copied = ref(false)
@@ -29,12 +30,12 @@ function shareH5() {
 <template>
   <!-- #ifdef MP-WEIXIN -->
   <button class="share-button" :class="{ compact }" open-type="share">
-    <AppIcon name="share-2-coral" :size="compact ? 17 : 19" /><text>{{ compact ? '' : '分享' }}</text>
+    <AppIcon name="share-2-coral" :size="compact ? 17 : 19" /><text>{{ compact ? '' : label }}</text>
   </button>
   <!-- #endif -->
   <!-- #ifndef MP-WEIXIN -->
   <button class="share-button" :class="{ compact }" @click="shareH5">
-    <AppIcon name="share-2-coral" :size="compact ? 17 : 19" /><text>{{ copied ? '已复制' : (compact ? '' : '分享') }}</text>
+    <AppIcon name="share-2-coral" :size="compact ? 17 : 19" /><text>{{ copied ? '已复制' : (compact ? '' : label) }}</text>
   </button>
   <!-- #endif -->
 </template>

@@ -108,8 +108,11 @@ public class ConsumerBargainController {
     @PostMapping("/help/{recordId}")
     public Result<Map<String, Object>> help(@PathVariable Long recordId) {
         // 助力者需登录（可不同于发起人）
-        requireLoginUserId();
+        Long helperId = requireLoginUserId();
         BargainRecord rec = bargainRecordService.getByIdWithTenant(recordId);
+        if (helperId.equals(rec.getUserId())) {
+            throw new BusinessException(ErrorCode.BARGAIN_HELP_LIMIT, "请分享给好友助力，发起人不能自己砍价");
+        }
         if (!"ongoing".equals(rec.getStatus())) {
             throw new BusinessException(ErrorCode.BARGAIN_FLOOR_REACHED, "砍价已结束");
         }

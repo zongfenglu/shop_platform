@@ -65,7 +65,9 @@ const progressPct = computed(() => {
   const floor = Number(active.value.floorPrice)
   const cur = Number(record.value.currentPrice)
   if (origin <= floor) return 100
-  return Math.min(100, Math.max(0, Math.round(((origin - cur) / (origin - floor)) * 100)))
+  if (cur <= floor) return 100
+  // 未到达底价时不能四舍五入成 100%，否则会出现进度满格但仍差几分钱。
+  return Math.min(99, Math.max(0, Math.floor(((origin - cur) / (origin - floor)) * 100)))
 })
 
 const reachedFloor = computed(() => {
@@ -216,13 +218,20 @@ function goCheckout() {
           </button>
         </template>
         <template v-else>
+          <ShareButton
+            v-if="record.status === 'ongoing' && !reachedFloor && record.isOwner"
+            class="bar-btn help share-action"
+            label="请好友砍一刀"
+            :title="`帮我砍一刀：${active.goodsName || '好友砍价'}`"
+            :path="`/pages/bargain/detail?id=${encodeRouteId(activeId)}&recordId=${encodeRouteId(record.recordId)}`"
+          />
           <button
-            v-if="record.status === 'ongoing' && !reachedFloor"
+            v-else-if="record.status === 'ongoing' && !reachedFloor"
             class="bar-btn help"
             :disabled="helping"
             @click="onHelp"
           >
-            {{ helping ? '砍价中…' : '请好友砍一刀' }}
+            {{ helping ? '砍价中…' : '帮TA砍一刀' }}
           </button>
           <button class="bar-btn" @click="goCheckout">
             用当前价下单
@@ -292,4 +301,9 @@ function goCheckout() {
 }
 .bar-btn.help { background: #ff8a3d; }
 .bar-btn[disabled] { opacity: 0.6; }
+.bar :deep(.share-action) {
+  flex: 1; max-width: 460rpx; height: 76rpx; line-height: 76rpx;
+  padding: 0 56rpx; border-radius: 38rpx; background: #ff8a3d;
+  color: #fff; font-size: 28rpx;
+}
 </style>
