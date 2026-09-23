@@ -38,8 +38,30 @@ COPY shop-client-api/src    shop-client-api/src
 COPY shop-job/src           shop-job/src
 COPY shop-mp/src            shop-mp/src
 COPY shop-app/src           shop-app/src
+# target 目录也使用 BuildKit cache。源码层变化时 Maven 可以复用未变化模块的编译结果，
+# 避免 shop-app 每次都从零编译整个 reactor；按 MODULE 隔离，避免不同镜像互相污染产物。
 RUN --mount=type=cache,target=/root/.m2/repository \
-    MAVEN_OPTS="-Xmx512m" mvn -B -q -pl "${MODULE}" -am package -DskipTests \
+    --mount=type=cache,target=/build/.maven-source-state,id=maven-source-state-${MODULE} \
+    --mount=type=cache,target=/build/shop-common/target,id=maven-target-${MODULE}-common \
+    --mount=type=cache,target=/build/shop-framework/target,id=maven-target-${MODULE}-framework \
+    --mount=type=cache,target=/build/shop-domain/target,id=maven-target-${MODULE}-domain \
+    --mount=type=cache,target=/build/shop-admin-api/target,id=maven-target-${MODULE}-admin-api \
+    --mount=type=cache,target=/build/shop-store-api/target,id=maven-target-${MODULE}-store-api \
+    --mount=type=cache,target=/build/shop-client-api/target,id=maven-target-${MODULE}-client-api \
+    --mount=type=cache,target=/build/shop-job/target,id=maven-target-${MODULE}-job \
+    --mount=type=cache,target=/build/shop-mp/target,id=maven-target-${MODULE}-mp \
+    --mount=type=cache,target=/build/shop-app/target,id=maven-target-${MODULE}-app \
+    set -eu; \
+    for module in shop-common shop-framework shop-domain shop-admin-api shop-store-api shop-client-api shop-job shop-mp shop-app; do \
+      state="/build/.maven-source-state/${module}.sha256"; \
+      current=$({ sha256sum pom.xml "${module}/pom.xml"; find "${module}/src" -type f -print0 | sort -z | xargs -0 sha256sum; } | sha256sum | cut -d' ' -f1); \
+      if [ ! -f "$state" ] || [ "$(cat "$state")" != "$current" ]; then \
+        mkdir -p "${module}/target"; \
+        find "${module}/target" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
+        printf '%s' "$current" > "$state"; \
+      fi; \
+    done; \
+    MAVEN_OPTS="-Xmx512m" mvn -B -q -T 1C -pl "${MODULE}" -am package -DskipTests \
     && if ls "${MODULE}/target/${MODULE}-"*-exec.jar >/dev/null 2>&1; then \
          cp "${MODULE}/target/${MODULE}-"*-exec.jar /build/app.jar; \
        else \
