@@ -60,6 +60,7 @@ public enum ErrorCode {
     GROUP_NOT_FOUND(60010, "拼团活动不存在"),
     GROUP_FULL(60011, "拼团已满或已结束"),
     GROUP_EXPIRED(60012, "拼团已过期"),
+    GROUP_ALREADY_JOINED(60013, "你已经参加过该团"),
     BARGAIN_NOT_FOUND(60020, "砍价活动不存在"),
     BARGAIN_EXPIRED(60021, "砍价已过期"),
     BARGAIN_FLOOR_REACHED(60022, "砍价已到底价"),

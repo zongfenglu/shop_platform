@@ -1,6 +1,8 @@
 package com.shopplatform.storeapi.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,10 +13,10 @@ import java.util.Map;
  */
 public record SaveGroupActiveRequest(
         @NotNull Long goodsId,
-        @NotNull Integer groupNum,
+        @NotNull @Min(2) Integer groupNum,
         /** {skuId: price}，至少一个 SKU */
-        @NotNull Map<Long, BigDecimal> groupPrice,
-        @NotNull Integer validHours,
+        @NotNull Map<Long, @DecimalMin(value = "0.01") BigDecimal> groupPrice,
+        @NotNull @Min(1) Integer validHours,
         Integer isMock,
         @NotNull LocalDateTime startTime,
         @NotNull LocalDateTime endTime,

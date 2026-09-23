@@ -110,6 +110,7 @@ function goCheckout(join) {
           <view class="badges">
             <text class="badge">{{ active.groupNum }}人团</text>
             <text class="badge">{{ active.validHours }}小时成团</text>
+            <text v-if="active.isMock" class="badge">超时自动成团</text>
           </view>
           <ShareButton compact :title="active.goodsName ? `一起拼团：${active.goodsName}` : '邀请你一起拼团'" :path="`/pages/group/detail?id=${encodeRouteId(activeId)}${recordId ? `&recordId=${encodeRouteId(recordId)}` : ''}`" />
         </view>
@@ -127,6 +128,7 @@ function goCheckout(join) {
         <view class="prog-meta">
           已参团 {{ record.actualNum }}/{{ record.groupNum }} 人
           <text v-if="record.status === 'pending'">· 还差 {{ Math.max(0, record.groupNum - record.actualNum) }} 人成团</text>
+          <text v-if="record.status === 'pending' && record.isMock">· 截止后系统可模拟成团</text>
         </view>
       </view>
 

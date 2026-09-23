@@ -20,7 +20,7 @@ public class GroupActive extends BaseEntity {
     /** JSON：{"skuId": price} */
     private String groupPrice;
     private Integer validHours;
-    /** 0否 1是：人数不足时模拟成团（仅演示） */
+    /** 0否 1是：截止时间人数不足时由系统补齐虚拟成员并放行已付款订单 */
     private Integer isMock;
     private LocalDateTime startTime;
     private LocalDateTime endTime;

@@ -3,6 +3,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { cancelOrder, confirmReceipt, getOrder, getOrderTracks, getPayChannels, prepayOrder } from '@/api'
+import { encodeRouteId } from '@/utils/routeId'
 
 /**
  * 订单详情。对应原型 docs/prototype/h5/order-detail.html。
@@ -105,6 +106,22 @@ function discountAmountOf(goods) {
 
 function activityText(type) {
   return ({ seckill: '秒杀活动', group: '拼团活动', bargain: '砍价活动' })[type] || '营销活动'
+}
+
+function groupStatusText(group) {
+  if (!group) return ''
+  if (group.status === 'success') return group.isMock ? '系统模拟成团' : '已成团'
+  if (group.status === 'fail') return '未成团，款项已原路退回'
+  return '拼团进行中'
+}
+
+function inviteGroup() {
+  const order = data.value?.order
+  const group = data.value?.group
+  if (!order?.activityId || !group?.recordId || group.status !== 'pending') return
+  uni.navigateTo({
+    url: `/pages/group/detail?id=${encodeRouteId(order.activityId)}&recordId=${encodeRouteId(group.recordId)}`,
+  })
 }
 
 function canConfirm() {
@@ -265,6 +282,18 @@ function packageGoodsText(pkg) {
       <view class="hero-title">{{ statusText() }}</view>
     </view>
 
+    <view v-if="data?.group" class="card group-card">
+      <view class="group-head">
+        <view>
+          <view class="group-title">{{ groupStatusText(data.group) }}</view>
+          <view class="group-count">已参团 {{ data.group.actualNum }}/{{ data.group.groupNum }} 人</view>
+        </view>
+        <button v-if="data.group.status === 'pending'" class="group-invite" @click="inviteGroup">邀请好友参团</button>
+      </view>
+      <view v-if="data.group.status === 'pending'" class="group-hint">截止 {{ fmtDateTime(data.group.expireTime) }}，邀请好友一起拼更容易成团</view>
+      <view v-else-if="data.group.status === 'success'" class="group-hint">拼团成功后，商家将按正常订单为你发货</view>
+    </view>
+
     <view v-if="data" class="card">
       <template v-if="data.order.deliveryType === 'pickup'">
         <view class="row">
@@ -376,6 +405,13 @@ function packageGoodsText(pkg) {
   font-size: 32rpx;
   font-weight: 700;
 }
+.group-card { background: #fff5f0; }
+.group-head { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.group-title { color: #d4380d; font-size: 28rpx; font-weight: 700; }
+.group-count { margin-top: 8rpx; color: #52514e; font-size: 23rpx; }
+.group-hint { margin-top: 14rpx; color: #898781; font-size: 22rpx; line-height: 1.5; }
+.group-invite { flex-shrink: 0; margin: 0; height: 60rpx; line-height: 60rpx; padding: 0 22rpx; border: 0; border-radius: 30rpx; background: #d4380d; color: #fff; font-size: 22rpx; }
+.group-invite::after { border: 0; }
 .card {
   background: #fff;
   margin: 20rpx 28rpx;

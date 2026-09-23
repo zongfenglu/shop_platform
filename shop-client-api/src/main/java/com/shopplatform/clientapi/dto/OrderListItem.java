@@ -18,6 +18,13 @@ public record OrderListItem(
         int goodsCount,
         boolean canApplyAfterSale,
         String afterSaleId,
-        String afterSaleStatus
+        String afterSaleStatus,
+        String activityType,
+        String activityId,
+        String groupRecordId,
+        String groupStatus,
+        Integer groupActualNum,
+        Integer groupNum,
+        LocalDateTime groupExpireTime
 ) {
 }

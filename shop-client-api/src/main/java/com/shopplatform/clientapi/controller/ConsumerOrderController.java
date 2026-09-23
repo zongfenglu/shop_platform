@@ -9,6 +9,9 @@ import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.common.result.Result;
 import com.shopplatform.clientapi.dto.OrderListItem;
 import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
+import com.shopplatform.domain.marketing.entity.GroupRecord;
+import com.shopplatform.domain.marketing.service.GroupActiveService;
+import com.shopplatform.domain.marketing.service.GroupRecordService;
 import com.shopplatform.domain.aftersale.entity.AfterSale;
 import com.shopplatform.domain.aftersale.service.AfterSaleService;
 import com.shopplatform.domain.order.entity.Order;
@@ -47,6 +50,8 @@ public class ConsumerOrderController {
     private final LogisticsQueryService logisticsQueryService;
     private final OfflineStoreService offlineStoreService;
     private final AfterSaleService afterSaleService;
+    private final GroupActiveService groupActiveService;
+    private final GroupRecordService groupRecordService;
 
     public ConsumerOrderController(OrderService orderService,
                                     OrderGoodsService orderGoodsService,
@@ -54,7 +59,9 @@ public class ConsumerOrderController {
                                     OrderPackageService orderPackageService,
                                     LogisticsQueryService logisticsQueryService,
                                     OfflineStoreService offlineStoreService,
-                                    AfterSaleService afterSaleService) {
+                                    AfterSaleService afterSaleService,
+                                    GroupActiveService groupActiveService,
+                                    GroupRecordService groupRecordService) {
         this.orderService = orderService;
         this.orderGoodsService = orderGoodsService;
         this.orderAddressService = orderAddressService;
@@ -62,6 +69,8 @@ public class ConsumerOrderController {
         this.logisticsQueryService = logisticsQueryService;
         this.offlineStoreService = offlineStoreService;
         this.afterSaleService = afterSaleService;
+        this.groupActiveService = groupActiveService;
+        this.groupRecordService = groupRecordService;
     }
 
     @GetMapping
@@ -89,6 +98,14 @@ public class ConsumerOrderController {
                 .stream().collect(Collectors.toMap(AfterSale::getOrderId, sale -> sale,
                         (left, right) -> Comparator.nullsFirst(java.time.LocalDateTime::compareTo)
                                 .compare(left.getCreateTime(), right.getCreateTime()) >= 0 ? left : right));
+        List<Long> groupRecordIds = orderPage.getRecords().stream()
+                .map(Order::getGroupRecordId).filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, GroupRecord> groupRecords = groupRecordIds.isEmpty() ? Map.of()
+                : groupRecordService.listByIds(groupRecordIds).stream()
+                .collect(Collectors.toMap(GroupRecord::getId, r -> r));
+        Map<Long, Integer> groupNums = groupRecords.isEmpty() ? Map.of()
+                : groupActiveService.listByIds(groupRecords.values().stream().map(GroupRecord::getActiveId).distinct().toList())
+                .stream().collect(Collectors.toMap(a -> a.getId(), a -> a.getGroupNum()));
 
         List<OrderListItem> records = orderPage.getRecords().stream().map(order -> {
             List<OrderGoods> goods = goodsByOrder.getOrDefault(order.getId(), List.of());
@@ -100,13 +117,21 @@ public class ConsumerOrderController {
             boolean canApplyAfterSale = deliveryAllowsAfterSale
                     && goods.stream().anyMatch(g -> "none".equals(g.getRefundStatus()));
             AfterSale latestAfterSale = latestAfterSaleByOrder.get(order.getId());
+            GroupRecord group = groupRecords.get(order.getGroupRecordId());
             return new OrderListItem(
                     order.getId().toString(), order.getOrderNo(), order.getPayPrice(), order.getPayStatus(),
                     order.getDeliveryStatus(), order.getOrderStatus(), order.getCreateTime(),
                     first == null ? null : first.getGoodsName(), first == null ? null : first.getImage(),
                     first == null ? null : first.getSpecText(), goodsCount, canApplyAfterSale,
                     latestAfterSale == null ? null : latestAfterSale.getId().toString(),
-                    latestAfterSale == null ? null : latestAfterSale.getStatus());
+                    latestAfterSale == null ? null : latestAfterSale.getStatus(),
+                    order.getActivityType(),
+                    order.getActivityId() == null ? null : order.getActivityId().toString(),
+                    group == null ? null : group.getId().toString(),
+                    group == null ? null : group.getStatus(),
+                    group == null ? null : group.getActualNum(),
+                    group == null ? null : groupNums.get(group.getActiveId()),
+                    group == null ? null : group.getExpireTime());
         }).toList();
         Page<OrderListItem> resultPage = new Page<>(orderPage.getCurrent(), orderPage.getSize(), orderPage.getTotal());
         resultPage.setRecords(records);
@@ -125,6 +150,21 @@ public class ConsumerOrderController {
         result.put("address", address == null ? Map.of() : address);
         result.put("packages", packages);
         result.put("afterSales", afterSaleService.listByOrderId(id));
+        if (order.getGroupRecordId() != null) {
+            GroupRecord group = groupRecordService.getByIdWithTenant(order.getGroupRecordId());
+            if (group != null) {
+                var active = groupActiveService.getByIdWithTenant(group.getActiveId());
+                Map<String, Object> groupView = new LinkedHashMap<>();
+                groupView.put("recordId", String.valueOf(group.getId()));
+                groupView.put("status", group.getStatus());
+                groupView.put("actualNum", group.getActualNum());
+                groupView.put("groupNum", active.getGroupNum());
+                groupView.put("expireTime", group.getExpireTime());
+                groupView.put("successTime", group.getSuccessTime());
+                groupView.put("isMock", Integer.valueOf(1).equals(active.getIsMock()));
+                result.put("group", groupView);
+            }
+        }
         if ("pickup".equals(order.getDeliveryType()) && order.getPickupStoreId() != null) {
             result.put("pickupStore", offlineStoreService.getByIdWithTenant(order.getPickupStoreId()));
         }

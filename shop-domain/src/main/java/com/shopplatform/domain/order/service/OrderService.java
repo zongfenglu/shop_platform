@@ -68,6 +68,9 @@ public interface OrderService extends TenantSafeService<Order> {
     /** 列出某拼团记录下的全部订单（GroupExpireJob 关单/退款用），按 id 升序 */
     List<Order> listByGroupRecordId(Long groupRecordId);
 
+    /** 判断用户是否已有一笔仍有效的订单参加该团，避免重复占用团位。 */
+    boolean hasUserInGroup(Long groupRecordId, Long userId);
+
     record ShipCommand(
             String expressCompany,
             String expressNo,

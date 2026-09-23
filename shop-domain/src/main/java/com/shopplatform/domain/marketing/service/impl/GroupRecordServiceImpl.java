@@ -59,6 +59,23 @@ public class GroupRecordServiceImpl extends ServiceImpl<GroupRecordMapper, Group
     }
 
     @Override
+    public boolean markSuccess(Long recordId) {
+        return update(com.baomidou.mybatisplus.core.toolkit.Wrappers.<GroupRecord>lambdaUpdate()
+                .eq(GroupRecord::getId, recordId)
+                .eq(GroupRecord::getStatus, "pending")
+                .set(GroupRecord::getStatus, "success")
+                .set(GroupRecord::getSuccessTime, LocalDateTime.now()));
+    }
+
+    @Override
+    public boolean leaveGroup(Long recordId) {
+        if (recordId == null) {
+            return false;
+        }
+        return baseMapper.leaveGroup(recordId) > 0;
+    }
+
+    @Override
     public void setLeaderOrder(Long recordId, Long orderId) {
         GroupRecord r = getByIdWithTenant(recordId);
         r.setLeaderOrderId(orderId);

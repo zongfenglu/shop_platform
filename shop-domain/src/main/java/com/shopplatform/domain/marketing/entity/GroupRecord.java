@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 /**
  * 拼团记录（一个团一条）。见 Sprint 10。
- * 团长开团时创建 status=pending、actual_num=1；每有人参团 actual_num+1；
+ * 团长开团时创建 status=pending、actual_num=1（含待付款订单预留的团位）；每有人参团 actual_num+1；
  * actual_num &gt;= group_active.group_num 时置 success；超时未成团由 GroupExpireJob 置 fail 并原路退款。
  */
 @TableName("group_record")

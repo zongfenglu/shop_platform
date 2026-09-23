@@ -20,6 +20,17 @@ public interface GroupRecordService extends TenantSafeService<GroupRecord> {
     /** 置为失败 */
     void markFail(Long recordId);
 
+    /**
+     * 将待成团记录置为成功。用于达到人数或活动配置的“模拟成团”。
+     * 只有 pending 记录允许流转，保证定时任务重复执行时幂等。
+     */
+    boolean markSuccess(Long recordId);
+
+    /**
+     * 释放一笔尚未付款的拼团订单占用的名额。取消订单时调用，避免未付款订单长期占用团位。
+     */
+    boolean leaveGroup(Long recordId);
+
     /** 关联砍价/拼团订单：记录 leader_order_id（开团时团长订单） */
     void setLeaderOrder(Long recordId, Long orderId);
 }

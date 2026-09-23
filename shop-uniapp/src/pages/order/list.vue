@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import AppIcon from '@/components/AppIcon.vue'
 import { cancelOrder, pageOrders } from '@/api'
+import { encodeRouteId } from '@/utils/routeId'
 
 /**
  * 我的订单。对应原型 docs/prototype/h5/order-list.html。
@@ -75,6 +76,26 @@ function canConfirm(row) {
   return row.orderStatus === 'normal' && row.payStatus === 'paid' && row.deliveryStatus === 'shipped'
 }
 
+function isGroup(row) {
+  return row.activityType === 'group' && row.groupRecordId
+}
+
+function groupStatusText(row) {
+  if (!isGroup(row)) return ''
+  if (row.groupStatus === 'success') return '已成团'
+  if (row.groupStatus === 'fail') return '未成团，款项已原路退回'
+  const actual = Number(row.groupActualNum || 0)
+  const target = Number(row.groupNum || 0)
+  return target > 0 ? `待成团 · ${actual}/${target} 人` : '待成团'
+}
+
+function inviteGroup(row) {
+  if (!isGroup(row) || row.groupStatus !== 'pending') return
+  uni.navigateTo({
+    url: `/pages/group/detail?id=${encodeRouteId(row.activityId)}&recordId=${encodeRouteId(row.groupRecordId)}`,
+  })
+}
+
 function goDetail(id) {
   uni.navigateTo({ url: `/pages/order/detail?id=${id}` })
 }
@@ -134,6 +155,13 @@ function onComment(row) {
             <view class="order-no">订单号 {{ row.orderNo }}</view>
           </view>
           <view class="price">{{ fmtPrice(row.payPrice) }}</view>
+        </view>
+        <view v-if="isGroup(row)" class="group-progress" @click.stop>
+          <view class="group-progress-main">
+            <text class="group-label">拼团</text>
+            <text :class="['group-status', row.groupStatus === 'fail' ? 'group-fail' : '']">{{ groupStatusText(row) }}</text>
+          </view>
+          <button v-if="row.groupStatus === 'pending'" class="btn btn-primary" size="mini" @click="inviteGroup(row)">邀请好友</button>
         </view>
         <view v-if="canCancel(row) || canAfterSale(row) || row.afterSaleId || canConfirm(row) || row.orderStatus === 'finished'" class="foot" @click.stop>
           <text class="pay-hint" v-if="canCancel(row)">应付 {{ fmtPrice(row.payPrice) }}</text>
@@ -254,6 +282,20 @@ function onComment(row) {
   font-size: 28rpx;
   font-weight: 600;
 }
+.group-progress {
+  margin: 0 28rpx 20rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 12rpx;
+  background: #fff5f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.group-progress-main { display: flex; align-items: center; gap: 12rpx; min-width: 0; }
+.group-label { color: #d4380d; font-size: 22rpx; font-weight: 700; }
+.group-status { color: #b05a20; font-size: 22rpx; }
+.group-fail { color: #898781; }
 .foot {
   display: flex;
   align-items: center;

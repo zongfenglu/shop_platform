@@ -59,6 +59,9 @@ public class StoreGroupController {
     }
 
     private void apply(SaveGroupActiveRequest req, GroupActive a) {
+        if (req.startTime().isAfter(req.endTime()) || req.startTime().isEqual(req.endTime())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "活动开始时间必须早于结束时间");
+        }
         a.setGoodsId(req.goodsId());
         a.setGroupNum(req.groupNum());
         a.setGroupPrice(toJson(req.groupPrice()));
@@ -75,7 +78,12 @@ public class StoreGroupController {
         }
         // key 序列化为字符串形式的 skuId
         TreeMap<String, java.math.BigDecimal> ordered = new TreeMap<>();
-        prices.forEach((k, v) -> ordered.put(String.valueOf(k), v));
+        prices.forEach((k, v) -> {
+            if (k == null || v == null || v.signum() <= 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "拼团价必须大于 0");
+            }
+            ordered.put(String.valueOf(k), v);
+        });
         try {
             return objectMapper.writeValueAsString(ordered);
         } catch (Exception e) {

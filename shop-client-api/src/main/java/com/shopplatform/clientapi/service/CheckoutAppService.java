@@ -185,6 +185,9 @@ public class CheckoutAppService {
         if (!active.getId().equals(requestedActive.getId())) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "拼团记录与活动不匹配");
         }
+        if (orderService.hasUserInGroup(rec.getId(), userId)) {
+            throw new BusinessException(ErrorCode.GROUP_ALREADY_JOINED, "你已经参加过该团");
+        }
         GroupRecord updated = groupRecordService.joinGroup(rec.getId(), active.getGroupNum());
         if (updated == null) {
             throw new BusinessException(ErrorCode.GROUP_FULL, "拼团已满或已结束");

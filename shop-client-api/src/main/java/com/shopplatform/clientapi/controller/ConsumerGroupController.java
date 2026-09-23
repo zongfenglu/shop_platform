@@ -98,8 +98,11 @@ public class ConsumerGroupController {
         m.put("status", rec.getStatus());
         m.put("actualNum", rec.getActualNum());
         m.put("groupNum", a.getGroupNum());
+        m.put("remainingNum", Math.max(0, (a.getGroupNum() == null ? 0 : a.getGroupNum())
+                - (rec.getActualNum() == null ? 0 : rec.getActualNum())));
         m.put("expireTime", rec.getExpireTime());
         m.put("successTime", rec.getSuccessTime());
+        m.put("isMock", Integer.valueOf(1).equals(a.getIsMock()));
         m.put("leaderUserId", rec.getLeaderUserId());
         // 是否已过期（前端倒计时兜底）
         m.put("expired", rec.getExpireTime() != null && LocalDateTime.now().isAfter(rec.getExpireTime()));
@@ -115,6 +118,7 @@ public class ConsumerGroupController {
         m.put("goodsId", String.valueOf(a.getGoodsId()));
         m.put("groupNum", a.getGroupNum());
         m.put("validHours", a.getValidHours());
+        m.put("isMock", Integer.valueOf(1).equals(a.getIsMock()));
         m.put("startTime", a.getStartTime());
         m.put("endTime", a.getEndTime());
         m.put("status", a.getStatus());

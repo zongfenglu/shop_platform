@@ -6,6 +6,8 @@ import com.shopplatform.common.exception.BusinessException;
 import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.domain.goods.service.GoodsService;
 import com.shopplatform.domain.goods.service.GoodsSkuService;
+import com.shopplatform.domain.marketing.entity.GroupRecord;
+import com.shopplatform.domain.marketing.service.GroupRecordService;
 import com.shopplatform.domain.marketing.service.UserCouponService;
 import com.shopplatform.domain.offlinestore.entity.OfflineStore;
 import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
@@ -25,6 +27,7 @@ import com.shopplatform.domain.pricing.PriceContext;
 import com.shopplatform.framework.tenant.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +55,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final UserCouponService userCouponService;
     private final OfflineStoreService offlineStoreService;
     private final ObjectMapper objectMapper;
+
+    /**
+     * 可选字段注入是为了保持订单域单测/工具类的构造器兼容；运行时由 Spring 注入营销域服务。
+     * 拼团订单支付成功后需要用它把已成团订单放行到待发货。
+     */
+    @Autowired(required = false)
+    private GroupRecordService groupRecordService;
 
     /** 未付款自动取消分钟数。M0 阶段先用全局默认值，租户可配置的"交易设置"表属于后续里程碑的独立任务。 */
     @Value("${shop.order.pay-timeout-minutes:30}")
@@ -234,6 +244,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                             OrderGoods::getGoodsId,
                             java.util.stream.Collectors.summingInt(OrderGoods::getTotalNum)))
                     .forEach(goodsService::increaseSalesActual);
+
+            // 团在下单时可能已经凑满，但团员是分开支付的；只在支付成功后放行该订单，
+            // 防止未付款拼团单提前进入商家发货队列。
+            if ("group".equals(order.getActivityType())
+                    && order.getGroupRecordId() != null
+                    && groupRecordService != null) {
+                GroupRecord record = groupRecordService.getByIdWithTenant(order.getGroupRecordId());
+                if (record != null && "success".equals(record.getStatus())) {
+                    releaseGroupOrders(record.getId());
+                }
+            }
         }
         return true;
     }
@@ -304,9 +325,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (groupRecordId == null) {
             return;
         }
+        // 团位在下单时预留，但只有仍有效的订单全部支付后才进入商家履约队列。
+        // 已取消的未付款订单不参与判断；否则一个取消订单会永久阻塞团。
+        List<Order> groupOrders = listByGroupRecordId(groupRecordId).stream()
+                .filter(order -> "normal".equals(order.getOrderStatus()))
+                .toList();
+        if (groupOrders.isEmpty() || groupOrders.stream().anyMatch(order -> !"paid".equals(order.getPayStatus()))) {
+            return;
+        }
         this.update(Wrappers.<Order>lambdaUpdate()
                 .eq(Order::getGroupRecordId, groupRecordId)
                 .eq(Order::getDeliveryStatus, "group_pending")
+                .eq(Order::getPayStatus, "paid")
                 .set(Order::getDeliveryStatus, "pending"));
     }
 
@@ -349,6 +379,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (order.getCouponId() != null) {
             userCouponService.release(order.getCouponId(), orderId);
         }
+        if (order.getGroupRecordId() != null && groupRecordService != null) {
+            groupRecordService.leaveGroup(order.getGroupRecordId());
+        }
         return true;
     }
 
@@ -381,6 +414,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return this.list(Wrappers.<Order>lambdaQuery()
                 .eq(Order::getGroupRecordId, groupRecordId)
                 .orderByAsc(Order::getId));
+    }
+
+    @Override
+    public boolean hasUserInGroup(Long groupRecordId, Long userId) {
+        if (groupRecordId == null || userId == null) {
+            return false;
+        }
+        return count(Wrappers.<Order>lambdaQuery()
+                .eq(Order::getGroupRecordId, groupRecordId)
+                .eq(Order::getUserId, userId)
+                .eq(Order::getOrderStatus, "normal")) > 0;
     }
 
     /** {yyyyMMdd}{shopId后4位}{雪花后8位}，见文档三 §3.3 订单号规则。 */

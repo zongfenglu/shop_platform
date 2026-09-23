@@ -1,6 +1,8 @@
 package com.shopplatform.job.marketing;
 
 import com.shopplatform.domain.marketing.entity.GroupRecord;
+import com.shopplatform.domain.marketing.entity.GroupActive;
+import com.shopplatform.domain.marketing.service.GroupActiveService;
 import com.shopplatform.domain.marketing.service.GroupRecordService;
 import com.shopplatform.domain.order.entity.Order;
 import com.shopplatform.domain.order.service.OrderService;
@@ -28,13 +30,16 @@ public class GroupExpireJob {
 
     private final ShopService shopService;
     private final GroupRecordService groupRecordService;
+    private final GroupActiveService groupActiveService;
     private final OrderService orderService;
 
     public GroupExpireJob(ShopService shopService,
                            GroupRecordService groupRecordService,
+                           GroupActiveService groupActiveService,
                            OrderService orderService) {
         this.shopService = shopService;
         this.groupRecordService = groupRecordService;
+        this.groupActiveService = groupActiveService;
         this.orderService = orderService;
     }
 
@@ -57,12 +62,27 @@ public class GroupExpireJob {
         List<GroupRecord> records = groupRecordService.listExpiredPending(LocalDateTime.now());
         for (GroupRecord record : records) {
             try {
-                groupRecordService.markFail(record.getId());
-                for (Order order : orderService.listByGroupRecordId(record.getId())) {
-                    if ("unpaid".equals(order.getPayStatus())) {
-                        orderService.cancel(order.getId(), "group timeout auto close");
-                    } else if ("paid".equals(order.getPayStatus())) {
-                        orderService.systemRefund(order.getId(), "group timeout auto refund");
+                GroupActive active = groupActiveService.getByIdWithTenant(record.getActiveId());
+                List<Order> orders = orderService.listByGroupRecordId(record.getId());
+                boolean hasPaidOrder = orders.stream().anyMatch(order -> "paid".equals(order.getPayStatus()));
+
+                // 模拟成团只对至少有一笔已支付订单的团生效；未付款订单不能被“补齐”后直接进入待发货。
+                if (active != null && Integer.valueOf(1).equals(active.getIsMock()) && hasPaidOrder) {
+                    for (Order order : orders) {
+                        if ("unpaid".equals(order.getPayStatus())) {
+                            orderService.cancel(order.getId(), "group mock success close unpaid order");
+                        }
+                    }
+                    groupRecordService.markSuccess(record.getId());
+                    orderService.releaseGroupOrders(record.getId());
+                } else {
+                    groupRecordService.markFail(record.getId());
+                    for (Order order : orders) {
+                        if ("unpaid".equals(order.getPayStatus())) {
+                            orderService.cancel(order.getId(), "group timeout auto close");
+                        } else if ("paid".equals(order.getPayStatus())) {
+                            orderService.systemRefund(order.getId(), "group timeout auto refund");
+                        }
                     }
                 }
             } catch (Exception e) {
