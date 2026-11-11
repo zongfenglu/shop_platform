@@ -92,7 +92,7 @@ async function onSave() {
             <span>{{ shareTitle || '全部分类' }}</span>
             <span>▮▮▮</span>
           </div>
-          <div class="pv-search">搜索</div>
+          <div class="pv-search"><span class="pv-search-inner">搜索商品</span></div>
 
           <div v-if="style === 'level1_large'" class="pv-large">
             <div v-for="c in roots" :key="c.id" class="pv-large-item">
@@ -169,12 +169,16 @@ async function onSave() {
 
 <style scoped>
 .cat-style { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
-.cat-phone { background: #f5f4f1; min-height: 640px; position: relative; padding-bottom: 56px; }
+.cat-phone { background: #f4f5f3; min-height: 640px; position: relative; padding-bottom: 56px; }
 .pv-search {
-  margin: 10px 12px; height: 32px; border-radius: 16px; background: #fff;
-  color: var(--text-muted); font-size: 12px; display: flex; align-items: center; padding: 0 12px;
+  margin: 0; height: 48px; background: #fff; border-bottom: 1px solid #eceeeb;
+  color: var(--text-muted); font-size: 12px; display: flex; align-items: center; padding: 8px 12px;
 }
-.pv-large { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
+.pv-search-inner {
+  flex: 1; height: 28px; line-height: 28px; padding: 0 12px;
+  background: #f4f5f3; border-radius: 14px; color: #898781;
+}
+.pv-large { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
 .pv-large-item { background: #fff; border-radius: 8px; overflow: hidden; }
 .pv-large-img {
   height: 92px; background: #e8e6e0; display: flex; align-items: center; justify-content: center;
@@ -191,16 +195,20 @@ async function onSave() {
 .pv-small-img img { width: 100%; height: 100%; object-fit: cover; }
 .pv-small-name { margin-top: 6px; font-size: 12px; }
 .pv-level2 { display: flex; min-height: 420px; }
-.pv-level2-nav { width: 88px; background: #fff; }
-.pv-level2-nav-item { padding: 12px 8px; font-size: 12px; color: var(--text-secondary); }
-.pv-level2-nav-item.on { background: #f5f4f1; color: var(--primary); font-weight: 600; }
-.pv-level2-main { flex: 1; padding: 12px 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 6px; align-content: start; }
+.pv-level2-nav { width: 88px; background: #eceee9; }
+.pv-level2-nav-item { position: relative; padding: 14px 8px; font-size: 12px; color: #5c6166; text-align: center; }
+.pv-level2-nav-item.on { background: #fff; color: #1e2429; font-weight: 700; }
+.pv-level2-nav-item.on::before {
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: #2a78d6;
+}
+.pv-level2-main { flex: 1; background: #fff; padding: 12px 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 6px; align-content: start; }
 .pv-tabbar {
   position: absolute; left: 0; right: 0; bottom: 0; height: 48px; background: #fff;
   border-top: 1px solid var(--gridline); display: flex; align-items: center; justify-content: space-around;
   font-size: 11px; color: var(--text-muted);
 }
-.pv-tabbar .on { color: #e34948; font-weight: 600; }
+.pv-tabbar .on { color: #2a78d6; font-weight: 600; }
 .cat-form { flex: 1; min-width: 320px; max-width: 480px; }
 .style-radios { display: flex; flex-direction: column; gap: 8px; }
 .style-radio {

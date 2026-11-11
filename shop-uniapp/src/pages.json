@@ -13,7 +13,9 @@
       "style": {
         "navigationBarTitleText": "全部商品",
         "enablePullDownRefresh": true,
-        "enableShareAppMessage": true
+        "enableShareAppMessage": true,
+        "backgroundColor": "#F4F5F3",
+        "navigationBarBackgroundColor": "#FFFFFF"
       }
     },
     {

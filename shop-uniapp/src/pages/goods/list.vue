@@ -286,14 +286,22 @@ function fmtPrice(v) {
 <style scoped>
 .page {
   padding: 24rpx;
+  min-height: 100vh;
+  background: #f4f5f3;
+  color: #1e2429;
 }
 .catalog {
   min-height: 100vh;
-  background: #f5f4f1;
-  padding-bottom: 24rpx;
+  background: #f4f5f3;
+  color: #1e2429;
+  display: flex;
+  flex-direction: column;
 }
 .catalog .search-bar {
-  padding: 20rpx 24rpx 8rpx;
+  margin: 0;
+  padding: 16rpx 24rpx 18rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #eceeeb;
 }
 .back-row {
   font-size: 26rpx;
@@ -307,7 +315,7 @@ function fmtPrice(v) {
   gap: 20rpx;
 }
 .large-item {
-  background: #fcfcfb;
+  background: #fff;
   border-radius: 16rpx;
   overflow: hidden;
 }
@@ -359,30 +367,48 @@ function fmtPrice(v) {
 .small-name {
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #333;
+  color: #1e2429;
+}
+.level2-main .small-grid {
+  padding: 20rpx 8rpx 40rpx;
 }
 .level2 {
   display: flex;
+  flex: 1;
   min-height: 70vh;
 }
 .level2-nav {
   width: 176rpx;
-  background: #fcfcfb;
-  height: 70vh;
+  background: #eceee9;
+  min-height: 70vh;
 }
 .level2-nav-item {
-  padding: 28rpx 16rpx;
+  position: relative;
+  padding: 32rpx 12rpx;
   font-size: 26rpx;
-  color: #52514e;
+  color: #5c6166;
+  text-align: center;
+  line-height: 1.35;
 }
 .level2-nav-item.on {
-  background: #f5f4f1;
-  color: #2a78d6;
-  font-weight: 600;
+  background: #fff;
+  color: #1e2429;
+  font-weight: 700;
+}
+.level2-nav-item.on::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 24rpx;
+  bottom: 24rpx;
+  width: 6rpx;
+  border-radius: 0 6rpx 6rpx 0;
+  background: #2a78d6;
 }
 .level2-main {
   flex: 1;
-  background: #f5f4f1;
+  background: #fff;
+  min-height: 70vh;
 }
 .search-bar {
   display: flex;
@@ -392,12 +418,16 @@ function fmtPrice(v) {
 }
 .search-input {
   flex: 1;
-  background: #fff;
-  border: 2rpx solid rgba(11, 11, 11, 0.1);
+  background: #f4f5f3;
+  border: 1rpx solid #e4e6e3;
   border-radius: 36rpx;
   height: 68rpx;
   padding: 0 28rpx;
   font-size: 26rpx;
+}
+.catalog .search-input {
+  background: #f4f5f3;
+  border-color: transparent;
 }
 .search-btn {
   font-size: 27rpx;
