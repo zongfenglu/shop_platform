@@ -1,14 +1,14 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { lookupMapLocation } from '@/api/operationSettings'
-import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, reverseGeocode, waitForElementSize } from '@/utils/amap'
+import { lookupMapLocation, searchMapPlaces } from '@/api/operationSettings'
+import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, waitForElementSize } from '@/utils/amap'
 
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
   longitude: { type: [Number, String], default: null },
   title: { type: String, default: '选择地图位置' },
-  description: { type: String, default: '搜索或点击地图选点，会解析出地点名称、完整地址和附近地点' },
+  description: { type: String, default: '搜索地点名称，或点击地图解析出完整地址和附近地点' },
   provider: { type: String, default: 'amap' },
   apiKey: { type: String, default: '' },
   securityJsCode: { type: String, default: '' },
@@ -16,15 +16,17 @@ const props = defineProps({
 const emit = defineEmits(['confirm', 'close'])
 
 const mapEl = ref(null)
-const searchEl = ref(null)
+const keyword = ref('')
 const locating = ref(false)
 const resolving = ref(false)
 const selected = ref(emptySelected())
 const pois = ref([])
+const authHint = ref('')
 let map = null
 let marker = null
 let resizeObserver = null
 let lookupTimer = 0
+let searchTimer = 0
 let lookupSeq = 0
 
 function emptySelected() {
@@ -78,6 +80,13 @@ function scheduleLookup(keepName = false) {
   lookupTimer = window.setTimeout(() => resolveAddress(keepName), 220)
 }
 
+function authMessage(error) {
+  if (error === 'WEB_KEY_SIGNATURE') return '高德 Web 服务 Key 开启了数字签名，无法解析地址。请在控制台关闭数字签名，或把该 Key 的私钥发给我们'
+  if (error === 'WEB_KEY_IP') return '高德 Web 服务 Key 未把服务器 IP 加入白名单'
+  if (error === 'WEB_KEY_INVALID') return '高德 Web 服务 Key 无效，请检查控制台 Key 类型是否为「Web服务」'
+  return ''
+}
+
 async function resolveAddress(keepName = false) {
   const lat = selected.value.latitude
   const lng = selected.value.longitude
@@ -85,21 +94,39 @@ async function resolveAddress(keepName = false) {
   const seq = ++lookupSeq
   resolving.value = true
   try {
-    let data = await reverseGeocode(lng, lat)
-    if (!data?.address) {
-      try {
-        data = await lookupMapLocation(lng, lat)
-      } catch (e) {
-        data = data || null
-      }
-    }
+    const data = await lookupMapLocation(lng, lat)
     if (seq !== lookupSeq) return
     applyLookup(data || {}, keepName)
-    if (!selected.value.address) message.warning('未能解析详细地址，可搜索地点或确认后手工补全')
+    authHint.value = authMessage(data?.error)
+    if (!selected.value.address && !keepName) {
+      message.warning(authHint.value || '未能解析详细地址，请搜索地点名称后再选')
+    }
   } catch (e) {
-    if (seq === lookupSeq) message.warning('地址解析失败，可搜索地点或确认后手工补全')
+    if (seq === lookupSeq) message.warning('地址解析失败，请搜索地点名称后再选')
   } finally {
     if (seq === lookupSeq) resolving.value = false
+  }
+}
+
+function onSearchInput() {
+  window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => searchPlaces(keyword.value), 280)
+}
+
+async function searchPlaces(text) {
+  const query = String(text || '').trim()
+  if (!query) return
+  resolving.value = true
+  try {
+    const list = await searchMapPlaces(query)
+    pois.value = Array.isArray(list) ? list : []
+    if (!pois.value.length) {
+      message.warning(authHint.value || '没有搜到地点，请换个关键词')
+    }
+  } catch (e) {
+    message.warning('地点搜索失败')
+  } finally {
+    resolving.value = false
   }
 }
 
@@ -122,6 +149,9 @@ function choosePoi(poi) {
     name: poi.name,
     address: poi.address,
     detail: poi.name,
+    province: poi.province,
+    city: poi.city,
+    district: poi.district,
   }, 17)
 }
 
@@ -163,19 +193,7 @@ onMounted(async () => {
     })
     map.on('click', (event) => setMapPoint(event.lnglat.getLat(), event.lnglat.getLng(), {}))
     map.on('complete', () => { if (map) map.resize() })
-    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation', 'AMap.Geocoder', 'AMap.PlaceSearch'], () => {
-      if (!searchEl.value) return
-      const auto = new AMap.AutoComplete({ input: searchEl.value, city: '全国' })
-      auto.on('select', (event) => {
-        const poi = event?.poi
-        if (!poi?.location) return
-        setMapPoint(poi.location.lat, poi.location.lng, {
-          name: poi.name,
-          address: [poi.district, poi.address, poi.name].filter(Boolean).join(''),
-          detail: poi.address || poi.name,
-        }, 17)
-      })
-    })
+    AMap.plugin(['AMap.Geolocation'], () => {})
     if (hasPoint) setMapPoint(selected.value.latitude, selected.value.longitude, {}, 16)
     if (typeof ResizeObserver !== 'undefined' && mapEl.value) {
       resizeObserver = new ResizeObserver(() => { if (map) map.resize() })
@@ -189,6 +207,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.clearTimeout(lookupTimer)
+  window.clearTimeout(searchTimer)
   if (resizeObserver) resizeObserver.disconnect()
   if (map) map.destroy()
 })
@@ -206,7 +225,13 @@ onBeforeUnmount(() => {
           <button class="map-picker-close" type="button" title="关闭" @click="emit('close')">×</button>
         </div>
         <div class="map-search">
-          <input ref="searchEl" class="map-search-input" placeholder="搜索小区、写字楼、道路，例如：无锡观湖花园" />
+          <input
+            v-model="keyword"
+            class="map-search-input"
+            placeholder="搜索小区、写字楼、道路，例如：龙湖滟澜山"
+            @input="onSearchInput"
+            @keydown.enter.prevent="searchPlaces(keyword)"
+          />
         </div>
         <div class="map-body">
           <div ref="mapEl" class="location-map" />
@@ -229,7 +254,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="selected-card">
           <div class="selected-name">{{ selected.name || (selected.latitude == null ? '尚未选点' : (resolving ? '正在解析地址…' : '已选位置')) }}</div>
-          <div class="selected-addr">{{ selected.address || (selected.latitude == null ? '搜索或点击地图，选点后会显示完整地址' : (resolving ? '正在获取附近地点和详细地址…' : '未解析到地址，可搜索地点后再确认')) }}</div>
+          <div class="selected-addr">{{ selected.address || (selected.latitude == null ? '搜索地点或点击地图，选点后会显示完整地址' : (resolving ? '正在获取附近地点和详细地址…' : (authHint || '未解析到地址，请搜索地点名称后再选'))) }}</div>
           <div v-if="selected.latitude != null" class="selected-coord">纬度 {{ selected.latitude }} · 经度 {{ selected.longitude }}</div>
         </div>
         <div class="map-picker-footer">

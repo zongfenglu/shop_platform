@@ -10,6 +10,10 @@ export function lookupMapLocation(longitude, latitude) {
   return get('/api/map/lookup', { longitude, latitude })
 }
 
+export function searchMapPlaces(keyword) {
+  return get('/api/map/search', { keyword })
+}
+
 export async function getMapConfig() {
   if (cachedConfig?.apiKey) return cachedConfig
   try {

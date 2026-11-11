@@ -223,6 +223,11 @@ public class StoreOperationSettingController {
         return Result.ok(amapGeoService.lookup(longitude, latitude));
     }
 
+    @GetMapping("/map/search")
+    public Result<java.util.List<java.util.Map<String, Object>>> searchMap(String keyword) {
+        return Result.ok(amapGeoService.search(keyword));
+    }
+
     @PutMapping("/upload")
     public Result<OperationSettingView> saveUploadSetting(@Valid @RequestBody UploadSettingRequest request) {
         requireOneOf(request.provider(), STORAGE_PROVIDERS, "不支持的存储渠道");

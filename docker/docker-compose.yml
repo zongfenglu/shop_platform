@@ -38,6 +38,7 @@ x-backend-common: &backend-common
     AMAP_JS_SECRET: ${AMAP_JS_SECRET:-e773074f110402b905245336232c9ffb}
     AMAP_MP_KEY: ${AMAP_MP_KEY:-ff5b8c4b9abb6024550a3e0f9c139bca}
     AMAP_WEB_KEY: ${AMAP_WEB_KEY:-b3917c268be461e583d2b3eedf959a5c}
+    AMAP_WEB_SECRET: ${AMAP_WEB_SECRET:-}
     JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx512m}
 
 services:

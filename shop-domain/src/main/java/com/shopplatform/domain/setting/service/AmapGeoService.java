@@ -7,41 +7,38 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * 用高德 Web 服务 Key 做逆地理和周边 POI。
- * JS API 的 Geocoder 在部分环境下会静默失败，选点后只剩经纬度；服务端调用更稳。
+ * 用高德 Web 服务 Key 做搜索、逆地理和周边 POI。
+ * Web 端 JS Key 只能出底图，restapi 会返回 INVALID_USER_KEY；Web 服务 Key 若开了数字签名必须带 sig。
  */
 @Service
 public class AmapGeoService {
 
     private static final Logger log = LoggerFactory.getLogger(AmapGeoService.class);
 
-    private final MapKeyResolver mapKeyResolver;
     private final ObjectMapper objectMapper;
     private final RestClient rest;
     private final String platformWebKey;
-    private final String platformJsKey;
-    private final String platformJsSecret;
+    private final String platformWebSecret;
 
-    public AmapGeoService(MapKeyResolver mapKeyResolver,
-                          ObjectMapper objectMapper,
+    public AmapGeoService(ObjectMapper objectMapper,
                           @Value("${shop.map.amap-web-key:}") String platformWebKey,
-                          @Value("${shop.map.amap-js-key:}") String platformJsKey,
-                          @Value("${shop.map.amap-js-secret:}") String platformJsSecret) {
-        this.mapKeyResolver = mapKeyResolver;
+                          @Value("${shop.map.amap-web-secret:}") String platformWebSecret) {
         this.objectMapper = objectMapper;
         this.platformWebKey = trim(platformWebKey);
-        this.platformJsKey = trim(platformJsKey);
-        this.platformJsSecret = trim(platformJsSecret);
+        this.platformWebSecret = trim(platformWebSecret);
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory();
         factory.setReadTimeout(Duration.ofSeconds(6));
         this.rest = RestClient.builder()
@@ -51,7 +48,12 @@ public class AmapGeoService {
     }
 
     public Map<String, Object> lookup(double longitude, double latitude) {
-        JsonNode root = requestRegeo(longitude, latitude);
+        String location = longitude + "," + latitude;
+        JsonNode root = get("/v3/geocode/regeo", Map.of(
+                "location", location,
+                "extensions", "all",
+                "radius", "1000"
+        ));
         JsonNode regeo = root.path("regeocode");
         JsonNode ac = regeo.path("addressComponent");
         String province = text(ac.get("province"));
@@ -63,25 +65,15 @@ public class AmapGeoService {
         String street = text(streetNumber.get("street"));
         String number = text(streetNumber.get("number"));
         String formatted = text(regeo.get("formatted_address"));
-        List<Map<String, Object>> pois = new ArrayList<>();
-        JsonNode poiNode = regeo.path("pois");
-        if (poiNode.isArray()) {
-            for (JsonNode poi : poiNode) {
-                double[] loc = parseLocation(text(poi.get("location")));
-                Map<String, Object> row = new LinkedHashMap<>();
-                row.put("name", text(poi.get("name")));
-                row.put("address", joinAddress(province, city, district, text(poi.get("address"))));
-                row.put("distance", text(poi.get("distance")));
-                if (loc != null) {
-                    row.put("longitude", loc[0]);
-                    row.put("latitude", loc[1]);
-                } else {
-                    row.put("longitude", longitude);
-                    row.put("latitude", latitude);
-                }
-                pois.add(row);
-                if (pois.size() >= 12) break;
-            }
+        List<Map<String, Object>> pois = parsePois(regeo.path("pois"), longitude, latitude, province, city, district);
+        if (pois.isEmpty()) {
+            JsonNode around = get("/v3/place/around", Map.of(
+                    "location", location,
+                    "radius", "800",
+                    "offset", "12",
+                    "extensions", "all"
+            ));
+            pois = parsePois(around.path("pois"), longitude, latitude, province, city, district);
         }
         String name = pois.isEmpty() ? firstNonBlank(street + number, township, district) : String.valueOf(pois.get(0).get("name"));
         String detail = firstNonBlank(joinStreet(street, number), township, formatted);
@@ -98,53 +90,113 @@ public class AmapGeoService {
         result.put("longitude", longitude);
         result.put("latitude", latitude);
         result.put("pois", pois);
+        if (!StringUtils.hasText(formatted) && pois.isEmpty()) {
+            result.put("error", authHint(root));
+        }
         return result;
     }
 
-    private JsonNode requestRegeo(double longitude, double latitude) {
-        String location = longitude + "," + latitude;
-        JsonNode web = get("/v3/geocode/regeo", Map.of(
-                "key", webKey(),
-                "location", location,
-                "extensions", "all",
-                "radius", "1000",
-                "output", "json"
+    public List<Map<String, Object>> search(String keyword) {
+        if (!StringUtils.hasText(keyword)) return List.of();
+        JsonNode root = get("/v3/place/text", Map.of(
+                "keywords", keyword.trim(),
+                "offset", "12",
+                "extensions", "all"
         ));
-        if (ok(web)) return web;
-        JsonNode js = get("/v3/geocode/regeo", Map.of(
-                "key", platformJsKey,
-                "jscode", platformJsSecret,
-                "location", location,
-                "extensions", "all",
-                "radius", "1000",
-                "output", "json"
-        ));
-        if (ok(js)) return js;
-        log.warn("amap regeo failed web={} js={}", info(web), info(js));
-        return objectMapper.createObjectNode();
+        List<Map<String, Object>> pois = parsePois(root.path("pois"), 0, 0, "", "", "");
+        if (pois.isEmpty() && !ok(root)) {
+            log.warn("amap place search failed keyword={} info={}", keyword, info(root));
+        }
+        return pois;
+    }
+
+    private List<Map<String, Object>> parsePois(JsonNode poiNode, double longitude, double latitude,
+                                                String province, String city, String district) {
+        List<Map<String, Object>> pois = new ArrayList<>();
+        if (!poiNode.isArray()) return pois;
+        for (JsonNode poi : poiNode) {
+            double[] loc = parseLocation(text(poi.get("location")));
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("name", text(poi.get("name")));
+            row.put("address", firstNonBlank(text(poi.get("address")), joinAddress(province, city, district, "")));
+            row.put("distance", text(poi.get("distance")));
+            if (loc != null) {
+                row.put("longitude", loc[0]);
+                row.put("latitude", loc[1]);
+            } else {
+                row.put("longitude", longitude);
+                row.put("latitude", latitude);
+            }
+            JsonNode pname = poi.get("pname");
+            JsonNode cityname = poi.get("cityname");
+            JsonNode adname = poi.get("adname");
+            if (pname != null) row.put("province", text(pname));
+            if (cityname != null) row.put("city", text(cityname));
+            if (adname != null) row.put("district", text(adname));
+            pois.add(row);
+            if (pois.size() >= 12) break;
+        }
+        return pois;
     }
 
     private JsonNode get(String path, Map<String, String> params) {
+        if (!StringUtils.hasText(platformWebKey)) {
+            log.warn("amap web key is empty");
+            return objectMapper.createObjectNode();
+        }
         try {
+            TreeMap<String, String> signed = new TreeMap<>();
+            params.forEach((key, value) -> {
+                if (StringUtils.hasText(value)) signed.put(key, value);
+            });
+            signed.put("key", platformWebKey);
+            signed.put("output", "json");
+            if (StringUtils.hasText(platformWebSecret)) {
+                signed.put("sig", sign(signed, platformWebSecret));
+            }
             StringBuilder query = new StringBuilder(path).append('?');
             boolean first = true;
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                if (!StringUtils.hasText(entry.getValue())) continue;
+            for (Map.Entry<String, String> entry : signed.entrySet()) {
                 if (!first) query.append('&');
                 first = false;
                 query.append(entry.getKey()).append('=')
-                        .append(java.net.URLEncoder.encode(entry.getValue(), java.nio.charset.StandardCharsets.UTF_8));
+                        .append(java.net.URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
             }
             String body = rest.get().uri(query.toString()).retrieve().body(String.class);
-            return objectMapper.readTree(body == null ? "{}" : body);
+            JsonNode root = objectMapper.readTree(body == null ? "{}" : body);
+            if (!ok(root)) {
+                log.warn("amap {} failed info={}", path, info(root));
+            }
+            return root;
         } catch (Exception e) {
             log.warn("amap request {} failed: {}", path, e.getMessage());
             return objectMapper.createObjectNode();
         }
     }
 
-    private String webKey() {
-        return StringUtils.hasText(platformWebKey) ? platformWebKey : mapKeyResolver.jsKey();
+    private static String sign(TreeMap<String, String> params, String secret) {
+        StringBuilder raw = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if ("sig".equals(entry.getKey()) || !StringUtils.hasText(entry.getValue())) continue;
+            if (!raw.isEmpty()) raw.append('&');
+            raw.append(entry.getKey()).append('=').append(entry.getValue());
+        }
+        raw.append(secret);
+        return DigestUtils.md5DigestAsHex(raw.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String authHint(JsonNode node) {
+        String code = info(node);
+        if ("INVALID_USER_SIGNATURE".equals(code)) {
+            return "WEB_KEY_SIGNATURE";
+        }
+        if ("INVALID_USER_KEY".equals(code) || "USERKEY_PLAT_NOMATCH".equals(code)) {
+            return "WEB_KEY_INVALID";
+        }
+        if ("INVALID_USER_IP".equals(code)) {
+            return "WEB_KEY_IP";
+        }
+        return StringUtils.hasText(code) ? code : "EMPTY";
     }
 
     private static boolean ok(JsonNode node) {

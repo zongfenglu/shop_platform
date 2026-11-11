@@ -1,10 +1,10 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { getMapConfig, loadAmapJs, lookupMapLocation, reverseGeocode, waitForElementSize } from '@/utils/amap'
+import { getMapConfig, loadAmapJs, lookupMapLocation, searchMapPlaces, waitForElementSize } from '@/utils/amap'
 
 const emit = defineEmits(['confirm', 'close'])
 const mapEl = ref(null)
-const searchEl = ref(null)
+const keyword = ref('')
 const locating = ref(false)
 const resolving = ref(false)
 const selected = ref(null)
@@ -12,6 +12,7 @@ const pois = ref([])
 let map = null
 let marker = null
 let lookupTimer = 0
+let searchTimer = 0
 let lookupSeq = 0
 
 function nativeNode(el, selector) {
@@ -50,16 +51,10 @@ async function resolveAddress(keepName = false) {
   const seq = ++lookupSeq
   resolving.value = true
   try {
-    let data = await reverseGeocode(selected.value.longitude, selected.value.latitude)
-    if (!data?.address) {
-      try {
-        data = await lookupMapLocation(selected.value.longitude, selected.value.latitude)
-      } catch (e) {
-        data = data || null
-      }
-    }
+    const data = await lookupMapLocation(selected.value.longitude, selected.value.latitude)
     if (seq !== lookupSeq) return
-    pois.value = Array.isArray(data?.pois) ? data.pois : []
+    const nearby = Array.isArray(data?.pois) ? data.pois : []
+    if (nearby.length) pois.value = nearby
     selected.value = {
       ...selected.value,
       name: keepName && selected.value.name ? selected.value.name : (data?.name || selected.value.name),
@@ -76,11 +71,35 @@ async function resolveAddress(keepName = false) {
   }
 }
 
+function onSearchInput(event) {
+  keyword.value = event?.detail?.value ?? event?.target?.value ?? keyword.value
+  window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => searchPlaces(keyword.value), 280)
+}
+
+async function searchPlaces(text) {
+  const query = String(text || keyword.value || '').trim()
+  if (!query) return
+  resolving.value = true
+  try {
+    const list = await searchMapPlaces(query)
+    pois.value = Array.isArray(list) ? list : []
+    if (!pois.value.length) uni.showToast({ title: '没有搜到地点', icon: 'none' })
+  } catch (e) {
+    // request.js 已提示
+  } finally {
+    resolving.value = false
+  }
+}
+
 function choosePoi(poi) {
   setPoint(poi.latitude, poi.longitude, {
     name: poi.name,
     address: poi.address,
     detail: poi.name,
+    province: poi.province,
+    city: poi.city,
+    region: poi.district,
   })
 }
 
@@ -119,7 +138,6 @@ onMounted(async () => {
     const AMap = await loadAmapJs(cfg.apiKey, cfg.securityJsCode)
     await nextTick()
     const container = nativeNode(mapEl.value)
-    const searchInput = nativeNode(searchEl.value, 'input')
     await waitForElementSize(container)
     map = new AMap.Map(container, {
       zoom: 12,
@@ -127,19 +145,6 @@ onMounted(async () => {
       viewMode: '2D',
       resizeEnable: true,
       layers: [new AMap.TileLayer()],
-    })
-    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation', 'AMap.Geocoder', 'AMap.PlaceSearch'], () => {
-      if (!searchInput) return
-      const auto = new AMap.AutoComplete({ input: searchInput, city: '全国' })
-      auto.on('select', (event) => {
-        const poi = event?.poi
-        if (!poi?.location) return
-        setPoint(poi.location.lat, poi.location.lng, {
-          name: poi.name,
-          address: [poi.district, poi.address, poi.name].filter(Boolean).join(''),
-          detail: poi.address || poi.name,
-        })
-      })
     })
     map.on('click', (event) => setPoint(event.lnglat.getLat(), event.lnglat.getLng()))
     setTimeout(() => map && map.resize(), 200)
@@ -150,6 +155,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.clearTimeout(lookupTimer)
+  window.clearTimeout(searchTimer)
   if (map) map.destroy()
 })
 </script>
@@ -161,7 +167,14 @@ onBeforeUnmount(() => {
         <text class="amap-title">选择收货地址</text>
         <text class="amap-close" @click="emit('close')">关闭</text>
       </view>
-      <input ref="searchEl" class="amap-search" placeholder="搜索小区、写字楼或街道" confirm-type="search" />
+      <input
+        class="amap-search"
+        :value="keyword"
+        placeholder="搜索小区、写字楼或街道"
+        confirm-type="search"
+        @input="onSearchInput"
+        @confirm="searchPlaces(keyword)"
+      />
       <view ref="mapEl" class="amap-map" />
       <view class="amap-selected">
         <view class="amap-name">{{ selected?.name || (resolving ? '正在解析地址…' : '点击地图或搜索地点') }}</view>

@@ -40,4 +40,9 @@ public class ConsumerMapController {
         }
         return Result.ok(amapGeoService.lookup(longitude, latitude));
     }
+
+    @GetMapping("/search")
+    public Result<java.util.List<Map<String, Object>>> search(String keyword) {
+        return Result.ok(amapGeoService.search(keyword));
+    }
 }
