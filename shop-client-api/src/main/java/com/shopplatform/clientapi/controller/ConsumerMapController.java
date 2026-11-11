@@ -42,7 +42,7 @@ public class ConsumerMapController {
     }
 
     @GetMapping("/search")
-    public Result<java.util.List<Map<String, Object>>> search(String keyword) {
-        return Result.ok(amapGeoService.search(keyword));
+    public Result<java.util.List<Map<String, Object>>> search(String keyword, Double longitude, Double latitude) {
+        return Result.ok(amapGeoService.search(keyword, longitude, latitude));
     }
 }

@@ -224,8 +224,8 @@ public class StoreOperationSettingController {
     }
 
     @GetMapping("/map/search")
-    public Result<java.util.List<java.util.Map<String, Object>>> searchMap(String keyword) {
-        return Result.ok(amapGeoService.search(keyword));
+    public Result<java.util.List<java.util.Map<String, Object>>> searchMap(String keyword, Double longitude, Double latitude) {
+        return Result.ok(amapGeoService.search(keyword, longitude, latitude));
     }
 
     @PutMapping("/upload")

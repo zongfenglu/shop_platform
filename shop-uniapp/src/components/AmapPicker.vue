@@ -92,7 +92,7 @@ async function searchPlaces(text) {
     let list = await searchPlacesByKeyword(query)
     if (!list.length) {
       try {
-        list = await searchMapPlaces(query)
+        list = await searchMapPlaces(query, selected.value?.longitude, selected.value?.latitude)
       } catch (e) {
         list = []
       }

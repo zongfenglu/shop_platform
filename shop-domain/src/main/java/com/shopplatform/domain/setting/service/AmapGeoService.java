@@ -97,12 +97,19 @@ public class AmapGeoService {
     }
 
     public List<Map<String, Object>> search(String keyword) {
+        return search(keyword, null, null);
+    }
+
+    public List<Map<String, Object>> search(String keyword, Double longitude, Double latitude) {
         if (!StringUtils.hasText(keyword)) return List.of();
-        JsonNode root = get("/v3/place/text", Map.of(
-                "keywords", keyword.trim(),
-                "offset", "12",
-                "extensions", "all"
-        ));
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("keywords", keyword.trim());
+        params.put("offset", "12");
+        params.put("extensions", "all");
+        if (longitude != null && latitude != null) {
+            params.put("location", longitude + "," + latitude);
+        }
+        JsonNode root = get("/v3/place/text", params);
         List<Map<String, Object>> pois = parsePois(root.path("pois"), 0, 0, "", "", "");
         if (pois.isEmpty() && !ok(root)) {
             log.warn("amap place search failed keyword={} info={}", keyword, info(root));
