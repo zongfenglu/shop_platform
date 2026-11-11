@@ -1,6 +1,6 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { getMapConfig, loadAmapJs } from '@/utils/amap'
+import { getMapConfig, loadAmapJs, waitForElementSize } from '@/utils/amap'
 
 const emit = defineEmits(['confirm', 'close'])
 const mapEl = ref(null)
@@ -87,7 +87,8 @@ onMounted(async () => {
     await nextTick()
     const container = nativeNode(mapEl.value)
     const searchInput = nativeNode(searchEl.value, 'input')
-    map = new AMap.Map(container, { zoom: 12, center: [120.3119, 31.4912] })
+    await waitForElementSize(container)
+    map = new AMap.Map(container, { zoom: 12, center: [120.3119, 31.4912], viewMode: '2D', resizeEnable: true })
     AMap.plugin(['AMap.Geocoder', 'AMap.AutoComplete', 'AMap.Geolocation'], () => {
       geocoder = new AMap.Geocoder({ radius: 1000, extensions: 'base' })
       if (searchInput) {
@@ -141,7 +142,7 @@ onBeforeUnmount(() => {
 .amap-title { font-size: 30rpx; font-weight: 700; }
 .amap-close { color: #2a78d6; font-size: 26rpx; }
 .amap-search { margin: 0 24rpx 16rpx; height: 72rpx; padding: 0 20rpx; border: 2rpx solid #e6e4de; border-radius: 12rpx; font-size: 26rpx; }
-.amap-map { width: 100%; height: 52vh; background: #eef1ee; }
+.amap-map { width: 100%; height: 420px; background: #eef1ee; }
 .amap-ft { padding: 18rpx 24rpx calc(18rpx + env(safe-area-inset-bottom)); }
 .amap-addr { min-height: 40rpx; color: #52514e; font-size: 24rpx; line-height: 1.5; }
 .amap-actions { display: flex; gap: 16rpx; margin-top: 16rpx; }

@@ -376,7 +376,7 @@ function modalTitle() {
       <div v-else-if="section === 'map'" class="card card-pad form-panel">
         <div class="share-setting-intro"><div class="share-setting-icon">⌖</div><div><div class="card-title">地图 API 配置</div><div class="card-sub">用于商户后台门店/退货地址选点，以及 H5 收货地址选点。小程序端导航走微信原生地图。Key 类型请选「Web端(JS API)」。</div></div></div>
         <div class="form-item"><label class="form-label">地图服务商</label><select v-model="mapForm.provider" class="form-select"><option value="amap">高德地图</option><option value="baidu">百度地图</option></select></div>
-        <div class="form-item"><label class="form-label">Web API Key</label><input v-model.trim="mapForm.apiKey" class="form-input" type="password" autocomplete="new-password" placeholder="请输入高德 Web端 JS API Key" /><div class="form-hint">请填「Web端(JS API)」Key，不要填微信小程序 Key。在高德控制台把 store.2doo.cn、h5.2doo.cn 加入白名单。留空则使用平台默认 Web 端 Key 和安全密钥。</div></div>
+        <div class="form-item"><label class="form-label">Web API Key</label><input v-model.trim="mapForm.apiKey" class="form-input" type="password" autocomplete="new-password" placeholder="请输入高德 Web端 JS API Key" /><div class="form-hint">请填「Web端(JS API)」Key，不要填微信小程序 Key。新版控制台没有域名白名单，靠该 Key 配套的安全密钥校验。留空则使用平台默认 Web 端 Key。</div></div>
         <div class="actions"><button class="btn btn-primary" :disabled="submitting" @click="saveMap">保存地图配置</button></div>
       </div>
       <div v-else-if="section === 'share'" class="card card-pad form-panel share-settings">

@@ -10,6 +10,8 @@
       var t = localStorage.getItem('shop_theme')
       if (t && t !== 'white') document.documentElement.setAttribute('data-theme', t)
     } catch (e) {}
+    // 高德 JS API 必须在脚本加载前拿到安全密钥；新版控制台没有域名白名单。
+    window._AMapSecurityConfig = { securityJsCode: 'e773074f110402b905245336232c9ffb' }
   </script>
 </head>
 <body>

@@ -1,7 +1,7 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET } from '@/utils/amap'
+import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, waitForElementSize } from '@/utils/amap'
 
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
@@ -23,6 +23,7 @@ const selectedAddress = ref('')
 let map = null
 let marker = null
 let geocoder = null
+let resizeObserver = null
 
 function toCoordinate(value, min, max) {
   if (value == null || value === '') return null
@@ -88,12 +89,16 @@ onMounted(async () => {
   try {
     const AMap = await loadAmapJs(props.apiKey || PLATFORM_AMAP_JS_KEY, props.securityJsCode || PLATFORM_AMAP_JS_SECRET)
     await nextTick()
+    await waitForElementSize(mapEl.value)
     const hasPoint = selectedLatitude.value != null && selectedLongitude.value != null
     map = new AMap.Map(mapEl.value, {
-      zoom: hasPoint ? 16 : 5,
-      center: hasPoint ? [selectedLongitude.value, selectedLatitude.value] : [104.1954, 35.8617],
+      zoom: hasPoint ? 16 : 11,
+      center: hasPoint ? [selectedLongitude.value, selectedLatitude.value] : [120.3119, 31.4912],
+      viewMode: '2D',
+      resizeEnable: true,
     })
     map.on('click', (event) => setMapPoint(event.lnglat.getLat(), event.lnglat.getLng()))
+    map.on('complete', () => { if (map) map.resize() })
     AMap.plugin(['AMap.Geocoder', 'AMap.AutoComplete', 'AMap.Geolocation'], () => {
       geocoder = new AMap.Geocoder({ radius: 1000, extensions: 'base' })
       if (hasPoint) setMapPoint(selectedLatitude.value, selectedLongitude.value, 16)
@@ -107,13 +112,19 @@ onMounted(async () => {
         })
       }
     })
-    setTimeout(() => map && map.resize(), 200)
+    if (typeof ResizeObserver !== 'undefined' && mapEl.value) {
+      resizeObserver = new ResizeObserver(() => { if (map) map.resize() })
+      resizeObserver.observe(mapEl.value)
+    }
+    setTimeout(() => map && map.resize(), 50)
+    setTimeout(() => map && map.resize(), 300)
   } catch (error) {
     message.error(error?.message || '高德地图加载失败')
   }
 })
 
 onBeforeUnmount(() => {
+  if (resizeObserver) resizeObserver.disconnect()
   if (map) map.destroy()
 })
 </script>
@@ -151,14 +162,15 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .map-picker-mask { position: fixed; inset: 0; z-index: 2100; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(20, 24, 28, .55); }
-.map-picker-dialog { width: min(820px, 96vw); overflow: hidden; border-radius: 8px; background: #fff; box-shadow: 0 18px 60px rgba(0, 0, 0, .22); }
+.map-picker-dialog { width: min(820px, 96vw); border-radius: 8px; background: #fff; box-shadow: 0 18px 60px rgba(0, 0, 0, .22); }
 .map-picker-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
 .map-picker-title { color: var(--text); font-size: 18px; font-weight: 650; }
 .map-picker-sub { margin-top: 4px; color: var(--text-muted); font-size: 12px; }
 .map-picker-close { width: 34px; height: 34px; border: 0; background: transparent; color: var(--text-muted); font-size: 25px; cursor: pointer; }
 .map-search { padding: 12px 20px 0; }
 .map-search-input { box-sizing: border-box; width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; }
-.location-map { width: 100%; height: min(52vh, 460px); min-height: 320px; margin-top: 12px; background: #eef1ee; }
+.location-map { width: 100%; height: 420px; margin-top: 12px; background: #eef1ee; }
+.location-map :deep(.amap-container) { width: 100% !important; height: 100% !important; }
 .map-picker-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
 .coordinate-text { min-width: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
 .map-picker-actions { display: flex; flex-shrink: 0; gap: 8px; }
