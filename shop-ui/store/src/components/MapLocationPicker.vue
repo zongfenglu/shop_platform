@@ -2,13 +2,13 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { lookupMapLocation } from '@/api/operationSettings'
-import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, waitForElementSize } from '@/utils/amap'
+import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, reverseGeocode, waitForElementSize } from '@/utils/amap'
 
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
   longitude: { type: [Number, String], default: null },
   title: { type: String, default: '选择地图位置' },
-  description: { type: String, default: '搜索地点或点击地图，确认后会带回详细地址' },
+  description: { type: String, default: '搜索或点击地图选点，会解析出地点名称、完整地址和附近地点' },
   provider: { type: String, default: 'amap' },
   apiKey: { type: String, default: '' },
   securityJsCode: { type: String, default: '' },
@@ -47,16 +47,16 @@ function toCoordinate(value, min, max) {
 }
 
 function setMapPoint(latitude, longitude, extra = {}, zoom) {
+  const keepName = Boolean(extra.name)
   selected.value = {
-    ...selected.value,
     latitude: Number(Number(latitude).toFixed(6)),
     longitude: Number(Number(longitude).toFixed(6)),
-    name: extra.name || selected.value.name || '',
-    address: extra.address || selected.value.address || '',
-    detail: extra.detail || selected.value.detail || '',
-    province: extra.province || selected.value.province || '',
-    city: extra.city || selected.value.city || '',
-    district: extra.district || selected.value.district || '',
+    name: extra.name || '',
+    address: extra.address || '',
+    detail: extra.detail || extra.name || '',
+    province: extra.province || '',
+    city: extra.city || '',
+    district: extra.district || '',
   }
   const position = [selected.value.longitude, selected.value.latitude]
   if (!marker) {
@@ -70,42 +70,50 @@ function setMapPoint(latitude, longitude, extra = {}, zoom) {
     marker.setPosition(position)
   }
   map.setZoomAndCenter(zoom || Math.max(map.getZoom(), 16), position)
-  scheduleLookup()
+  scheduleLookup(keepName)
 }
 
-function scheduleLookup() {
+function scheduleLookup(keepName = false) {
   window.clearTimeout(lookupTimer)
-  lookupTimer = window.setTimeout(resolveAddress, 220)
+  lookupTimer = window.setTimeout(() => resolveAddress(keepName), 220)
 }
 
-async function resolveAddress() {
+async function resolveAddress(keepName = false) {
   const lat = selected.value.latitude
   const lng = selected.value.longitude
   if (lat == null || lng == null) return
   const seq = ++lookupSeq
   resolving.value = true
   try {
-    const data = await lookupMapLocation(lng, lat)
+    let data = await reverseGeocode(lng, lat)
+    if (!data?.address) {
+      try {
+        data = await lookupMapLocation(lng, lat)
+      } catch (e) {
+        data = data || null
+      }
+    }
     if (seq !== lookupSeq) return
-    applyLookup(data || {})
+    applyLookup(data || {}, keepName)
+    if (!selected.value.address) message.warning('未能解析详细地址，可搜索地点或确认后手工补全')
   } catch (e) {
-    if (seq === lookupSeq) message.warning('地址解析失败，可先确认坐标再手工补全地址')
+    if (seq === lookupSeq) message.warning('地址解析失败，可搜索地点或确认后手工补全')
   } finally {
     if (seq === lookupSeq) resolving.value = false
   }
 }
 
-function applyLookup(data) {
+function applyLookup(data, keepName = false) {
   const nearby = Array.isArray(data.pois) ? data.pois : []
   pois.value = nearby
   selected.value = {
     ...selected.value,
-    name: data.name || selected.value.name || '',
+    name: keepName && selected.value.name ? selected.value.name : (data.name || selected.value.name || ''),
     address: data.address || selected.value.address || '',
-    detail: data.detail || selected.value.detail || '',
-    province: data.province || '',
-    city: data.city || '',
-    district: data.district || data.region || '',
+    detail: keepName && selected.value.detail ? selected.value.detail : (data.detail || selected.value.detail || ''),
+    province: data.province || selected.value.province || '',
+    city: data.city || selected.value.city || '',
+    district: data.district || data.region || selected.value.district || '',
   }
 }
 
@@ -155,7 +163,7 @@ onMounted(async () => {
     })
     map.on('click', (event) => setMapPoint(event.lnglat.getLat(), event.lnglat.getLng(), {}))
     map.on('complete', () => { if (map) map.resize() })
-    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation'], () => {
+    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation', 'AMap.Geocoder', 'AMap.PlaceSearch'], () => {
       if (!searchEl.value) return
       const auto = new AMap.AutoComplete({ input: searchEl.value, city: '全国' })
       auto.on('select', (event) => {
@@ -220,8 +228,9 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div class="selected-card">
-          <div class="selected-name">{{ selected.name || (selected.latitude == null ? '尚未选点' : '已选位置') }}</div>
-          <div class="selected-addr">{{ selected.address || (selected.latitude == null ? '搜索或点击地图选择地点' : '地址解析中…') }}</div>
+          <div class="selected-name">{{ selected.name || (selected.latitude == null ? '尚未选点' : (resolving ? '正在解析地址…' : '已选位置')) }}</div>
+          <div class="selected-addr">{{ selected.address || (selected.latitude == null ? '搜索或点击地图，选点后会显示完整地址' : (resolving ? '正在获取附近地点和详细地址…' : '未解析到地址，可搜索地点后再确认')) }}</div>
+          <div v-if="selected.latitude != null" class="selected-coord">纬度 {{ selected.latitude }} · 经度 {{ selected.longitude }}</div>
         </div>
         <div class="map-picker-footer">
           <div class="map-picker-actions">
@@ -261,6 +270,7 @@ onBeforeUnmount(() => {
 .selected-card { padding: 12px 20px; border-top: 1px solid var(--border); background: #fff8f6; }
 .selected-name { color: var(--text); font-size: 15px; font-weight: 650; }
 .selected-addr { margin-top: 4px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.selected-coord { margin-top: 4px; color: #9aa0a6; font-size: 12px; }
 .map-picker-footer { display: flex; justify-content: flex-end; padding: 12px 20px 16px; }
 .map-picker-actions { display: flex; gap: 8px; }
 @media (max-width: 760px) {

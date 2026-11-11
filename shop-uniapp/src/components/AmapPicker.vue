@@ -1,6 +1,6 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { getMapConfig, loadAmapJs, lookupMapLocation, waitForElementSize } from '@/utils/amap'
+import { getMapConfig, loadAmapJs, lookupMapLocation, reverseGeocode, waitForElementSize } from '@/utils/amap'
 
 const emit = defineEmits(['confirm', 'close'])
 const mapEl = ref(null)
@@ -22,15 +22,16 @@ function nativeNode(el, selector) {
 }
 
 function setPoint(lat, lng, extra = {}) {
+  const keepName = Boolean(extra.name)
   selected.value = {
     latitude: Number(Number(lat).toFixed(6)),
     longitude: Number(Number(lng).toFixed(6)),
-    name: extra.name || selected.value?.name || '',
-    address: extra.address || selected.value?.address || '',
-    detail: extra.detail || selected.value?.detail || '',
-    province: extra.province || selected.value?.province || '',
-    city: extra.city || selected.value?.city || '',
-    region: extra.region || extra.district || selected.value?.region || '',
+    name: extra.name || '',
+    address: extra.address || '',
+    detail: extra.detail || extra.name || '',
+    province: extra.province || '',
+    city: extra.city || '',
+    region: extra.region || extra.district || '',
   }
   const position = [selected.value.longitude, selected.value.latitude]
   if (!marker) {
@@ -41,22 +42,29 @@ function setPoint(lat, lng, extra = {}) {
   }
   map.setZoomAndCenter(Math.max(map.getZoom(), 16), position)
   window.clearTimeout(lookupTimer)
-  lookupTimer = window.setTimeout(resolveAddress, 220)
+  lookupTimer = window.setTimeout(() => resolveAddress(keepName), 220)
 }
 
-async function resolveAddress() {
+async function resolveAddress(keepName = false) {
   if (!selected.value) return
   const seq = ++lookupSeq
   resolving.value = true
   try {
-    const data = await lookupMapLocation(selected.value.longitude, selected.value.latitude)
+    let data = await reverseGeocode(selected.value.longitude, selected.value.latitude)
+    if (!data?.address) {
+      try {
+        data = await lookupMapLocation(selected.value.longitude, selected.value.latitude)
+      } catch (e) {
+        data = data || null
+      }
+    }
     if (seq !== lookupSeq) return
     pois.value = Array.isArray(data?.pois) ? data.pois : []
     selected.value = {
       ...selected.value,
-      name: data?.name || selected.value.name,
+      name: keepName && selected.value.name ? selected.value.name : (data?.name || selected.value.name),
       address: data?.address || selected.value.address,
-      detail: data?.detail || selected.value.detail,
+      detail: keepName && selected.value.detail ? selected.value.detail : (data?.detail || selected.value.detail),
       province: data?.province || selected.value.province,
       city: data?.city || selected.value.city,
       region: data?.district || data?.region || selected.value.region,
@@ -120,7 +128,7 @@ onMounted(async () => {
       resizeEnable: true,
       layers: [new AMap.TileLayer()],
     })
-    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation'], () => {
+    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation', 'AMap.Geocoder', 'AMap.PlaceSearch'], () => {
       if (!searchInput) return
       const auto = new AMap.AutoComplete({ input: searchInput, city: '全国' })
       auto.on('select', (event) => {
@@ -157,7 +165,7 @@ onBeforeUnmount(() => {
       <view ref="mapEl" class="amap-map" />
       <view class="amap-selected">
         <view class="amap-name">{{ selected?.name || (resolving ? '正在解析地址…' : '点击地图或搜索地点') }}</view>
-        <view class="amap-addr">{{ selected?.address || '' }}</view>
+        <view class="amap-addr">{{ selected?.address || (selected && resolving ? '正在获取详细地址…' : '') }}</view>
       </view>
       <scroll-view scroll-y class="amap-pois">
         <view
