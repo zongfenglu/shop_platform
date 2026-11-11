@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import draggable from 'vuedraggable'
 import BlockPreview from './BlockPreview.vue'
@@ -30,6 +31,7 @@ import ImageField from '@/components/ImageField.vue'
 import MaterialPicker from '@/components/MaterialPicker.vue'
 import PageLinkField from '@/components/PageLinkField.vue'
 
+const router = useRouter()
 const loading = ref(false)
 const activeTab = ref('pages')
 const pageModalOpen = ref(false)
@@ -177,7 +179,7 @@ const BLOCK_META = {
   group: { title: '拼团商品组', hint: '自动拉取进行中的拼团，或手动勾选。' },
   bargain: { title: '砍价商品组', hint: '自动拉取进行中的砍价，或手动勾选。' },
   store: { title: '线下门店', hint: '展示自提门店名称、地址与电话。' },
-  followMp: { title: '关注公众号', hint: '引导用户关注，可换 Logo 与文案。' },
+  followMp: { title: '关注公众号', hint: '上传公众号二维码后，顾客点击「关注」即可长按识别。AppID 在「客户端 → 公众号」里填，用于授权登录，不能替代二维码。' },
   richText: { title: '富文本', hint: '自定义 HTML。' },
   blank: { title: '辅助空白', hint: '调整组件间距。' },
   divider: { title: '辅助线', hint: '分隔内容区块。' },
@@ -272,7 +274,7 @@ function defaultItemData(type) {
     case 'divider':
       return { ...base, color: '#e1e0d9', style: 'solid' }
     case 'followMp':
-      return { ...base, title: '关注公众号', desc: '获取更多优惠与新品', logo: '', bgColor: '#ffffff' }
+      return { ...base, title: '关注公众号', desc: '获取更多优惠与新品', logo: '', qrCode: '', bgColor: '#ffffff' }
     case 'store':
       return { ...base, source: 'auto', storeIds: [], bgColor: '#ffffff' }
     case 'coupon':
@@ -1256,6 +1258,21 @@ function removePage(page) {
             <div class="form-item">
               <label class="form-label">Logo</label>
               <ImageField v-model="selectedItem.logo" size="sm" />
+            </div>
+            <div class="form-item">
+              <label class="form-label">关注二维码</label>
+              <ImageField v-model="selectedItem.qrCode" size="md" />
+              <div class="form-hint" style="margin-top: 6px">
+                微信公众平台 → 设置与开发 → 公众号设置 → 账号详情，下载二维码后上传。顾客点击「关注」后长按识别。
+              </div>
+            </div>
+            <div class="form-item">
+              <div class="form-hint">
+                「客户端 → 公众号」里的 AppID / Secret 用于网页授权登录和模板消息，不能让顾客直接关注。
+              </div>
+              <button class="btn btn-sm" type="button" style="margin-top: 8px" @click="router.push({ path: '/client', query: { tab: 'wechat' } })">
+                去配置公众号 AppID
+              </button>
             </div>
           </template>
 

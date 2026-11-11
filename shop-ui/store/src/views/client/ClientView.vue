@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import {
   applyStoreDomain,
@@ -14,6 +15,7 @@ import { getStoreMp, getStoreMpAuthUrl, getStoreMpExtJson, saveStoreMpSelf, unbi
  * 客户端。对照 docs/prototype/store/client.html。
  * H5 域名、小程序/公众号自填与托管授权接真实接口；APP 云打包仍未对接。
  */
+const route = useRoute()
 const activeTab = ref('h5')
 const loading = ref(false)
 const submitting = ref(false)
@@ -71,6 +73,8 @@ const h5Hint = computed(() => {
 })
 
 onMounted(() => {
+  const tab = String(route.query.tab || '')
+  if (['h5', 'mini', 'wechat', 'app'].includes(tab)) activeTab.value = tab
   load()
   loadMp()
 })
@@ -344,6 +348,10 @@ function onUnbind(row) {
     <template v-else-if="activeTab === 'wechat'">
       <a-spin :spinning="mpLoading">
         <p class="card-title">公众号</p>
+        <div class="form-hint" style="margin-bottom: 16px">
+          这里填写 AppID / Secret，用于公众号网页授权登录和模板消息。
+          装修里的「关注公众号」组件要让顾客扫码关注，请在该组件右侧上传公众号二维码：微信公众平台 → 设置与开发 → 公众号设置 → 账号详情。
+        </div>
         <div class="form-item">
           <label class="form-label">接入方式</label>
           <div style="display: flex; gap: 10px">

@@ -375,6 +375,8 @@ function imageGroupList() {
       <div>
         <div class="pv-list-title">{{ item.title || '关注公众号' }}</div>
         <div class="pv-muted">{{ item.desc || '获取更多优惠与新品' }}</div>
+        <div v-if="item.qrCode" class="pv-muted">已上传关注二维码</div>
+        <div v-else class="pv-muted">请上传公众号二维码</div>
       </div>
       <span class="pv-cta red">关注</span>
     </div>

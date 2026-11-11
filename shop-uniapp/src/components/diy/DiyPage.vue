@@ -14,6 +14,7 @@ const props = defineProps({
 
 const COUPON_TONES = ['#e34948', '#8b6cc9', '#eb6834']
 const searchKeyword = ref('')
+const followPopup = ref(null)
 
 const wrapStyle = computed(() => {
   const meta = props.page || {}
@@ -206,6 +207,32 @@ async function onReceive(id) {
 
 function submitSearch() {
   openGoodsSearch(searchKeyword.value)
+}
+
+function followQrUrl(item) {
+  return item?.qrCode ? mediaUrl(item.qrCode) : ''
+}
+
+function openFollowMp(item) {
+  const qr = followQrUrl(item)
+  if (!qr) {
+    uni.showToast({ title: '商家暂未上传公众号二维码', icon: 'none' })
+    return
+  }
+  followPopup.value = {
+    title: item.title || '关注公众号',
+    qr,
+  }
+}
+
+function previewFollowQr() {
+  const qr = followPopup.value?.qr
+  if (!qr) return
+  uni.previewImage({ urls: [qr], current: qr })
+}
+
+function closeFollowMp() {
+  followPopup.value = null
 }
 </script>
 
@@ -443,13 +470,13 @@ function submitSearch() {
       </view>
 
       <view v-else-if="item.type === 'followMp'" class="follow">
-        <image v-if="item.logo" class="store-logo" :src="item.logo" mode="aspectFill" />
+        <image v-if="item.logo" class="store-logo" :src="mediaUrl(item.logo)" mode="aspectFill" />
         <view v-else class="store-logo ph" />
         <view class="list-body">
           <text class="list-title">{{ item.title || '关注公众号' }}</text>
           <text class="muted">{{ item.desc || '获取更多优惠与新品' }}</text>
         </view>
-        <text class="cta" @click="uni.showToast({ title: '请在微信内关注店铺公众号', icon: 'none' })">关注</text>
+        <text class="cta" @click.stop="openFollowMp(item)">关注</text>
       </view>
 
       <view v-else-if="item.type === 'richText'" class="rich">
@@ -473,6 +500,21 @@ function submitSearch() {
         <image v-if="item.icon" class="cs-icon" :src="item.icon" mode="aspectFill" />
         <AppIcon v-else name="headphones-blue" :size="26" />
       </button>
+    </view>
+
+    <view v-if="followPopup" class="follow-mask" @click="closeFollowMp">
+      <view class="follow-sheet" @click.stop>
+        <text class="follow-sheet-title">{{ followPopup.title }}</text>
+        <image
+          class="follow-qr"
+          :src="followPopup.qr"
+          mode="aspectFit"
+          show-menu-by-longpress
+          @click="previewFollowQr"
+        />
+        <text class="follow-sheet-tip">长按识别二维码，关注公众号</text>
+        <text class="follow-sheet-close" @click="closeFollowMp">关闭</text>
+      </view>
     </view>
   </view>
 </template>
@@ -584,6 +626,46 @@ function submitSearch() {
 .store-logo { width: 88rpx; height: 88rpx; border-radius: 50%; background: #dceeff; flex-shrink: 0; }
 .store-name { color: #d4380d; font-weight: 650; font-size: 28rpx; display: block; margin-bottom: 8rpx; }
 .follow { display: flex; align-items: center; gap: 20rpx; padding: 20rpx 0; }
+.follow-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(17, 17, 17, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+}
+.follow-sheet {
+  width: 560rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+.follow-sheet-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1e2429;
+}
+.follow-qr {
+  width: 360rpx;
+  height: 360rpx;
+  background: #f4f5f3;
+  border-radius: 12rpx;
+}
+.follow-sheet-tip {
+  font-size: 24rpx;
+  color: #767d82;
+}
+.follow-sheet-close {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #2a78d6;
+}
 .rich { padding: 16rpx 0; font-size: 26rpx; }
 .divider { padding: 16rpx 0; }
 .divider-line { border-top-width: 1rpx; }
@@ -606,26 +688,8 @@ function submitSearch() {
 .cs-icon { width: 100%; height: 100%; }
 .empty-hint { text-align: center; color: #898781; font-size: 24rpx; padding: 24rpx 0; }
 
-/* 微信真机按 750rpx 设计宽度折算后，20~22rpx 仅约 10~11px，辅助文字会明显偏小。 */
+/* 小程序字号由 vite mp-font-boost 统一抬一档，这里只保留真机视频宽度。 */
 /* #ifdef MP-WEIXIN */
 .video-wrap, .video { width: 702rpx; max-width: 702rpx; }
-.diy { font-size: 30rpx; }
-.search, .search-input { font-size: 28rpx; }
-.article-title { font-size: 30rpx; }
-.muted { font-size: 24rpx; }
-.news-tag { font-size: 22rpx; }
-.news-label, .news-title { font-size: 28rpx; }
-.nav-text { font-size: 24rpx; }
-.goods-name { font-size: 28rpx; }
-.price { font-size: 34rpx; }
-.line { font-size: 24rpx; }
-.ticket-sub { font-size: 22rpx; }
-.ticket-act { font-size: 24rpx; }
-.seckill-badge, .seckill-live, .more { font-size: 24rpx; }
-.timer { font-size: 22rpx; }
-.list-title, .store-name { font-size: 30rpx; }
-.cta { font-size: 24rpx; }
-.rich { font-size: 28rpx; }
-.empty-hint { font-size: 26rpx; }
 /* #endif */
 </style>
