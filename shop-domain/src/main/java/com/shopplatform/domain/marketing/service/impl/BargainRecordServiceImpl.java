@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shopplatform.domain.marketing.entity.BargainRecord;
 import com.shopplatform.domain.marketing.mapper.BargainRecordMapper;
 import com.shopplatform.domain.marketing.service.BargainRecordService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,7 +19,7 @@ public class BargainRecordServiceImpl extends ServiceImpl<BargainRecordMapper, B
     public BargainRecord startBargain(Long activeId, Long userId, BigDecimal originPrice, int validHours) {
         BargainRecord existing = findByActiveAndUser(activeId, userId);
         if (existing != null) {
-            return existing;
+            return reuseOrReturn(existing, originPrice, validHours);
         }
         BargainRecord r = new BargainRecord();
         r.setActiveId(activeId);
@@ -27,8 +28,29 @@ public class BargainRecordServiceImpl extends ServiceImpl<BargainRecordMapper, B
         r.setHelpCount(0);
         r.setStatus("ongoing");
         r.setExpireTime(LocalDateTime.now().plusHours(validHours));
-        save(r);
-        return r;
+        try {
+            save(r);
+            return r;
+        } catch (DataIntegrityViolationException e) {
+            BargainRecord raced = findByActiveAndUser(activeId, userId);
+            if (raced != null) {
+                return reuseOrReturn(raced, originPrice, validHours);
+            }
+            throw e;
+        }
+    }
+
+    /** uk_active_user 每人每活动只有一行：过期后复用重开，进行中/已成交直接返回。 */
+    private BargainRecord reuseOrReturn(BargainRecord existing, BigDecimal originPrice, int validHours) {
+        if ("expired".equals(existing.getStatus())) {
+            existing.setCurrentPrice(originPrice);
+            existing.setHelpCount(0);
+            existing.setStatus("ongoing");
+            existing.setExpireTime(LocalDateTime.now().plusHours(validHours));
+            existing.setOrderId(null);
+            updateById(existing);
+        }
+        return existing;
     }
 
     @Override
@@ -50,8 +72,7 @@ public class BargainRecordServiceImpl extends ServiceImpl<BargainRecordMapper, B
     public BargainRecord findByActiveAndUser(Long activeId, Long userId) {
         return getOne(new LambdaQueryWrapper<BargainRecord>()
                 .eq(BargainRecord::getActiveId, activeId)
-                .eq(BargainRecord::getUserId, userId)
-                .in(BargainRecord::getStatus, List.of("ongoing", "done", "ordered")), false);
+                .eq(BargainRecord::getUserId, userId), false);
     }
 
     @Override
