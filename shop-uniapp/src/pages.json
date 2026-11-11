@@ -34,7 +34,9 @@
     {
       "path": "pages/cart/index",
       "style": {
-        "navigationBarTitleText": "购物车"
+        "navigationBarTitleText": "购物车",
+        "backgroundColor": "#F4F5F3",
+        "navigationBarBackgroundColor": "#FFFFFF"
       }
     },
     {

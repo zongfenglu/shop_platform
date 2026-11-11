@@ -211,8 +211,10 @@ function fmtPrice(v) {
 
 <style scoped>
 .page {
-  padding: 20rpx;
+  padding: 20rpx 20rpx 0;
   min-height: 100vh;
+  background: #f4f5f3;
+  color: #1e2429;
 }
 .hd {
   display: flex;
@@ -237,9 +239,8 @@ function fmtPrice(v) {
   display: flex;
   align-items: center;
   gap: 18rpx;
-  background: #fcfcfb;
-  border: 2rpx solid rgba(11, 11, 11, 0.08);
-  border-radius: 18rpx;
+  background: #fff;
+  border-radius: 16rpx;
   padding: 20rpx;
 }
 .row.invalid {
@@ -349,24 +350,36 @@ function fmtPrice(v) {
   padding: 28rpx 0 8rpx;
 }
 .bottom-spacer {
-  /* 结算栏 + tabBar 两层的高度，否则最后一行商品会被压住 */
-  height: 240rpx;
+  /* 只给结算栏留空。小程序窗口已经不含 tabBar；H5 再补 tabBar 高度。 */
+  height: 140rpx;
 }
+/* #ifdef H5 */
+.bottom-spacer {
+  height: calc(140rpx + 50px);
+}
+/* #endif */
 .bar {
   position: fixed;
   left: 0;
   right: 0;
-  /* 购物车是 tabBar 页面，bottom:0 会被 uni 的 tabBar 盖住（结算/全选点不到），
-     所以要抬到 tabBar 之上。H5 端 tabBar 高度为 50px，各端一致由 uni 保证；
-     再叠加安全区，避免全面屏机型上被下巴挡住。 */
-  bottom: calc(50px + env(safe-area-inset-bottom));
+  /* 小程序/App 的页面窗口已经在原生 tabBar 之上，bottom:0 就是结算栏该在的位置。
+     之前按 H5 再抬 50px + 安全区，小程序上会整栏悬空。 */
+  bottom: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 20rpx;
   background: #fff;
-  border-top: 2rpx solid rgba(11, 11, 11, 0.08);
+  border-top: 1rpx solid #eceeeb;
+  box-shadow: 0 -8rpx 24rpx rgba(30, 36, 41, 0.04);
   padding: 16rpx 24rpx;
 }
+/* #ifdef H5 */
+.bar {
+  /* H5 tabBar 是页面里的 div，不抬起来会被挡住、点不到。 */
+  bottom: var(--window-bottom, 50px);
+}
+/* #endif */
 .bar-check {
   display: flex;
   align-items: center;
