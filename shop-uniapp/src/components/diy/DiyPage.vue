@@ -209,30 +209,48 @@ function submitSearch() {
   openGoodsSearch(searchKeyword.value)
 }
 
+function runtimeApi() {
+  if (typeof uni !== 'undefined' && uni) return uni
+  if (typeof wx !== 'undefined' && wx) return wx
+  return null
+}
+
+function pickImageUrl(value) {
+  if (!value) return ''
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'object') return String(value.url || value.src || value.path || '').trim()
+  return ''
+}
+
 function followQrUrl(item) {
-  return item?.qrCode ? mediaUrl(item.qrCode) : ''
+  const raw = pickImageUrl(item?.qrCode) || pickImageUrl(item?.qrcode)
+  return raw ? mediaUrl(raw) : ''
 }
 
 function openFollowMp(item) {
-  const qr = followQrUrl(item)
-  if (!qr) {
-    uni.showToast({ title: '商家暂未上传公众号二维码', icon: 'none' })
-    return
-  }
   followPopup.value = {
-    title: item.title || '关注公众号',
-    qr,
+    title: item?.title || '关注公众号',
+    qr: followQrUrl(item),
   }
 }
 
 function previewFollowQr() {
   const qr = followPopup.value?.qr
-  if (!qr) return
-  uni.previewImage({ urls: [qr], current: qr })
+  const api = runtimeApi()
+  if (!qr || !api || typeof api.previewImage !== 'function') return
+  api.previewImage({ urls: [qr], current: qr })
 }
 
 function closeFollowMp() {
   followPopup.value = null
+}
+
+function goSeckillList() {
+  goLink('/pages/seckill/index')
+}
+
+function goStoreLocator() {
+  goLink('/pages/store/locator')
 }
 </script>
 
@@ -394,7 +412,7 @@ function closeFollowMp() {
       </view>
 
       <view v-else-if="item.type === 'seckill'" class="seckill">
-        <view class="seckill-hd" @click="uni.navigateTo({ url: '/pages/seckill/index' })">
+        <view class="seckill-hd" @click="goSeckillList">
           <text class="seckill-badge">⚡ 限时秒杀</text>
           <text class="seckill-live">正在疯抢</text>
           <view class="timer"><text>00</text><text>:</text><text>58</text><text>:</text><text>04</text></view>
@@ -457,7 +475,7 @@ function closeFollowMp() {
       </view>
 
       <view v-else-if="item.type === 'store'">
-        <view v-for="s in (item.storeList || [])" :key="s.id" class="store-row" @click="uni.navigateTo({ url: '/pages/store/locator' })">
+        <view v-for="s in (item.storeList || [])" :key="s.id" class="store-row" @click="goStoreLocator">
           <image v-if="s.logo" class="store-logo" :src="s.logo" mode="aspectFill" />
           <view v-else class="store-logo ph" />
           <view>
@@ -469,14 +487,19 @@ function closeFollowMp() {
         <view v-if="!(item.storeList || []).length" class="empty-hint">暂无门店</view>
       </view>
 
-      <view v-else-if="item.type === 'followMp'" class="follow">
-        <image v-if="item.logo" class="store-logo" :src="mediaUrl(item.logo)" mode="aspectFill" />
-        <view v-else class="store-logo ph" />
-        <view class="list-body">
-          <text class="list-title">{{ item.title || '关注公众号' }}</text>
-          <text class="muted">{{ item.desc || '获取更多优惠与新品' }}</text>
+      <view v-else-if="item.type === 'followMp'" class="follow-wrap">
+        <view class="follow">
+          <image v-if="item.logo" class="store-logo" :src="mediaUrl(item.logo)" mode="aspectFill" />
+          <view v-else class="store-logo ph" />
+          <view class="list-body">
+            <text class="list-title">{{ item.title || '关注公众号' }}</text>
+            <text class="muted">{{ item.desc || '获取更多优惠与新品' }}</text>
+          </view>
+          <view class="cta" @click.stop="openFollowMp(item)">关注</view>
         </view>
-        <text class="cta" @click.stop="openFollowMp(item)">关注</text>
+        <!-- #ifdef MP-WEIXIN -->
+        <official-account class="oa-card" />
+        <!-- #endif -->
       </view>
 
       <view v-else-if="item.type === 'richText'" class="rich">
@@ -506,14 +529,16 @@ function closeFollowMp() {
       <view class="follow-sheet" @click.stop>
         <text class="follow-sheet-title">{{ followPopup.title }}</text>
         <image
+          v-if="followPopup.qr"
           class="follow-qr"
           :src="followPopup.qr"
           mode="aspectFit"
           show-menu-by-longpress
           @click="previewFollowQr"
         />
-        <text class="follow-sheet-tip">长按识别二维码，关注公众号</text>
-        <text class="follow-sheet-close" @click="closeFollowMp">关闭</text>
+        <text v-else class="follow-sheet-tip">请在装修组件中上传公众号二维码后重新发布</text>
+        <text v-if="followPopup.qr" class="follow-sheet-tip">长按识别二维码，关注公众号</text>
+        <view class="follow-sheet-close" @click="closeFollowMp">关闭</view>
       </view>
     </view>
   </view>
@@ -619,13 +644,23 @@ function closeFollowMp() {
 .list-body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .list-title { font-size: 28rpx; font-weight: 650; }
 .list-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
-.cta { background: #e34948; color: #fff; border-radius: 999rpx; padding: 8rpx 20rpx; font-size: 22rpx; }
+.cta {
+  background: #e34948;
+  color: #fff;
+  border-radius: 999rpx;
+  padding: 8rpx 20rpx;
+  font-size: 22rpx;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
 .cta.tan { background: #c4a574; }
 
 .store-row { display: flex; gap: 20rpx; padding: 20rpx 0; border-bottom: 1rpx solid #f0efec; }
 .store-logo { width: 88rpx; height: 88rpx; border-radius: 50%; background: #dceeff; flex-shrink: 0; }
 .store-name { color: #d4380d; font-weight: 650; font-size: 28rpx; display: block; margin-bottom: 8rpx; }
-.follow { display: flex; align-items: center; gap: 20rpx; padding: 20rpx 0; }
+.follow-wrap { padding: 20rpx 0; }
+.follow { display: flex; align-items: center; gap: 20rpx; }
+.oa-card { margin-top: 16rpx; }
 .follow-mask {
   position: fixed;
   inset: 0;
