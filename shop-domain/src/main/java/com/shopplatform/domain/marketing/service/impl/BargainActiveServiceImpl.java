@@ -7,6 +7,7 @@ import com.shopplatform.domain.marketing.mapper.BargainActiveMapper;
 import com.shopplatform.domain.marketing.service.BargainActiveService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -14,8 +15,11 @@ public class BargainActiveServiceImpl extends ServiceImpl<BargainActiveMapper, B
 
     @Override
     public List<BargainActive> listOnSale() {
+        LocalDateTime now = LocalDateTime.now();
         return list(new LambdaQueryWrapper<BargainActive>()
                 .eq(BargainActive::getStatus, "on")
+                .le(BargainActive::getStartTime, now)
+                .ge(BargainActive::getEndTime, now)
                 .orderByDesc(BargainActive::getId));
     }
 

@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface BargainActiveService extends TenantSafeService<BargainActive> {
 
-    /** 列出当前租户上架的砍价活动 */
+    /** 列出当前租户上架且在有效期内的砍价活动 */
     List<BargainActive> listOnSale();
 
     /** 列出当前租户全部砍价活动（含下架，商户后台用） */
