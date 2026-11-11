@@ -111,6 +111,22 @@ function goDetail(id) {
   uni.navigateTo({ url: `/pages/goods/detail?id=${id}` })
 }
 
+function goSeckill() {
+  uni.navigateTo({ url: '/pages/seckill/index' })
+}
+
+function goGroup() {
+  uni.navigateTo({ url: '/pages/group/index' })
+}
+
+function goBargain() {
+  uni.navigateTo({ url: '/pages/bargain/index' })
+}
+
+function goAllGoods() {
+  uni.navigateTo({ url: '/pages/goods/list' })
+}
+
 function fmtPrice(v) {
   return Number(v ?? 0).toFixed(2)
 }
@@ -146,7 +162,7 @@ function fmtPrice(v) {
       <view class="hero-sub">好物上新 · 正品保障</view>
     </view>
 
-    <view class="seckill-entry" @click="uni.navigateTo({ url: '/pages/seckill/index' })">
+    <view class="seckill-entry" @click="goSeckill">
       <view class="seckill-entry-left">
         <text class="seckill-entry-title">⚡ 秒杀专场</text>
         <text class="seckill-entry-sub">限时抢购 · 限量秒杀</text>
@@ -155,11 +171,11 @@ function fmtPrice(v) {
     </view>
 
     <view class="promo-row">
-      <view class="promo-item group-entry" @click="uni.navigateTo({ url: '/pages/group/index' })">
+      <view class="promo-item group-entry" @click="goGroup">
         <text class="promo-title">👥 拼团</text>
         <text class="promo-sub">人满成团</text>
       </view>
-      <view class="promo-item bargain-entry" @click="uni.navigateTo({ url: '/pages/bargain/index' })">
+      <view class="promo-item bargain-entry" @click="goBargain">
         <text class="promo-title">🔪 砍价</text>
         <text class="promo-sub">好友助力</text>
       </view>
@@ -175,7 +191,7 @@ function fmtPrice(v) {
 
     <view class="section-hd">
       <text class="section-title">为你推荐</text>
-      <text class="section-more" @click="goDetail && uni.navigateTo({ url: '/pages/goods/list' })">全部 ›</text>
+      <text class="section-more" @click="goAllGoods">全部 ›</text>
     </view>
 
     <view v-if="!goodsList.length" class="empty">暂无在售商品</view>

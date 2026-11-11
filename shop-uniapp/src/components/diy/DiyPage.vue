@@ -6,6 +6,7 @@ import { getToken } from '@/utils/request'
 import { mediaUrl } from '@/utils/request'
 import { openGoodsSearch } from '@/utils/goodsSearch'
 import { encodeRouteId } from '@/utils/routeId'
+import { mpMakePhoneCall, mpNavigateTo, mpPreviewImage, mpSetBackgroundColor, mpSwitchTab, mpToast } from '@/utils/mp'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -32,12 +33,8 @@ const wrapStyle = computed(() => {
 watch(
   () => wrapStyle.value.backgroundColor,
   (color) => {
-    if (!color || typeof uni.setBackgroundColor !== 'function') return
-    uni.setBackgroundColor({
-      backgroundColor: color,
-      backgroundColorTop: color,
-      backgroundColorBottom: color,
-    })
+    if (!color) return
+    mpSetBackgroundColor(color)
   },
   { immediate: true },
 )
@@ -94,10 +91,10 @@ function customerServiceStyle(item) {
 function contactCustomerService(item) {
   if (item?.serviceType === 'phone') {
     if (!item.phone) {
-      uni.showToast({ title: '商家暂未配置客服电话', icon: 'none' })
+      mpToast('商家暂未配置客服电话')
       return
     }
-    uni.makePhoneCall({ phoneNumber: String(item.phone) })
+    mpMakePhoneCall(String(item.phone))
     return
   }
   if (item?.chatUrl) {
@@ -108,7 +105,7 @@ function contactCustomerService(item) {
   }
   // 小程序端由 open-type="contact" 唤起客服；其他端没有客服链接时给出明确提示。
   // #ifndef MP-WEIXIN
-  uni.showToast({ title: '商家暂未配置在线客服', icon: 'none' })
+  mpToast('商家暂未配置在线客服')
   // #endif
 }
 
@@ -134,15 +131,15 @@ function goLink(link) {
   if (s.startsWith('/pages/')) {
     const path = s.split('?')[0]
     if (path === '/pages/index/index' || path === '/pages/cart/index' || path === '/pages/my/index' || path === '/pages/goods/list') {
-      uni.switchTab({ url: path })
+      mpSwitchTab(path)
     } else {
-      uni.navigateTo({ url: s })
+      mpNavigateTo(s)
     }
     return
   }
   const diyId = s.match(/^(?:diy:|page:)?(\d+)$/)
   if (diyId) {
-    uni.navigateTo({ url: `/pages/diy/custom?id=${diyId[1]}` })
+    mpNavigateTo(`/pages/diy/custom?id=${diyId[1]}`)
     return
   }
   const shortcuts = {
@@ -156,7 +153,7 @@ function goLink(link) {
     store: '/pages/store/locator',
   }
   if (shortcuts[s]) {
-    uni.navigateTo({ url: shortcuts[s] })
+    mpNavigateTo(shortcuts[s])
     return
   }
   if (/^https?:\/\//.test(s)) {
@@ -167,7 +164,7 @@ function goLink(link) {
 }
 
 function goGoods(id) {
-  uni.navigateTo({ url: `/pages/goods/detail?id=${id}` })
+  mpNavigateTo(`/pages/goods/detail?id=${id}`)
 }
 
 function getActivityRow(itemIndex, rowIndex = 0) {
@@ -179,27 +176,27 @@ function goSeckill(itemIndex, goodsIndex) {
   const active = props.items[itemIndex]?.active
   const goods = active?.goods?.[goodsIndex]
   if (!active?.id || !goods?.skuId || !goods?.goodsId) return
-  uni.navigateTo({ url: `/pages/order/checkout?skuId=${encodeRouteId(goods.skuId)}&goodsId=${encodeRouteId(goods.goodsId)}&quantity=1&activityType=seckill&activityId=${encodeRouteId(active.id)}` })
+  mpNavigateTo(`/pages/order/checkout?skuId=${encodeRouteId(goods.skuId)}&goodsId=${encodeRouteId(goods.goodsId)}&quantity=1&activityType=seckill&activityId=${encodeRouteId(active.id)}`)
 }
 
 function goGroup(itemIndex, rowIndex) {
   const id = getActivityRow(itemIndex, rowIndex)?.id
-  if (id) uni.navigateTo({ url: `/pages/group/detail?id=${encodeRouteId(id)}` })
+  if (id) mpNavigateTo(`/pages/group/detail?id=${encodeRouteId(id)}`)
 }
 
 function goBargain(itemIndex, rowIndex) {
   const id = getActivityRow(itemIndex, rowIndex)?.id
-  if (id) uni.navigateTo({ url: `/pages/bargain/detail?id=${encodeRouteId(id)}` })
+  if (id) mpNavigateTo(`/pages/bargain/detail?id=${encodeRouteId(id)}`)
 }
 
 async function onReceive(id) {
   if (!getToken()) {
-    uni.navigateTo({ url: '/pages/my/login' })
+    mpNavigateTo('/pages/my/login')
     return
   }
   try {
     await receiveCoupon(id)
-    uni.showToast({ title: '领取成功', icon: 'success' })
+    mpToast('领取成功', 'success')
   } catch (e) {
     // request.js 已提示
   }
@@ -207,12 +204,6 @@ async function onReceive(id) {
 
 function submitSearch() {
   openGoodsSearch(searchKeyword.value)
-}
-
-function runtimeApi() {
-  if (typeof uni !== 'undefined' && uni) return uni
-  if (typeof wx !== 'undefined' && wx) return wx
-  return null
 }
 
 function pickImageUrl(value) {
@@ -236,9 +227,7 @@ function openFollowMp(item) {
 
 function previewFollowQr() {
   const qr = followPopup.value?.qr
-  const api = runtimeApi()
-  if (!qr || !api || typeof api.previewImage !== 'function') return
-  api.previewImage({ urls: [qr], current: qr })
+  if (qr) mpPreviewImage([qr], qr)
 }
 
 function closeFollowMp() {
