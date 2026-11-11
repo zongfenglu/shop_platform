@@ -42,7 +42,6 @@ public class AmapGeoService {
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory();
         factory.setReadTimeout(Duration.ofSeconds(6));
         this.rest = RestClient.builder()
-                .baseUrl("https://restapi.amap.com")
                 .requestFactory(factory)
                 .build();
     }
@@ -161,18 +160,19 @@ public class AmapGeoService {
             if (StringUtils.hasText(platformWebSecret)) {
                 signed.put("sig", sign(signed, platformWebSecret));
             }
-            StringBuilder query = new StringBuilder(path).append('?');
+            StringBuilder query = new StringBuilder("https://restapi.amap.com").append(path).append('?');
             boolean first = true;
             for (Map.Entry<String, String> entry : signed.entrySet()) {
                 if (!first) query.append('&');
                 first = false;
                 query.append(entry.getKey()).append('=')
-                        .append(java.net.URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+                        .append(java.net.URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8)
+                                .replace("+", "%20"));
             }
-            String body = rest.get().uri(query.toString()).retrieve().body(String.class);
+            String body = rest.get().uri(java.net.URI.create(query.toString())).retrieve().body(String.class);
             JsonNode root = objectMapper.readTree(body == null ? "{}" : body);
             if (!ok(root)) {
-                log.warn("amap {} failed info={}", path, info(root));
+                log.warn("amap {} failed info={} signed={}", path, info(root), StringUtils.hasText(platformWebSecret));
             }
             return root;
         } catch (Exception e) {
