@@ -105,7 +105,7 @@ function addr(store) {
   const region = fmtRegion(store.region)
   const detail = String(store.detail || '').trim()
   if (region && detail && detail.includes(region)) return detail
-  return [region, detail].filter(Boolean).join('') || '地址待完善'
+  return [region, detail].filter(Boolean).join(' ') || '地址待完善'
 }
 
 function hoursInfo(store) {
@@ -146,10 +146,21 @@ function onCall(store) {
 
 function locateMe(prompt = true) {
   locating.value = true
+  let settled = false
+  const finish = () => {
+    if (settled) return
+    settled = true
+    locating.value = false
+  }
+  const timer = setTimeout(() => {
+    if (!myLocation.value) locateFailed.value = true
+    finish()
+  }, 8000)
   uni.getLocation({
     type: 'gcj02',
     isHighAccuracy: true,
     success(res) {
+      clearTimeout(timer)
       myLocation.value = { latitude: res.latitude, longitude: res.longitude }
       locateFailed.value = false
       sortStores()
@@ -163,11 +174,13 @@ function locateMe(prompt = true) {
         .catch(() => {})
     },
     fail() {
+      clearTimeout(timer)
       locateFailed.value = true
       if (prompt) askLocationPermission()
     },
     complete() {
-      locating.value = false
+      clearTimeout(timer)
+      finish()
     },
   })
 }
@@ -262,7 +275,10 @@ function onNavigate(store) {
             <text class="store-name">{{ store.name }}</text>
             <text v-if="store.distance" class="distance">{{ store.distance }}</text>
           </view>
-          <view class="tag-row">
+          <view
+            v-if="store.nearest || store.hoursOpen != null || (selectMode && String(store.id) === String(selectedId))"
+            class="tag-row"
+          >
             <text v-if="store.nearest" class="tag nearest">最近</text>
             <text v-if="store.hoursOpen === true" class="tag open">营业中</text>
             <text v-else-if="store.hoursOpen === false" class="tag closed">已打烊</text>
@@ -339,9 +355,7 @@ function onNavigate(store) {
   font-size: 26rpx;
   font-weight: 600;
   color: #1e2429;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 .locate-sub {
   font-size: 20rpx;
