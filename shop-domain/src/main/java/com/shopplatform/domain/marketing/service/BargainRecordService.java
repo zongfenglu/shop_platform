@@ -18,6 +18,9 @@ public interface BargainRecordService extends TenantSafeService<BargainRecord> {
     /** 按活动+用户查记录（ongoing/done/ordered），不存在返回 null */
     BargainRecord findByActiveAndUser(Long activeId, Long userId);
 
+    /** 按下单后的订单 id 找回砍价记录，订单详情展示用 */
+    BargainRecord findByOrderId(Long orderId);
+
     /** 当前用户尚未下单、且未过期的砍价（ongoing / done） */
     List<BargainRecord> listInProgress(Long userId);
 

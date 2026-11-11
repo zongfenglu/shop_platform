@@ -25,6 +25,12 @@ public record OrderListItem(
         String groupStatus,
         Integer groupActualNum,
         Integer groupNum,
-        LocalDateTime groupExpireTime
+        LocalDateTime groupExpireTime,
+        String bargainRecordId,
+        String bargainActiveId,
+        String bargainStatus,
+        BigDecimal bargainCurrentPrice,
+        BigDecimal bargainFloorPrice,
+        Integer bargainHelpCount
 ) {
 }

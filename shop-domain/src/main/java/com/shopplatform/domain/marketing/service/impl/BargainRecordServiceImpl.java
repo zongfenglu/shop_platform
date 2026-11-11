@@ -55,6 +55,15 @@ public class BargainRecordServiceImpl extends ServiceImpl<BargainRecordMapper, B
     }
 
     @Override
+    public BargainRecord findByOrderId(Long orderId) {
+        if (orderId == null) {
+            return null;
+        }
+        return getOne(new LambdaQueryWrapper<BargainRecord>()
+                .eq(BargainRecord::getOrderId, orderId), false);
+    }
+
+    @Override
     public List<BargainRecord> listInProgress(Long userId) {
         return list(new LambdaQueryWrapper<BargainRecord>()
                 .eq(BargainRecord::getUserId, userId)

@@ -9,7 +9,11 @@ import com.shopplatform.common.result.ErrorCode;
 import com.shopplatform.common.result.Result;
 import com.shopplatform.clientapi.dto.OrderListItem;
 import com.shopplatform.domain.offlinestore.service.OfflineStoreService;
+import com.shopplatform.domain.marketing.entity.BargainActive;
+import com.shopplatform.domain.marketing.entity.BargainRecord;
 import com.shopplatform.domain.marketing.entity.GroupRecord;
+import com.shopplatform.domain.marketing.service.BargainActiveService;
+import com.shopplatform.domain.marketing.service.BargainRecordService;
 import com.shopplatform.domain.marketing.service.GroupActiveService;
 import com.shopplatform.domain.marketing.service.GroupRecordService;
 import com.shopplatform.domain.aftersale.entity.AfterSale;
@@ -52,6 +56,8 @@ public class ConsumerOrderController {
     private final AfterSaleService afterSaleService;
     private final GroupActiveService groupActiveService;
     private final GroupRecordService groupRecordService;
+    private final BargainActiveService bargainActiveService;
+    private final BargainRecordService bargainRecordService;
 
     public ConsumerOrderController(OrderService orderService,
                                     OrderGoodsService orderGoodsService,
@@ -61,7 +67,9 @@ public class ConsumerOrderController {
                                     OfflineStoreService offlineStoreService,
                                     AfterSaleService afterSaleService,
                                     GroupActiveService groupActiveService,
-                                    GroupRecordService groupRecordService) {
+                                    GroupRecordService groupRecordService,
+                                    BargainActiveService bargainActiveService,
+                                    BargainRecordService bargainRecordService) {
         this.orderService = orderService;
         this.orderGoodsService = orderGoodsService;
         this.orderAddressService = orderAddressService;
@@ -71,6 +79,8 @@ public class ConsumerOrderController {
         this.afterSaleService = afterSaleService;
         this.groupActiveService = groupActiveService;
         this.groupRecordService = groupRecordService;
+        this.bargainActiveService = bargainActiveService;
+        this.bargainRecordService = bargainRecordService;
     }
 
     @GetMapping
@@ -106,6 +116,15 @@ public class ConsumerOrderController {
         Map<Long, Integer> groupNums = groupRecords.isEmpty() ? Map.of()
                 : groupActiveService.listByIds(groupRecords.values().stream().map(GroupRecord::getActiveId).distinct().toList())
                 .stream().collect(Collectors.toMap(a -> a.getId(), a -> a.getGroupNum()));
+        List<Long> bargainRecordIds = orderPage.getRecords().stream()
+                .filter(order -> "bargain".equals(order.getActivityType()))
+                .map(Order::getActivityId).filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, BargainRecord> bargainRecords = bargainRecordIds.isEmpty() ? Map.of()
+                : bargainRecordService.listByIds(bargainRecordIds).stream()
+                .collect(Collectors.toMap(BargainRecord::getId, r -> r));
+        Map<Long, BargainActive> bargainActives = bargainRecords.isEmpty() ? Map.of()
+                : bargainActiveService.listByIds(bargainRecords.values().stream().map(BargainRecord::getActiveId).distinct().toList())
+                .stream().collect(Collectors.toMap(BargainActive::getId, a -> a));
 
         List<OrderListItem> records = orderPage.getRecords().stream().map(order -> {
             List<OrderGoods> goods = goodsByOrder.getOrDefault(order.getId(), List.of());
@@ -118,6 +137,8 @@ public class ConsumerOrderController {
                     && goods.stream().anyMatch(g -> "none".equals(g.getRefundStatus()));
             AfterSale latestAfterSale = latestAfterSaleByOrder.get(order.getId());
             GroupRecord group = groupRecords.get(order.getGroupRecordId());
+            BargainRecord bargain = bargainRecords.get(order.getActivityId());
+            BargainActive bargainActive = bargain == null ? null : bargainActives.get(bargain.getActiveId());
             return new OrderListItem(
                     order.getId().toString(), order.getOrderNo(), order.getPayPrice(), order.getPayStatus(),
                     order.getDeliveryStatus(), order.getOrderStatus(), order.getCreateTime(),
@@ -131,7 +152,13 @@ public class ConsumerOrderController {
                     group == null ? null : group.getStatus(),
                     group == null ? null : group.getActualNum(),
                     group == null ? null : groupNums.get(group.getActiveId()),
-                    group == null ? null : group.getExpireTime());
+                    group == null ? null : group.getExpireTime(),
+                    bargain == null ? null : bargain.getId().toString(),
+                    bargain == null ? null : String.valueOf(bargain.getActiveId()),
+                    bargain == null ? null : bargain.getStatus(),
+                    bargain == null ? null : bargain.getCurrentPrice(),
+                    bargainActive == null ? null : bargainActive.getFloorPrice(),
+                    bargain == null ? null : bargain.getHelpCount());
         }).toList();
         Page<OrderListItem> resultPage = new Page<>(orderPage.getCurrent(), orderPage.getSize(), orderPage.getTotal());
         resultPage.setRecords(records);
@@ -160,6 +187,7 @@ public class ConsumerOrderController {
             var active = groupActiveService.getByIdWithTenant(group.getActiveId());
             Map<String, Object> groupView = new LinkedHashMap<>();
             groupView.put("recordId", String.valueOf(group.getId()));
+            groupView.put("activeId", String.valueOf(group.getActiveId()));
             groupView.put("status", group.getStatus());
             groupView.put("actualNum", group.getActualNum());
             groupView.put("groupNum", active.getGroupNum());
@@ -167,6 +195,20 @@ public class ConsumerOrderController {
             groupView.put("successTime", group.getSuccessTime());
             groupView.put("isMock", Integer.valueOf(1).equals(active.getIsMock()));
             result.put("group", groupView);
+        }
+        BargainRecord bargain = resolveBargainRecord(order);
+        if (bargain != null) {
+            var active = bargainActiveService.getByIdWithTenant(bargain.getActiveId());
+            Map<String, Object> bargainView = new LinkedHashMap<>();
+            bargainView.put("recordId", String.valueOf(bargain.getId()));
+            bargainView.put("activeId", String.valueOf(bargain.getActiveId()));
+            bargainView.put("status", bargain.getStatus());
+            bargainView.put("currentPrice", bargain.getCurrentPrice());
+            bargainView.put("floorPrice", active.getFloorPrice());
+            bargainView.put("helpCount", bargain.getHelpCount());
+            bargainView.put("helpLimit", active.getHelpLimit());
+            bargainView.put("expireTime", bargain.getExpireTime());
+            result.put("bargain", bargainView);
         }
         if ("pickup".equals(order.getDeliveryType()) && order.getPickupStoreId() != null) {
             result.put("pickupStore", offlineStoreService.getByIdWithTenant(order.getPickupStoreId()));
@@ -210,6 +252,20 @@ public class ConsumerOrderController {
                     .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "包裹不属于该订单"));
         }
         return Result.ok(logisticsQueryService.track(target.getExpressCompany(), target.getExpressNo()));
+    }
+
+    /** 砍价下单时 activityId = bargain_record.id；找不到则按订单 id 回查。 */
+    private BargainRecord resolveBargainRecord(Order order) {
+        if (!"bargain".equals(order.getActivityType())) {
+            return null;
+        }
+        if (order.getActivityId() != null) {
+            BargainRecord byId = bargainRecordService.getById(order.getActivityId());
+            if (byId != null) {
+                return byId;
+            }
+        }
+        return bargainRecordService.findByOrderId(order.getId());
     }
 
     private Order requireOwnOrder(Long orderId) {

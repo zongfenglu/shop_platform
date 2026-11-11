@@ -4,20 +4,23 @@
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "首页",
-        "enablePullDownRefresh": true
+        "enablePullDownRefresh": true,
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/goods/list",
       "style": {
         "navigationBarTitleText": "全部商品",
-        "enablePullDownRefresh": true
+        "enablePullDownRefresh": true,
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/goods/detail",
       "style": {
-        "navigationBarTitleText": "商品详情"
+        "navigationBarTitleText": "商品详情",
+        "enableShareAppMessage": true
       }
     },
     {
@@ -35,7 +38,8 @@
     {
       "path": "pages/order/list",
       "style": {
-        "navigationBarTitleText": "我的订单"
+        "navigationBarTitleText": "我的订单",
+        "enableShareAppMessage": true
       }
     },
     {
@@ -59,7 +63,8 @@
     {
       "path": "pages/order/detail",
       "style": {
-        "navigationBarTitleText": "订单详情"
+        "navigationBarTitleText": "订单详情",
+        "enableShareAppMessage": true
       }
     },
     {
@@ -144,31 +149,36 @@
     {
       "path": "pages/seckill/index",
       "style": {
-        "navigationBarTitleText": "秒杀专场"
+        "navigationBarTitleText": "秒杀专场",
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/group/index",
       "style": {
-        "navigationBarTitleText": "拼团专场"
+        "navigationBarTitleText": "拼团专场",
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/group/detail",
       "style": {
-        "navigationBarTitleText": "拼团详情"
+        "navigationBarTitleText": "拼团详情",
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/bargain/index",
       "style": {
-        "navigationBarTitleText": "砍价专场"
+        "navigationBarTitleText": "砍价专场",
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/bargain/detail",
       "style": {
-        "navigationBarTitleText": "砍价详情"
+        "navigationBarTitleText": "砍价详情",
+        "enableShareAppMessage": true
       }
     },
     {
@@ -198,19 +208,22 @@
     {
       "path": "pages/my/share",
       "style": {
-        "navigationBarTitleText": "分享好物"
+        "navigationBarTitleText": "分享好物",
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/share/link",
       "style": {
-        "navigationBarTitleText": "分享链接"
+        "navigationBarTitleText": "分享链接",
+        "enableShareAppMessage": true
       }
     },
     {
       "path": "pages/share/image",
       "style": {
-        "navigationBarTitleText": "分享图片"
+        "navigationBarTitleText": "分享图片",
+        "enableShareAppMessage": true
       }
     },
     {

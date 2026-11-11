@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import AppIcon from '@/components/AppIcon.vue'
 import { cancelOrder, pageOrders } from '@/api'
 import { encodeRouteId } from '@/utils/routeId'
@@ -77,12 +77,42 @@ function canConfirm(row) {
 }
 
 function isGroup(row) {
-  return row.activityType === 'group' && row.groupRecordId
+  return row.activityType === 'group' && (row.groupRecordId || row.activityId)
+}
+
+function isBargain(row) {
+  return row.activityType === 'bargain' && (row.bargainRecordId || row.activityId)
 }
 
 function canInviteGroup(row) {
-  return isGroup(row) && row.orderStatus === 'normal' && row.groupStatus === 'pending'
+  return isGroup(row) && row.orderStatus === 'normal' && (row.groupStatus === 'pending' || !row.groupStatus)
 }
+
+function canInviteBargain(row) {
+  if (!isBargain(row) || row.orderStatus !== 'normal') return false
+  return row.bargainStatus === 'ongoing' || row.bargainStatus === 'done'
+}
+
+function groupSharePath(row) {
+  if (!row?.activityId && !row?.groupRecordId) return '/pages/group/index'
+  const id = encodeRouteId(row.activityId)
+  const recordId = encodeRouteId(row.groupRecordId)
+  return `/pages/group/detail?id=${id}${row.groupRecordId ? `&recordId=${recordId}` : ''}`
+}
+
+function bargainSharePath(row) {
+  const activeId = row.bargainActiveId || row.activityId
+  if (!activeId) return '/pages/bargain/index'
+  const recordQuery = row.bargainRecordId ? `&recordId=${encodeRouteId(row.bargainRecordId)}` : ''
+  return `/pages/bargain/detail?id=${encodeRouteId(activeId)}${recordQuery}`
+}
+
+const shareTarget = ref(null)
+
+onShareAppMessage(() => {
+  if (shareTarget.value) return shareTarget.value
+  return { title: '我的订单', path: '/pages/order/list' }
+})
 
 function groupStatusText(row) {
   if (!isGroup(row)) return ''
@@ -94,11 +124,32 @@ function groupStatusText(row) {
   return target > 0 ? `待成团 · ${actual}/${target} 人` : '待成团'
 }
 
+function bargainStatusText(row) {
+  if (row.bargainStatus === 'ordered') {
+    return `砍价成交 ¥${Number(row.bargainCurrentPrice ?? row.payPrice ?? 0).toFixed(2)}`
+  }
+  if (row.bargainStatus === 'done') return '已砍到底价'
+  if (row.bargainStatus === 'expired') return '砍价已过期'
+  const current = Number(row.bargainCurrentPrice ?? 0).toFixed(2)
+  const floor = row.bargainFloorPrice != null ? Number(row.bargainFloorPrice).toFixed(2) : null
+  return floor ? `砍价中 ¥${current} / 底价 ¥${floor}` : `砍价中 ¥${current}`
+}
+
+function prepareGroupShare(row) {
+  shareTarget.value = { title: '邀请你一起拼团', path: groupSharePath(row) }
+}
+
+function prepareBargainShare(row) {
+  shareTarget.value = { title: '帮我砍一刀，好友一起享优惠', path: bargainSharePath(row) }
+}
+
 function inviteGroup(row) {
   if (!canInviteGroup(row)) return
-  uni.navigateTo({
-    url: `/pages/group/detail?id=${encodeRouteId(row.activityId)}&recordId=${encodeRouteId(row.groupRecordId)}`,
-  })
+  uni.navigateTo({ url: groupSharePath(row) })
+}
+
+function inviteBargain(row) {
+  uni.navigateTo({ url: bargainSharePath(row) })
 }
 
 function goDetail(id) {
@@ -166,7 +217,26 @@ function onComment(row) {
             <text class="group-label">拼团</text>
             <text :class="['group-status', row.groupStatus === 'fail' ? 'group-fail' : '']">{{ groupStatusText(row) }}</text>
           </view>
+          <!-- #ifdef MP-WEIXIN -->
+          <button v-if="canInviteGroup(row)" class="btn btn-primary" size="mini" open-type="share" @click="prepareGroupShare(row)">邀请好友</button>
+          <!-- #endif -->
+          <!-- #ifndef MP-WEIXIN -->
           <button v-if="canInviteGroup(row)" class="btn btn-primary" size="mini" @click="inviteGroup(row)">邀请好友</button>
+          <!-- #endif -->
+        </view>
+        <view v-if="isBargain(row)" class="bargain-progress" @click.stop>
+          <view class="group-progress-main">
+            <text class="bargain-label">砍价</text>
+            <text class="bargain-status">{{ bargainStatusText(row) }}</text>
+          </view>
+          <!-- #ifdef MP-WEIXIN -->
+          <button v-if="canInviteBargain(row)" class="btn btn-bargain" size="mini" open-type="share" @click="prepareBargainShare(row)">请好友砍</button>
+          <button v-else class="btn" size="mini" @click="inviteBargain(row)">查看</button>
+          <!-- #endif -->
+          <!-- #ifndef MP-WEIXIN -->
+          <button v-if="canInviteBargain(row)" class="btn btn-bargain" size="mini" @click="inviteBargain(row)">请好友砍</button>
+          <button v-else class="btn" size="mini" @click="inviteBargain(row)">查看</button>
+          <!-- #endif -->
         </view>
         <view v-if="canCancel(row) || canAfterSale(row) || row.afterSaleId || canConfirm(row) || row.orderStatus === 'finished'" class="foot" @click.stop>
           <text class="pay-hint" v-if="canCancel(row)">应付 {{ fmtPrice(row.payPrice) }}</text>
@@ -301,6 +371,19 @@ function onComment(row) {
 .group-label { color: #d4380d; font-size: 22rpx; font-weight: 700; }
 .group-status { color: #b05a20; font-size: 22rpx; }
 .group-fail { color: #898781; }
+.bargain-progress {
+  margin: 0 28rpx 20rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 12rpx;
+  background: #f6f0ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.bargain-label { color: #531dab; font-size: 22rpx; font-weight: 700; }
+.bargain-status { color: #531dab; font-size: 22rpx; }
+.btn-bargain { background: #722ed1; color: #fff; border-color: #722ed1; }
 .foot {
   display: flex;
   align-items: center;

@@ -116,35 +116,59 @@ function canInviteGroup() {
   return !!(group?.recordId || order.groupRecordId)
 }
 
+function canInviteBargain() {
+  const bargain = data.value?.bargain
+  if (!bargain?.recordId || !bargain?.activeId) return false
+  return bargain.status === 'ongoing' || bargain.status === 'done'
+}
+
 function groupSharePath() {
   const order = data.value?.order
   const group = data.value?.group
-  const activeId = order?.activityId
+  const activeId = group?.activeId || order?.activityId
   const recordId = group?.recordId || order?.groupRecordId
   if (!activeId || !recordId) return '/pages/group/index'
   return `/pages/group/detail?id=${encodeRouteId(activeId)}&recordId=${encodeRouteId(recordId)}`
 }
 
-onShareAppMessage(() => ({
-  title: '邀请你一起拼团',
-  path: groupSharePath(),
-}))
+function bargainSharePath() {
+  const bargain = data.value?.bargain
+  if (!bargain?.activeId) return '/pages/bargain/index'
+  const recordQuery = bargain.recordId ? `&recordId=${encodeRouteId(bargain.recordId)}` : ''
+  return `/pages/bargain/detail?id=${encodeRouteId(bargain.activeId)}${recordQuery}`
+}
+
+onShareAppMessage(() => {
+  if (canInviteBargain()) {
+    return { title: '帮我砍一刀，好友一起享优惠', path: bargainSharePath() }
+  }
+  if (canInviteGroup()) {
+    return { title: '邀请你一起拼团', path: groupSharePath() }
+  }
+  return { title: '查看订单详情', path: `/pages/order/detail?id=${orderId.value}` }
+})
 
 function groupStatusText(group) {
-  if (!group) return ''
+  if (!group) return '拼团进行中'
   if (data.value?.order?.orderStatus === 'cancelled') return '拼团已取消'
   if (group.status === 'success') return group.isMock ? '系统模拟成团' : '已成团'
   if (group.status === 'fail') return '未成团，款项已原路退回'
   return '拼团进行中'
 }
 
+function bargainStatusText(bargain) {
+  if (!bargain) return ''
+  return { ongoing: '砍价中', done: '已砍到底价', ordered: '砍价成交', expired: '砍价已过期' }[bargain.status] || '砍价订单'
+}
+
 function inviteGroup() {
-  const order = data.value?.order
-  const group = data.value?.group
-  if (!canInviteGroup() || !order?.activityId || !group?.recordId) return
-  uni.navigateTo({
-    url: `/pages/group/detail?id=${encodeRouteId(order.activityId)}&recordId=${encodeRouteId(group.recordId)}`,
-  })
+  if (!canInviteGroup()) return
+  uni.navigateTo({ url: groupSharePath() })
+}
+
+function inviteBargain() {
+  if (!data.value?.bargain?.activeId) return
+  uni.navigateTo({ url: bargainSharePath() })
 }
 
 function canConfirm() {
@@ -163,7 +187,8 @@ function openMap(target, name, address) {
 }
 
 function hasBottomActions() {
-  return canInviteGroup() || canCancel() || canAfterSale() || canConfirm() || data.value?.order?.orderStatus === 'finished'
+  return canInviteGroup() || canInviteBargain() || data.value?.order?.activityType === 'bargain'
+    || canCancel() || canAfterSale() || canConfirm() || data.value?.order?.orderStatus === 'finished'
 }
 
 function goOrderList() {
@@ -305,10 +330,10 @@ function packageGoodsText(pkg) {
       <view class="hero-title">{{ statusText() }}</view>
     </view>
 
-    <view v-if="data?.order?.activityType === 'group' && (data.group || data.order.orderStatus === 'normal')" class="card group-card">
+    <view v-if="data?.order?.activityType === 'group'" class="card group-card">
       <view class="group-head">
         <view>
-          <view class="group-title">{{ data.group ? groupStatusText(data.group) : '拼团进行中' }}</view>
+          <view class="group-title">{{ groupStatusText(data.group) }}</view>
           <view v-if="data.group" class="group-count">已参团 {{ data.group.actualNum }}/{{ data.group.groupNum }} 人</view>
         </view>
         <!-- #ifdef MP-WEIXIN -->
@@ -319,7 +344,29 @@ function packageGoodsText(pkg) {
         <!-- #endif -->
       </view>
       <view v-if="canInviteGroup() && data.group?.expireTime" class="group-hint">截止 {{ fmtDateTime(data.group.expireTime) }}，邀请好友一起拼更容易成团</view>
-      <view v-else-if="data.group.status === 'success'" class="group-hint">拼团成功后，商家将按正常订单为你发货</view>
+      <view v-else-if="data.group?.status === 'success'" class="group-hint">拼团成功后，商家将按正常订单为你发货</view>
+      <view v-else-if="!data.group" class="group-hint">支付后即可邀请好友参团</view>
+    </view>
+
+    <view v-if="data?.order?.activityType === 'bargain'" class="card bargain-card">
+      <view class="group-head">
+        <view>
+          <view class="bargain-title">{{ bargainStatusText(data.bargain) }}</view>
+          <view v-if="data.bargain" class="group-count">
+            当前价 ¥{{ Number(data.bargain.currentPrice ?? 0).toFixed(2) }}
+            <text v-if="data.bargain.floorPrice != null"> · 底价 ¥{{ Number(data.bargain.floorPrice).toFixed(2) }}</text>
+            <text v-if="data.bargain.helpCount != null"> · 已助力 {{ data.bargain.helpCount }} 次</text>
+          </view>
+        </view>
+        <!-- #ifdef MP-WEIXIN -->
+        <button v-if="canInviteBargain()" class="bargain-invite" open-type="share">请好友砍一刀</button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <button v-if="canInviteBargain()" class="bargain-invite" @click="inviteBargain">请好友砍一刀</button>
+        <!-- #endif -->
+      </view>
+      <view v-if="canInviteBargain()" class="group-hint">分享给好友助力，砍到更低价再下单</view>
+      <view v-else-if="data.bargain?.status === 'ordered'" class="group-hint">已按砍后价下单，支付后商家将为你发货</view>
     </view>
 
     <view v-if="data" class="card">
@@ -403,10 +450,13 @@ function packageGoodsText(pkg) {
     <view v-if="data && hasBottomActions()" class="bottom-bar">
       <!-- #ifdef MP-WEIXIN -->
       <button v-if="canInviteGroup()" class="m-btn m-btn-warm" open-type="share">邀请好友参团</button>
+      <button v-if="canInviteBargain()" class="m-btn m-btn-warm" open-type="share">请好友砍一刀</button>
       <!-- #endif -->
       <!-- #ifndef MP-WEIXIN -->
       <button v-if="canInviteGroup()" class="m-btn m-btn-warm" @click="inviteGroup">邀请好友参团</button>
+      <button v-if="canInviteBargain()" class="m-btn m-btn-warm" @click="inviteBargain">请好友砍一刀</button>
       <!-- #endif -->
+      <button v-if="data.order.activityType === 'bargain' && data.bargain?.activeId && !canInviteBargain()" class="m-btn" @click="inviteBargain">查看砍价</button>
       <button v-if="canCancel()" class="m-btn" @click="onCancel">取消订单</button>
       <button
         v-if="canCancel()"
@@ -446,6 +496,10 @@ function packageGoodsText(pkg) {
 .group-hint { margin-top: 14rpx; color: #898781; font-size: 22rpx; line-height: 1.5; }
 .group-invite { flex-shrink: 0; margin: 0; height: 60rpx; line-height: 60rpx; padding: 0 22rpx; border: 0; border-radius: 30rpx; background: #d4380d; color: #fff; font-size: 22rpx; }
 .group-invite::after { border: 0; }
+.bargain-card { background: #f6f0ff; }
+.bargain-title { color: #531dab; font-size: 28rpx; font-weight: 700; }
+.bargain-invite { flex-shrink: 0; margin: 0; height: 60rpx; line-height: 60rpx; padding: 0 22rpx; border: 0; border-radius: 30rpx; background: #722ed1; color: #fff; font-size: 22rpx; }
+.bargain-invite::after { border: 0; }
 .card {
   background: #fff;
   margin: 20rpx 28rpx;
