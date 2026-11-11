@@ -96,6 +96,7 @@ onMounted(async () => {
       center: hasPoint ? [selectedLongitude.value, selectedLatitude.value] : [120.3119, 31.4912],
       viewMode: '2D',
       resizeEnable: true,
+      layers: [new AMap.TileLayer()],
     })
     map.on('click', (event) => setMapPoint(event.lnglat.getLat(), event.lnglat.getLng()))
     map.on('complete', () => { if (map) map.resize() })
@@ -170,7 +171,11 @@ onBeforeUnmount(() => {
 .map-search { padding: 12px 20px 0; }
 .map-search-input { box-sizing: border-box; width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; }
 .location-map { width: 100%; height: 420px; margin-top: 12px; background: #eef1ee; }
-.location-map :deep(.amap-container) { width: 100% !important; height: 100% !important; }
+.location-map :deep(.amap-container),
+.location-map :deep(.amap-layers),
+.location-map :deep(.amap-e) { width: 100% !important; height: 100% !important; }
+.location-map :deep(canvas),
+.location-map :deep(img) { max-width: none !important; }
 .map-picker-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
 .coordinate-text { min-width: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
 .map-picker-actions { display: flex; flex-shrink: 0; gap: 8px; }

@@ -5,11 +5,14 @@ let loading = null
 
 export function applyAmapSecurity(securityJsCode) {
   const secret = String(securityJsCode || PLATFORM_AMAP_JS_SECRET).trim()
-  if (!secret) return
-  window._AMapSecurityConfig = {
-    ...(window._AMapSecurityConfig || {}),
-    securityJsCode: secret,
+  if (secret) {
+    window._AMapSecurityConfig = {
+      ...(window._AMapSecurityConfig || {}),
+      securityJsCode: secret,
+    }
   }
+  // 官方变量名就是 forbidenWebGL：禁用 WebGL 矢量底图，改用栅格瓦片。
+  window.forbidenWebGL = true
 }
 
 export function loadAmapJs(key, securityJsCode) {

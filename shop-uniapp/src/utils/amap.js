@@ -34,6 +34,7 @@ export function loadAmapJs(key, securityJsCode) {
       securityJsCode: secret,
     }
   }
+  window.forbidenWebGL = true
   if (window.AMap) return Promise.resolve(window.AMap)
   const jsKey = String(key || '').trim()
   if (!jsKey) return Promise.reject(new Error('未配置高德地图 Key'))
