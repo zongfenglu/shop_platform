@@ -37,7 +37,7 @@ mybatis-plus:
 shop:
   map:
     amap-js-key: ${AMAP_JS_KEY:65eeae53a1f353c31e329e44c774ca7e}
-    amap-js-secret: ${AMAP_JS_SECRET:e773074f110402b905245336232c9ffb}
+    amap-js-secret: ${AMAP_JS_SECRET:e773074f110402b90524533e232c9ffb}
     amap-mp-key: ${AMAP_MP_KEY:ff5b8c4b9abb6024550a3e0f9c139bca}
     amap-web-key: ${AMAP_WEB_KEY:b3917c268be461e583d2b3eedf959a5c}
     amap-web-secret: ${AMAP_WEB_SECRET:}

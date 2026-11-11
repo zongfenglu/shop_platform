@@ -1,6 +1,6 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { getMapConfig, loadAmapJs, lookupMapLocation, searchMapPlaces, waitForElementSize } from '@/utils/amap'
+import { getMapConfig, loadAmapJs, lookupMapLocation, reverseGeocode, searchMapPlaces, searchPlacesByKeyword, waitForElementSize } from '@/utils/amap'
 
 const emit = defineEmits(['confirm', 'close'])
 const mapEl = ref(null)
@@ -51,7 +51,14 @@ async function resolveAddress(keepName = false) {
   const seq = ++lookupSeq
   resolving.value = true
   try {
-    const data = await lookupMapLocation(selected.value.longitude, selected.value.latitude)
+    let data = await reverseGeocode(selected.value.longitude, selected.value.latitude)
+    if (!data?.address) {
+      try {
+        data = await lookupMapLocation(selected.value.longitude, selected.value.latitude)
+      } catch (e) {
+        data = data || null
+      }
+    }
     if (seq !== lookupSeq) return
     const nearby = Array.isArray(data?.pois) ? data.pois : []
     if (nearby.length) pois.value = nearby
@@ -82,7 +89,14 @@ async function searchPlaces(text) {
   if (!query) return
   resolving.value = true
   try {
-    const list = await searchMapPlaces(query)
+    let list = await searchPlacesByKeyword(query)
+    if (!list.length) {
+      try {
+        list = await searchMapPlaces(query)
+      } catch (e) {
+        list = []
+      }
+    }
     pois.value = Array.isArray(list) ? list : []
     if (!pois.value.length) uni.showToast({ title: '没有搜到地点', icon: 'none' })
   } catch (e) {

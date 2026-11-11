@@ -1,7 +1,7 @@
 import { get } from '@/utils/request'
 
 const PLATFORM_AMAP_JS_KEY = '65eeae53a1f353c31e329e44c774ca7e'
-const PLATFORM_AMAP_JS_SECRET = 'e773074f110402b905245336232c9ffb'
+const PLATFORM_AMAP_JS_SECRET = 'e773074f110402b90524533e232c9ffb'
 
 let cachedConfig = null
 let loadingScript = null
@@ -36,11 +36,10 @@ export async function getMapConfig() {
 export function loadAmapJs(key, securityJsCode) {
   if (typeof window === 'undefined') return Promise.reject(new Error('当前环境无法加载地图'))
   const secret = String(securityJsCode || PLATFORM_AMAP_JS_SECRET).trim()
-  if (secret) {
-    window._AMapSecurityConfig = {
-      ...(window._AMapSecurityConfig || {}),
-      securityJsCode: secret,
-    }
+  window._AMapSecurityConfig = {
+    ...(window._AMapSecurityConfig || {}),
+    securityJsCode: secret,
+    serviceHost: (typeof location !== 'undefined' ? location.origin : '') + '/_AMapService',
   }
   window.forbidenWebGL = true
   if (window.AMap) return Promise.resolve(window.AMap)
@@ -51,7 +50,7 @@ export function loadAmapJs(key, securityJsCode) {
     const script = document.createElement('script')
     script.charset = 'utf-8'
     script.async = false
-    script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(jsKey)}`
+    script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(jsKey)}&plugin=AMap.Geocoder,AMap.PlaceSearch,AMap.AutoComplete,AMap.Geolocation`
     script.onload = () => {
       if (window.AMap) resolve(window.AMap)
       else {
@@ -194,23 +193,62 @@ function searchNearbyPois(longitude, latitude) {
   })
 }
 
-export async function reverseGeocode(longitude, latitude) {
-  if (!window.AMap) return null
-  await loadPlugins(['AMap.Geocoder', 'AMap.PlaceSearch'])
-  const regeo = await new Promise((resolve) => {
-    const geocoder = new window.AMap.Geocoder({
-      city: '全国',
-      radius: 1000,
-      extensions: 'all',
-    })
-    geocoder.getAddress([longitude, latitude], (status, result) => {
-      if (status === 'complete' && result?.regeocode) resolve(result.regeocode)
-      else resolve(null)
-    })
+async function amapServiceGet(path, params) {
+  const query = new URLSearchParams({
+    key: PLATFORM_AMAP_JS_KEY,
+    output: 'json',
+    ...params,
   })
-  let data = regeo ? fromRegeo(regeo, longitude, latitude) : null
+  const res = await fetch(`/_AMapService${path}?${query.toString()}`)
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function reverseGeocode(longitude, latitude) {
+  let data = null
+  if (window.AMap) {
+    try {
+      await loadPlugins(['AMap.Geocoder', 'AMap.PlaceSearch'])
+      const regeo = await new Promise((resolve) => {
+        const geocoder = new window.AMap.Geocoder({ radius: 1000, extensions: 'all' })
+        const timer = window.setTimeout(() => resolve(null), 4000)
+        geocoder.getAddress([longitude, latitude], (status, result) => {
+          window.clearTimeout(timer)
+          if (status === 'complete' && result?.regeocode) resolve(result.regeocode)
+          else resolve(null)
+        })
+      })
+      if (regeo) data = fromRegeo(regeo, longitude, latitude)
+    } catch (e) {
+      data = null
+    }
+  }
+  if (!data?.address) {
+    const json = await amapServiceGet('/v3/geocode/regeo', {
+      location: `${longitude},${latitude}`,
+      extensions: 'all',
+      radius: '1000',
+    })
+    if (json?.status === '1' && json.regeocode) {
+      data = fromRegeo(json.regeocode, longitude, latitude)
+    }
+  }
   if (!data?.pois?.length) {
-    const nearby = await searchNearbyPois(longitude, latitude)
+    let nearby = []
+    try {
+      nearby = await searchNearbyPois(longitude, latitude)
+    } catch (e) {
+      nearby = []
+    }
+    if (!nearby.length) {
+      const around = await amapServiceGet('/v3/place/around', {
+        location: `${longitude},${latitude}`,
+        radius: '800',
+        offset: '12',
+        extensions: 'all',
+      })
+      if (around?.pois) nearby = mapPois(around.pois, longitude, latitude, data?.address || '')
+    }
     if (nearby.length) {
       data = {
         name: data?.name || nearby[0].name,
@@ -225,6 +263,20 @@ export async function reverseGeocode(longitude, latitude) {
     }
   }
   return data
+}
+
+export async function searchPlacesByKeyword(keyword) {
+  const query = String(keyword || '').trim()
+  if (!query) return []
+  const json = await amapServiceGet('/v3/place/text', {
+    keywords: query,
+    offset: '12',
+    extensions: 'all',
+  })
+  if (json?.status === '1' && Array.isArray(json.pois)) {
+    return mapPois(json.pois, 0, 0, '')
+  }
+  return []
 }
 
 export function openMapNav({ latitude, longitude, name, address }) {

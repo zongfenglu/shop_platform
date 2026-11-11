@@ -2,7 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { lookupMapLocation, searchMapPlaces } from '@/api/operationSettings'
-import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, waitForElementSize } from '@/utils/amap'
+import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, reverseGeocode, searchPlacesByKeyword, waitForElementSize } from '@/utils/amap'
 
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
@@ -94,7 +94,14 @@ async function resolveAddress(keepName = false) {
   const seq = ++lookupSeq
   resolving.value = true
   try {
-    const data = await lookupMapLocation(lng, lat)
+    let data = await reverseGeocode(lng, lat)
+    if (!data?.address) {
+      try {
+        data = await lookupMapLocation(lng, lat)
+      } catch (e) {
+        data = data || null
+      }
+    }
     if (seq !== lookupSeq) return
     applyLookup(data || {}, keepName)
     authHint.value = authMessage(data?.error)
@@ -118,7 +125,14 @@ async function searchPlaces(text) {
   if (!query) return
   resolving.value = true
   try {
-    const list = await searchMapPlaces(query)
+    let list = await searchPlacesByKeyword(query)
+    if (!list.length) {
+      try {
+        list = await searchMapPlaces(query)
+      } catch (e) {
+        list = []
+      }
+    }
     pois.value = Array.isArray(list) ? list : []
     if (!pois.value.length) {
       message.warning(authHint.value || '没有搜到地点，请换个关键词')

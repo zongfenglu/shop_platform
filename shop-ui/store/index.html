@@ -12,7 +12,10 @@
     } catch (e) {}
     // 高德 JS API 必须在脚本加载前拿到安全密钥；新版控制台没有域名白名单。
     // forbidenWebGL 是官方拼写，用来关掉 2.0 矢量 WebGL，改走栅格底图。
-    window._AMapSecurityConfig = { securityJsCode: 'e773074f110402b905245336232c9ffb' }
+    window._AMapSecurityConfig = {
+      securityJsCode: 'e773074f110402b90524533e232c9ffb',
+      serviceHost: location.protocol + '//' + location.host + '/_AMapService'
+    }
     window.forbidenWebGL = true
   </script>
 </head>
