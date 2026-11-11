@@ -39,6 +39,16 @@ const roots = computed(() => categories.value || [])
 const level2Parent = computed(() =>
   roots.value.find((c) => String(c.id) === String(level2ParentId.value)) || roots.value[0] || null)
 const level2Children = computed(() => level2Parent.value?.children || [])
+const filterCats = computed(() => {
+  const id = String(activeCategoryId.value || '')
+  if (!id) return roots.value
+  if (roots.value.some((c) => String(c.id) === id)) return roots.value
+  for (const root of roots.value) {
+    const kids = root.children || []
+    if (kids.some((c) => String(c.id) === id)) return kids
+  }
+  return roots.value
+})
 
 onLoad(async (query) => {
   const pendingSearch = consumeGoodsSearch()
@@ -119,11 +129,19 @@ async function load(reset) {
   }
 }
 
-function onCategory(id) {
+function onCategory(cat) {
   // categoryId 是雪花 id，从这里到 URL 到后端全程按字符串传递。
   // 千万不要 Number(id) —— 19 位 id 超过 Number.MAX_SAFE_INTEGER，会被静默改成另一个合法值，
   // 结果是筛选不到商品/接口 403，看起来完全不像精度问题。见 CONTRIBUTING.md 的 Code Review 一节。
-  activeCategoryId.value = activeCategoryId.value === id ? null : id
+  if (!cat?.id) return
+  const id = cat.id
+  if (String(activeCategoryId.value) === String(id)) {
+    if (fromCatalog.value) return
+    activeCategoryId.value = null
+  } else {
+    activeCategoryId.value = id
+    if (cat.name) uni.setNavigationBarTitle({ title: cat.name })
+  }
   load(true)
 }
 
@@ -218,35 +236,48 @@ function fmtPrice(v) {
   </view>
 
   <view v-else class="page">
-    <view v-if="fromCatalog" class="back-row" @click="backToCatalog">‹ 返回分类</view>
-    <view class="search-bar">
-      <input v-model="keyword" class="search-input" placeholder="搜索商品" confirm-type="search" @confirm="onSearch" />
-      <text class="search-btn" @click="onSearch">搜索</text>
-    </view>
-
-    <scroll-view v-if="categories.length" class="cat-scroll" scroll-x>
-      <view class="cat-row">
-        <view
-          v-for="cat in categories"
-          :key="cat.id"
-          class="cat-chip"
-          :class="{ active: activeCategoryId === cat.id }"
-          @click="onCategory(cat.id)"
-        >
-          {{ cat.name }}
+    <view class="list-head">
+      <view class="toolbar">
+        <view v-if="fromCatalog" class="back-btn" @click="backToCatalog">
+          <text class="back-ico">‹</text>
+          <text>分类</text>
+        </view>
+        <view class="search-pill">
+          <input
+            v-model="keyword"
+            class="search-input"
+            placeholder="搜索商品"
+            confirm-type="search"
+            @confirm="onSearch"
+          />
+          <text class="search-go" @click="onSearch">搜索</text>
         </view>
       </view>
-    </scroll-view>
 
-    <view class="sort-row">
-      <view
-        v-for="s in SORTS"
-        :key="s.key"
-        class="sort-item"
-        :class="{ active: sort === s.key }"
-        @click="onSort(s.key)"
-      >
-        {{ s.label }}
+      <scroll-view v-if="filterCats.length" class="cat-scroll" scroll-x>
+        <view class="cat-row">
+          <view
+            v-for="cat in filterCats"
+            :key="cat.id"
+            class="cat-chip"
+            :class="{ active: String(activeCategoryId) === String(cat.id) }"
+            @click="onCategory(cat)"
+          >
+            {{ cat.name }}
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sort-row">
+        <view
+          v-for="s in SORTS"
+          :key="s.key"
+          class="sort-item"
+          :class="{ active: sort === s.key }"
+          @click="onSort(s.key)"
+        >
+          {{ s.label }}
+        </view>
       </view>
     </view>
 
@@ -285,10 +316,64 @@ function fmtPrice(v) {
 
 <style scoped>
 .page {
-  padding: 24rpx;
   min-height: 100vh;
   background: #f4f5f3;
   color: #1e2429;
+  padding-bottom: 24rpx;
+}
+.list-head {
+  background: #fff;
+  margin-bottom: 16rpx;
+  border-bottom: 1rpx solid #eceeeb;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 24rpx 10rpx;
+}
+.back-btn {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 64rpx;
+  padding-right: 4rpx;
+  font-size: 26rpx;
+  color: #1e2429;
+  font-weight: 600;
+}
+.back-ico {
+  font-size: 40rpx;
+  line-height: 1;
+  margin-top: -4rpx;
+  color: #1e2429;
+}
+.search-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 64rpx;
+  background: #f4f5f3;
+  border-radius: 32rpx;
+  padding: 0 8rpx 0 24rpx;
+}
+.search-pill .search-input {
+  flex: 1;
+  height: 64rpx;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 26rpx;
+}
+.search-go {
+  flex-shrink: 0;
+  height: 48rpx;
+  line-height: 48rpx;
+  padding: 0 22rpx;
+  border-radius: 24rpx;
+  background: #2a78d6;
+  color: #fff;
+  font-size: 24rpx;
 }
 .catalog {
   min-height: 100vh;
@@ -302,11 +387,6 @@ function fmtPrice(v) {
   padding: 16rpx 24rpx 18rpx;
   background: #fff;
   border-bottom: 1rpx solid #eceeeb;
-}
-.back-row {
-  font-size: 26rpx;
-  color: #2a78d6;
-  padding-bottom: 12rpx;
 }
 .large-list {
   padding: 8rpx 24rpx 24rpx;
@@ -436,50 +516,63 @@ function fmtPrice(v) {
 }
 .cat-scroll {
   white-space: nowrap;
-  margin-bottom: 16rpx;
+  padding: 4rpx 16rpx 8rpx;
 }
 .cat-row {
   display: inline-flex;
-  gap: 14rpx;
-  padding: 2rpx;
+  gap: 12rpx;
+  padding: 0 8rpx;
 }
 .cat-chip {
-  background: #fcfcfb;
-  border: 2rpx solid rgba(11, 11, 11, 0.12);
-  border-radius: 32rpx;
-  padding: 10rpx 26rpx;
-  font-size: 25rpx;
-  color: #4a4844;
+  background: #f4f5f3;
+  border-radius: 10rpx;
+  padding: 10rpx 24rpx;
+  font-size: 24rpx;
+  color: #5c6166;
 }
 .cat-chip.active {
-  background: #eef4fc;
-  border-color: #2a78d6;
+  background: #e8f1fc;
   color: #2a78d6;
+  font-weight: 600;
 }
 .sort-row {
   display: flex;
-  gap: 32rpx;
-  padding: 12rpx 8rpx 20rpx;
+  padding: 0 8rpx;
 }
 .sort-item {
+  flex: 1;
+  text-align: center;
   font-size: 26rpx;
-  color: #898781;
+  color: #5c6166;
+  padding: 16rpx 0 18rpx;
+  position: relative;
 }
 .sort-item.active {
-  color: #2a78d6;
-  font-weight: 600;
+  color: #1e2429;
+  font-weight: 700;
+}
+.sort-item.active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 40rpx;
+  height: 4rpx;
+  margin-left: -20rpx;
+  border-radius: 2rpx;
+  background: #2a78d6;
 }
 .goods-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 16rpx;
+  padding: 0 20rpx;
 }
 .goods-row {
   display: flex;
   gap: 20rpx;
-  background: #fcfcfb;
-  border: 2rpx solid rgba(11, 11, 11, 0.08);
-  border-radius: 20rpx;
+  background: #fff;
+  border-radius: 16rpx;
   padding: 20rpx;
 }
 .goods-img {
