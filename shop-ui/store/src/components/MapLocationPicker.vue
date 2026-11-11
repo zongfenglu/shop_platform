@@ -1,13 +1,14 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import { lookupMapLocation } from '@/api/operationSettings'
 import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET, waitForElementSize } from '@/utils/amap'
 
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
   longitude: { type: [Number, String], default: null },
   title: { type: String, default: '选择地图位置' },
-  description: { type: String, default: '搜索或点击地图放置定位点，保存后可直接发起导航' },
+  description: { type: String, default: '搜索地点或点击地图，确认后会带回详细地址' },
   provider: { type: String, default: 'amap' },
   apiKey: { type: String, default: '' },
   securityJsCode: { type: String, default: '' },
@@ -17,13 +18,27 @@ const emit = defineEmits(['confirm', 'close'])
 const mapEl = ref(null)
 const searchEl = ref(null)
 const locating = ref(false)
-const selectedLatitude = ref(toCoordinate(props.latitude, -90, 90))
-const selectedLongitude = ref(toCoordinate(props.longitude, -180, 180))
-const selectedAddress = ref('')
+const resolving = ref(false)
+const selected = ref(emptySelected())
+const pois = ref([])
 let map = null
 let marker = null
-let geocoder = null
 let resizeObserver = null
+let lookupTimer = 0
+let lookupSeq = 0
+
+function emptySelected() {
+  return {
+    latitude: toCoordinate(props.latitude, -90, 90),
+    longitude: toCoordinate(props.longitude, -180, 180),
+    name: '',
+    address: '',
+    detail: '',
+    province: '',
+    city: '',
+    district: '',
+  }
+}
 
 function toCoordinate(value, min, max) {
   if (value == null || value === '') return null
@@ -31,31 +46,75 @@ function toCoordinate(value, min, max) {
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null
 }
 
-function setMapPoint(latitude, longitude, zoom) {
-  selectedLatitude.value = Number(Number(latitude).toFixed(6))
-  selectedLongitude.value = Number(Number(longitude).toFixed(6))
-  const position = [selectedLongitude.value, selectedLatitude.value]
+function setMapPoint(latitude, longitude, extra = {}, zoom) {
+  selected.value = {
+    ...selected.value,
+    latitude: Number(Number(latitude).toFixed(6)),
+    longitude: Number(Number(longitude).toFixed(6)),
+    name: extra.name || selected.value.name || '',
+    address: extra.address || selected.value.address || '',
+    detail: extra.detail || selected.value.detail || '',
+    province: extra.province || selected.value.province || '',
+    city: extra.city || selected.value.city || '',
+    district: extra.district || selected.value.district || '',
+  }
+  const position = [selected.value.longitude, selected.value.latitude]
   if (!marker) {
     marker = new window.AMap.Marker({ position, draggable: true })
     marker.on('dragend', (event) => {
       const lnglat = event.lnglat
-      setMapPoint(lnglat.getLat(), lnglat.getLng())
+      setMapPoint(lnglat.getLat(), lnglat.getLng(), {}, map.getZoom())
     })
     map.add(marker)
   } else {
     marker.setPosition(position)
   }
   map.setZoomAndCenter(zoom || Math.max(map.getZoom(), 16), position)
-  reverseGeocode(selectedLongitude.value, selectedLatitude.value)
+  scheduleLookup()
 }
 
-function reverseGeocode(lng, lat) {
-  if (!geocoder) return
-  geocoder.getAddress([lng, lat], (status, result) => {
-    if (status === 'complete' && result?.regeocode?.formattedAddress) {
-      selectedAddress.value = result.regeocode.formattedAddress
-    }
-  })
+function scheduleLookup() {
+  window.clearTimeout(lookupTimer)
+  lookupTimer = window.setTimeout(resolveAddress, 220)
+}
+
+async function resolveAddress() {
+  const lat = selected.value.latitude
+  const lng = selected.value.longitude
+  if (lat == null || lng == null) return
+  const seq = ++lookupSeq
+  resolving.value = true
+  try {
+    const data = await lookupMapLocation(lng, lat)
+    if (seq !== lookupSeq) return
+    applyLookup(data || {})
+  } catch (e) {
+    if (seq === lookupSeq) message.warning('地址解析失败，可先确认坐标再手工补全地址')
+  } finally {
+    if (seq === lookupSeq) resolving.value = false
+  }
+}
+
+function applyLookup(data) {
+  const nearby = Array.isArray(data.pois) ? data.pois : []
+  pois.value = nearby
+  selected.value = {
+    ...selected.value,
+    name: data.name || selected.value.name || '',
+    address: data.address || selected.value.address || '',
+    detail: data.detail || selected.value.detail || '',
+    province: data.province || '',
+    city: data.city || '',
+    district: data.district || data.region || '',
+  }
+}
+
+function choosePoi(poi) {
+  setMapPoint(poi.latitude, poi.longitude, {
+    name: poi.name,
+    address: poi.address,
+    detail: poi.name,
+  }, 17)
 }
 
 function locateCurrent() {
@@ -65,24 +124,20 @@ function locateCurrent() {
     geo.getCurrentPosition((status, result) => {
       locating.value = false
       if (status === 'complete' && result?.position) {
-        setMapPoint(result.position.lat, result.position.lng, 17)
+        setMapPoint(result.position.lat, result.position.lng, {}, 17)
         return
       }
-      message.warning('无法获取当前位置，请检查定位权限或直接点击地图选点')
+      message.warning('无法获取当前位置，请搜索或直接点击地图选点')
     })
   })
 }
 
 function confirm() {
-  if (selectedLatitude.value == null || selectedLongitude.value == null) {
+  if (selected.value.latitude == null || selected.value.longitude == null) {
     message.warning('请先在地图上选择位置')
     return
   }
-  emit('confirm', {
-    latitude: selectedLatitude.value,
-    longitude: selectedLongitude.value,
-    address: selectedAddress.value,
-  })
+  emit('confirm', { ...selected.value })
 }
 
 onMounted(async () => {
@@ -90,41 +145,42 @@ onMounted(async () => {
     const AMap = await loadAmapJs(props.apiKey || PLATFORM_AMAP_JS_KEY, props.securityJsCode || PLATFORM_AMAP_JS_SECRET)
     await nextTick()
     await waitForElementSize(mapEl.value)
-    const hasPoint = selectedLatitude.value != null && selectedLongitude.value != null
+    const hasPoint = selected.value.latitude != null && selected.value.longitude != null
     map = new AMap.Map(mapEl.value, {
-      zoom: hasPoint ? 16 : 11,
-      center: hasPoint ? [selectedLongitude.value, selectedLatitude.value] : [120.3119, 31.4912],
+      zoom: hasPoint ? 16 : 12,
+      center: hasPoint ? [selected.value.longitude, selected.value.latitude] : [120.3119, 31.4912],
       viewMode: '2D',
       resizeEnable: true,
       layers: [new AMap.TileLayer()],
     })
-    map.on('click', (event) => setMapPoint(event.lnglat.getLat(), event.lnglat.getLng()))
+    map.on('click', (event) => setMapPoint(event.lnglat.getLat(), event.lnglat.getLng(), {}))
     map.on('complete', () => { if (map) map.resize() })
-    AMap.plugin(['AMap.Geocoder', 'AMap.AutoComplete', 'AMap.Geolocation'], () => {
-      geocoder = new AMap.Geocoder({ radius: 1000, extensions: 'base' })
-      if (hasPoint) setMapPoint(selectedLatitude.value, selectedLongitude.value, 16)
-      if (searchEl.value) {
-        const auto = new AMap.AutoComplete({ input: searchEl.value, city: '全国' })
-        auto.on('select', (event) => {
-          const poi = event?.poi
-          if (!poi?.location) return
-          setMapPoint(poi.location.lat, poi.location.lng, 17)
-          selectedAddress.value = [poi.district, poi.address, poi.name].filter(Boolean).join('')
-        })
-      }
+    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation'], () => {
+      if (!searchEl.value) return
+      const auto = new AMap.AutoComplete({ input: searchEl.value, city: '全国' })
+      auto.on('select', (event) => {
+        const poi = event?.poi
+        if (!poi?.location) return
+        setMapPoint(poi.location.lat, poi.location.lng, {
+          name: poi.name,
+          address: [poi.district, poi.address, poi.name].filter(Boolean).join(''),
+          detail: poi.address || poi.name,
+        }, 17)
+      })
     })
+    if (hasPoint) setMapPoint(selected.value.latitude, selected.value.longitude, {}, 16)
     if (typeof ResizeObserver !== 'undefined' && mapEl.value) {
       resizeObserver = new ResizeObserver(() => { if (map) map.resize() })
       resizeObserver.observe(mapEl.value)
     }
-    setTimeout(() => map && map.resize(), 50)
-    setTimeout(() => map && map.resize(), 300)
+    setTimeout(() => map && map.resize(), 80)
   } catch (error) {
     message.error(error?.message || '高德地图加载失败')
   }
 })
 
 onBeforeUnmount(() => {
+  window.clearTimeout(lookupTimer)
   if (resizeObserver) resizeObserver.disconnect()
   if (map) map.destroy()
 })
@@ -135,21 +191,39 @@ onBeforeUnmount(() => {
     <div class="map-picker-mask" @click.self="emit('close')">
       <div class="map-picker-dialog">
         <div class="map-picker-header">
-          <div><div class="map-picker-title">{{ title }}</div><div class="map-picker-sub">{{ description }}</div></div>
+          <div>
+            <div class="map-picker-title">{{ title }}</div>
+            <div class="map-picker-sub">{{ description }}</div>
+          </div>
           <button class="map-picker-close" type="button" title="关闭" @click="emit('close')">×</button>
         </div>
         <div class="map-search">
-          <input ref="searchEl" class="map-search-input" placeholder="搜索地点，例如：无锡观湖花园" />
+          <input ref="searchEl" class="map-search-input" placeholder="搜索小区、写字楼、道路，例如：无锡观湖花园" />
         </div>
-        <div ref="mapEl" class="location-map" />
-        <div class="map-picker-footer">
-          <div class="coordinate-text">
-            <template v-if="selectedLatitude == null">尚未选点</template>
-            <template v-else>
-              <div>{{ selectedAddress || '已选点' }}</div>
-              <div>纬度 {{ selectedLatitude }} · 经度 {{ selectedLongitude }}</div>
-            </template>
+        <div class="map-body">
+          <div ref="mapEl" class="location-map" />
+          <div class="poi-panel">
+            <div class="poi-title">附近地点</div>
+            <div v-if="resolving" class="poi-empty">正在解析地址…</div>
+            <button
+              v-for="poi in pois"
+              :key="poi.name + String(poi.distance)"
+              class="poi-item"
+              :class="{ active: poi.name === selected.name }"
+              type="button"
+              @click="choosePoi(poi)"
+            >
+              <div class="poi-name">{{ poi.name }}</div>
+              <div class="poi-addr">{{ poi.address }}<template v-if="poi.distance"> · {{ poi.distance }}m</template></div>
+            </button>
+            <div v-if="!resolving && !pois.length" class="poi-empty">点击地图或搜索后，这里会列出附近地点</div>
           </div>
+        </div>
+        <div class="selected-card">
+          <div class="selected-name">{{ selected.name || (selected.latitude == null ? '尚未选点' : '已选位置') }}</div>
+          <div class="selected-addr">{{ selected.address || (selected.latitude == null ? '搜索或点击地图选择地点' : '地址解析中…') }}</div>
+        </div>
+        <div class="map-picker-footer">
           <div class="map-picker-actions">
             <button class="btn" type="button" :disabled="locating" @click="locateCurrent">{{ locating ? '定位中…' : '定位到当前' }}</button>
             <button class="btn" type="button" @click="emit('close')">取消</button>
@@ -163,25 +237,36 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .map-picker-mask { position: fixed; inset: 0; z-index: 2100; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(20, 24, 28, .55); }
-.map-picker-dialog { width: min(820px, 96vw); border-radius: 8px; background: #fff; box-shadow: 0 18px 60px rgba(0, 0, 0, .22); }
+.map-picker-dialog { width: min(920px, 96vw); border-radius: 8px; background: #fff; box-shadow: 0 18px 60px rgba(0, 0, 0, .22); }
 .map-picker-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
 .map-picker-title { color: var(--text); font-size: 18px; font-weight: 650; }
 .map-picker-sub { margin-top: 4px; color: var(--text-muted); font-size: 12px; }
 .map-picker-close { width: 34px; height: 34px; border: 0; background: transparent; color: var(--text-muted); font-size: 25px; cursor: pointer; }
 .map-search { padding: 12px 20px 0; }
 .map-search-input { box-sizing: border-box; width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; }
-.location-map { width: 100%; height: 420px; margin-top: 12px; background: #eef1ee; }
+.map-body { display: grid; grid-template-columns: minmax(0, 1.4fr) 280px; gap: 0; margin-top: 12px; border-top: 1px solid var(--border); }
+.location-map { width: 100%; height: 360px; background: #eef1ee; }
 .location-map :deep(.amap-container),
 .location-map :deep(.amap-layers),
 .location-map :deep(.amap-e) { width: 100% !important; height: 100% !important; }
 .location-map :deep(canvas),
 .location-map :deep(img) { max-width: none !important; }
-.map-picker-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
-.coordinate-text { min-width: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
-.map-picker-actions { display: flex; flex-shrink: 0; gap: 8px; }
-@media (max-width: 640px) {
-  .map-picker-mask { padding: 10px; }
-  .map-picker-footer { align-items: stretch; flex-direction: column; }
-  .map-picker-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.poi-panel { height: 360px; overflow: auto; border-left: 1px solid var(--border); background: #fafafa; }
+.poi-title { padding: 12px 14px 6px; color: var(--text-muted); font-size: 12px; }
+.poi-item { display: block; width: 100%; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--border); background: transparent; text-align: left; cursor: pointer; }
+.poi-item:hover, .poi-item.active { background: #fff; }
+.poi-name { color: var(--text); font-size: 14px; font-weight: 600; }
+.poi-addr { margin-top: 4px; color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+.poi-empty { padding: 18px 14px; color: var(--text-muted); font-size: 12px; }
+.selected-card { padding: 12px 20px; border-top: 1px solid var(--border); background: #fff8f6; }
+.selected-name { color: var(--text); font-size: 15px; font-weight: 650; }
+.selected-addr { margin-top: 4px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.map-picker-footer { display: flex; justify-content: flex-end; padding: 12px 20px 16px; }
+.map-picker-actions { display: flex; gap: 8px; }
+@media (max-width: 760px) {
+  .map-picker-mask { padding: 8px; }
+  .map-body { grid-template-columns: 1fr; }
+  .location-map, .poi-panel { height: 240px; }
+  .poi-panel { border-left: 0; border-top: 1px solid var(--border); }
 }
 </style>

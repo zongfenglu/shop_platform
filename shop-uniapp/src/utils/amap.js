@@ -6,6 +6,10 @@ const PLATFORM_AMAP_JS_SECRET = 'e773074f110402b905245336232c9ffb'
 let cachedConfig = null
 let loadingScript = null
 
+export function lookupMapLocation(longitude, latitude) {
+  return get('/api/map/lookup', { longitude, latitude })
+}
+
 export async function getMapConfig() {
   if (cachedConfig?.apiKey) return cachedConfig
   try {

@@ -93,7 +93,12 @@ function closeModal() {
 function onLocationConfirm(location) {
   form.latitude = location.latitude
   form.longitude = location.longitude
-  if (!form.detail && location.address) form.detail = location.address
+  const parts = [location.province, location.city, location.district].filter(Boolean)
+  if (parts.length) {
+    regionParts.value = parts
+    form.region = parts.join('/')
+  }
+  form.detail = location.detail || location.address || form.detail
   locationPickerOpen.value = false
 }
 
@@ -257,7 +262,7 @@ function dateText(value) {
           <label class="form-label">地图位置</label>
           <div class="location-field">
             <div class="location-value">
-              <template v-if="form.latitude !== '' && form.longitude !== ''">纬度 {{ form.latitude }} · 经度 {{ form.longitude }}</template>
+              <template v-if="form.latitude !== '' && form.longitude !== ''">{{ form.detail || form.region || `纬度 ${form.latitude} · 经度 ${form.longitude}` }}</template>
               <template v-else>尚未选择门店位置</template>
             </div>
             <button class="btn" type="button" @click="locationPickerOpen = true">地图选点</button>

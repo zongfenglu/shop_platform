@@ -1,15 +1,18 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { getMapConfig, loadAmapJs, waitForElementSize } from '@/utils/amap'
+import { getMapConfig, loadAmapJs, lookupMapLocation, waitForElementSize } from '@/utils/amap'
 
 const emit = defineEmits(['confirm', 'close'])
 const mapEl = ref(null)
 const searchEl = ref(null)
 const locating = ref(false)
+const resolving = ref(false)
 const selected = ref(null)
+const pois = ref([])
 let map = null
 let marker = null
-let geocoder = null
+let lookupTimer = 0
+let lookupSeq = 0
 
 function nativeNode(el, selector) {
   if (!el) return null
@@ -24,9 +27,10 @@ function setPoint(lat, lng, extra = {}) {
     longitude: Number(Number(lng).toFixed(6)),
     name: extra.name || selected.value?.name || '',
     address: extra.address || selected.value?.address || '',
+    detail: extra.detail || selected.value?.detail || '',
     province: extra.province || selected.value?.province || '',
     city: extra.city || selected.value?.city || '',
-    region: extra.region || selected.value?.region || '',
+    region: extra.region || extra.district || selected.value?.region || '',
   }
   const position = [selected.value.longitude, selected.value.latitude]
   if (!marker) {
@@ -36,18 +40,39 @@ function setPoint(lat, lng, extra = {}) {
     marker.setPosition(position)
   }
   map.setZoomAndCenter(Math.max(map.getZoom(), 16), position)
-  if (!geocoder) return
-  geocoder.getAddress(position, (status, result) => {
-    if (status !== 'complete' || !result?.regeocode) return
-    const ac = result.regeocode.addressComponent || {}
+  window.clearTimeout(lookupTimer)
+  lookupTimer = window.setTimeout(resolveAddress, 220)
+}
+
+async function resolveAddress() {
+  if (!selected.value) return
+  const seq = ++lookupSeq
+  resolving.value = true
+  try {
+    const data = await lookupMapLocation(selected.value.longitude, selected.value.latitude)
+    if (seq !== lookupSeq) return
+    pois.value = Array.isArray(data?.pois) ? data.pois : []
     selected.value = {
       ...selected.value,
-      address: extra.address || result.regeocode.formattedAddress || selected.value.address,
-      province: ac.province || selected.value.province,
-      city: ac.city || ac.province || selected.value.city,
-      region: ac.district || selected.value.region,
-      name: extra.name || ac.building || ac.streetNumber || ac.street || selected.value.name,
+      name: data?.name || selected.value.name,
+      address: data?.address || selected.value.address,
+      detail: data?.detail || selected.value.detail,
+      province: data?.province || selected.value.province,
+      city: data?.city || selected.value.city,
+      region: data?.district || data?.region || selected.value.region,
     }
+  } catch (e) {
+    // request.js 已提示
+  } finally {
+    if (seq === lookupSeq) resolving.value = false
+  }
+}
+
+function choosePoi(poi) {
+  setPoint(poi.latitude, poi.longitude, {
+    name: poi.name,
+    address: poi.address,
+    detail: poi.name,
   })
 }
 
@@ -62,7 +87,7 @@ function locateCurrent() {
         setPoint(result.position.lat, result.position.lng)
         return
       }
-      uni.showToast({ title: '定位失败，请在地图上选点', icon: 'none' })
+      uni.showToast({ title: '定位失败，请搜索或在地图上选点', icon: 'none' })
     })
   })
 }
@@ -95,19 +120,18 @@ onMounted(async () => {
       resizeEnable: true,
       layers: [new AMap.TileLayer()],
     })
-    AMap.plugin(['AMap.Geocoder', 'AMap.AutoComplete', 'AMap.Geolocation'], () => {
-      geocoder = new AMap.Geocoder({ radius: 1000, extensions: 'base' })
-      if (searchInput) {
-        const auto = new AMap.AutoComplete({ input: searchInput, city: '全国' })
-        auto.on('select', (event) => {
-          const poi = event?.poi
-          if (!poi?.location) return
-          setPoint(poi.location.lat, poi.location.lng, {
-            name: poi.name,
-            address: [poi.district, poi.address, poi.name].filter(Boolean).join(''),
-          })
+    AMap.plugin(['AMap.AutoComplete', 'AMap.Geolocation'], () => {
+      if (!searchInput) return
+      const auto = new AMap.AutoComplete({ input: searchInput, city: '全国' })
+      auto.on('select', (event) => {
+        const poi = event?.poi
+        if (!poi?.location) return
+        setPoint(poi.location.lat, poi.location.lng, {
+          name: poi.name,
+          address: [poi.district, poi.address, poi.name].filter(Boolean).join(''),
+          detail: poi.address || poi.name,
         })
-      }
+      })
     })
     map.on('click', (event) => setPoint(event.lnglat.getLat(), event.lnglat.getLng()))
     setTimeout(() => map && map.resize(), 200)
@@ -117,6 +141,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.clearTimeout(lookupTimer)
   if (map) map.destroy()
 })
 </script>
@@ -125,13 +150,28 @@ onBeforeUnmount(() => {
   <view class="amap-mask" @click.self="emit('close')">
     <view class="amap-dialog">
       <view class="amap-hd">
-        <text class="amap-title">地图选点</text>
+        <text class="amap-title">选择收货地址</text>
         <text class="amap-close" @click="emit('close')">关闭</text>
       </view>
       <input ref="searchEl" class="amap-search" placeholder="搜索小区、写字楼或街道" confirm-type="search" />
       <view ref="mapEl" class="amap-map" />
+      <view class="amap-selected">
+        <view class="amap-name">{{ selected?.name || (resolving ? '正在解析地址…' : '点击地图或搜索地点') }}</view>
+        <view class="amap-addr">{{ selected?.address || '' }}</view>
+      </view>
+      <scroll-view scroll-y class="amap-pois">
+        <view
+          v-for="poi in pois"
+          :key="poi.name + String(poi.distance)"
+          class="amap-poi"
+          :class="{ active: poi.name === selected?.name }"
+          @click="choosePoi(poi)"
+        >
+          <view class="amap-poi-name">{{ poi.name }}</view>
+          <view class="amap-poi-addr">{{ poi.address }}<text v-if="poi.distance"> · {{ poi.distance }}m</text></view>
+        </view>
+      </scroll-view>
       <view class="amap-ft">
-        <view class="amap-addr">{{ selected?.address || '点击地图或搜索地点' }}</view>
         <view class="amap-actions">
           <button class="amap-btn ghost" @click="locateCurrent">{{ locating ? '定位中…' : '定位当前' }}</button>
           <button class="amap-btn" @click="confirm">确认位置</button>
@@ -143,17 +183,24 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .amap-mask { position: fixed; inset: 0; z-index: 80; background: rgba(20,24,28,.45); display: flex; align-items: flex-end; }
-.amap-dialog { width: 100%; background: #fff; border-radius: 24rpx 24rpx 0 0; overflow: hidden; }
+.amap-dialog { width: 100%; max-height: 92vh; background: #fff; border-radius: 24rpx 24rpx 0 0; overflow: hidden; }
 .amap-hd { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 28rpx 12rpx; }
 .amap-title { font-size: 30rpx; font-weight: 700; }
 .amap-close { color: #2a78d6; font-size: 26rpx; }
 .amap-search { margin: 0 24rpx 16rpx; height: 72rpx; padding: 0 20rpx; border: 2rpx solid #e6e4de; border-radius: 12rpx; font-size: 26rpx; }
-.amap-map { width: 100%; height: 420px; background: #eef1ee; }
+.amap-map { width: 100%; height: 280px; background: #eef1ee; }
 .amap-map :deep(.amap-container),
 .amap-map :deep(.amap-layers) { width: 100% !important; height: 100% !important; }
-.amap-ft { padding: 18rpx 24rpx calc(18rpx + env(safe-area-inset-bottom)); }
-.amap-addr { min-height: 40rpx; color: #52514e; font-size: 24rpx; line-height: 1.5; }
-.amap-actions { display: flex; gap: 16rpx; margin-top: 16rpx; }
+.amap-selected { padding: 16rpx 28rpx; background: #fff8f6; }
+.amap-name { font-size: 28rpx; font-weight: 700; }
+.amap-addr { margin-top: 6rpx; color: #52514e; font-size: 24rpx; line-height: 1.5; }
+.amap-pois { max-height: 240rpx; }
+.amap-poi { padding: 18rpx 28rpx; border-top: 2rpx solid #f1efe8; }
+.amap-poi.active { background: #fff4f0; }
+.amap-poi-name { font-size: 26rpx; font-weight: 600; }
+.amap-poi-addr { margin-top: 6rpx; color: #898781; font-size: 22rpx; }
+.amap-ft { padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom)); }
+.amap-actions { display: flex; gap: 16rpx; }
 .amap-btn { flex: 1; height: 76rpx; margin: 0; border: 0; border-radius: 38rpx; background: #e34948; color: #fff; font-size: 26rpx; line-height: 76rpx; }
 .amap-btn::after { border: 0; }
 .amap-btn.ghost { background: #f3f1ec; color: #20262e; }

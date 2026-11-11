@@ -37,7 +37,12 @@ function onReturnRegionChange(values) {
 function onReturnLocationConfirm(location) {
   addressForm.longitude = location.longitude
   addressForm.latitude = location.latitude
-  if (!addressForm.detail && location.address) addressForm.detail = location.address
+  if (location.province) addressForm.province = location.province
+  if (location.city) addressForm.city = location.city
+  if (location.district) addressForm.district = location.district
+  const parts = [location.province, location.city, location.district].filter(Boolean)
+  if (parts.length) returnRegionParts.value = parts
+  addressForm.detail = location.detail || location.address || addressForm.detail
   locationPickerOpen.value = false
 }
 
@@ -412,7 +417,7 @@ function modalTitle() {
           <label class="form-label">地图位置</label>
           <div class="location-field">
             <div class="location-value">
-              <template v-if="addressForm.latitude !== '' && addressForm.longitude !== ''">纬度 {{ addressForm.latitude }} · 经度 {{ addressForm.longitude }}</template>
+              <template v-if="addressForm.latitude !== '' && addressForm.longitude !== ''">{{ addressForm.detail || `${addressForm.province || ''}${addressForm.city || ''}${addressForm.district || ''}` || `纬度 ${addressForm.latitude} · 经度 ${addressForm.longitude}` }}</template>
               <template v-else>尚未选择位置</template>
             </div>
             <button class="btn" type="button" @click="locationPickerOpen = true">地图选点</button>

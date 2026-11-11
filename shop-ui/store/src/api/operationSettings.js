@@ -30,3 +30,5 @@ export const savePrintRules = (data) => http.put(`${base}/print-rules`, data)
 export const saveSmsRules = (data) => http.put(`${base}/sms-rules`, data)
 export const saveShareSettings = (data) => http.put(`${base}/share`, data)
 export const saveMapSettings = (data) => http.put(`${base}/map`, data)
+export const lookupMapLocation = (longitude, latitude) =>
+  http.get(`${base}/map/lookup`, { params: { longitude, latitude } })

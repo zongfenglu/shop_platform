@@ -1,6 +1,7 @@
 package com.shopplatform.clientapi.controller;
 
 import com.shopplatform.common.result.Result;
+import com.shopplatform.domain.setting.service.AmapGeoService;
 import com.shopplatform.domain.setting.service.MapKeyResolver;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,9 +16,11 @@ import java.util.Map;
 public class ConsumerMapController {
 
     private final MapKeyResolver mapKeyResolver;
+    private final AmapGeoService amapGeoService;
 
-    public ConsumerMapController(MapKeyResolver mapKeyResolver) {
+    public ConsumerMapController(MapKeyResolver mapKeyResolver, AmapGeoService amapGeoService) {
         this.mapKeyResolver = mapKeyResolver;
+        this.amapGeoService = amapGeoService;
     }
 
     @GetMapping("/config")
@@ -28,5 +31,13 @@ public class ConsumerMapController {
         result.put("securityJsCode", mapKeyResolver.securityJsCode());
         result.put("mpKey", mapKeyResolver.mpKey());
         return Result.ok(result);
+    }
+
+    @GetMapping("/lookup")
+    public Result<Map<String, Object>> lookup(Double longitude, Double latitude) {
+        if (longitude == null || latitude == null) {
+            return Result.ok(Map.of());
+        }
+        return Result.ok(amapGeoService.lookup(longitude, latitude));
     }
 }

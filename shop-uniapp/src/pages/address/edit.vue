@@ -152,7 +152,7 @@ function onAmapPicked(location) {
   if (location.province) form.value.province = location.province
   if (location.city) form.value.city = location.city
   if (location.region) form.value.region = location.region
-  if (location.address) form.value.detail = locationDetail(location)
+  if (location.detail || location.address) form.value.detail = location.detail || locationDetail(location)
   // #ifdef H5
   syncH5Region(form.value.province, form.value.city, form.value.region)
   // #endif

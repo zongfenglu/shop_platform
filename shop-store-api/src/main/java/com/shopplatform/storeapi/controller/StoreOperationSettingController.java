@@ -12,6 +12,7 @@ import com.shopplatform.domain.setting.service.ExpressCompanyService;
 import com.shopplatform.domain.setting.service.ReceiptPrinterService;
 import com.shopplatform.domain.setting.service.ReturnAddressService;
 import com.shopplatform.domain.setting.service.SmsChannelService;
+import com.shopplatform.domain.setting.service.AmapGeoService;
 import com.shopplatform.domain.setting.service.MapKeyResolver;
 import com.shopplatform.domain.setting.service.StoreOperationSettingService;
 import com.shopplatform.framework.crypto.AesGcmEncryptor;
@@ -52,6 +53,7 @@ public class StoreOperationSettingController {
     private final SmsChannelService smsChannelService;
     private final StoreOperationSettingService settingService;
     private final MapKeyResolver mapKeyResolver;
+    private final AmapGeoService amapGeoService;
     private final AesGcmEncryptor encryptor;
 
     public StoreOperationSettingController(ExpressCompanyService expressCompanyService,
@@ -60,6 +62,7 @@ public class StoreOperationSettingController {
                                            SmsChannelService smsChannelService,
                                            StoreOperationSettingService settingService,
                                            MapKeyResolver mapKeyResolver,
+                                           AmapGeoService amapGeoService,
                                            AesGcmEncryptor encryptor) {
         this.expressCompanyService = expressCompanyService;
         this.returnAddressService = returnAddressService;
@@ -67,6 +70,7 @@ public class StoreOperationSettingController {
         this.smsChannelService = smsChannelService;
         this.settingService = settingService;
         this.mapKeyResolver = mapKeyResolver;
+        this.amapGeoService = amapGeoService;
         this.encryptor = encryptor;
     }
 
@@ -209,6 +213,14 @@ public class StoreOperationSettingController {
     @GetMapping("/operations")
     public Result<OperationSettingView> getOperationSetting() {
         return Result.ok(operationView(settingService.getOrCreate()));
+    }
+
+    @GetMapping("/map/lookup")
+    public Result<java.util.Map<String, Object>> lookupMap(Double longitude, Double latitude) {
+        if (longitude == null || latitude == null) {
+            return Result.ok(java.util.Map.of());
+        }
+        return Result.ok(amapGeoService.lookup(longitude, latitude));
     }
 
     @PutMapping("/upload")
