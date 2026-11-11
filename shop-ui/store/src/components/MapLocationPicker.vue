@@ -1,64 +1,27 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import { loadAmapJs, PLATFORM_AMAP_JS_KEY } from '@/utils/amap'
 
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
   longitude: { type: [Number, String], default: null },
   title: { type: String, default: '选择地图位置' },
-  description: { type: String, default: '点击地图放置定位点，保存后可直接发起导航' },
+  description: { type: String, default: '搜索或点击地图放置定位点，保存后可直接发起导航' },
   provider: { type: String, default: 'amap' },
   apiKey: { type: String, default: '' },
 })
 const emit = defineEmits(['confirm', 'close'])
 
 const mapEl = ref(null)
+const searchEl = ref(null)
 const locating = ref(false)
 const selectedLatitude = ref(toCoordinate(props.latitude, -90, 90))
 const selectedLongitude = ref(toCoordinate(props.longitude, -180, 180))
+const selectedAddress = ref('')
 let map = null
 let marker = null
-
-function outsideChina(latitude, longitude) {
-  return longitude < 72.004 || longitude > 137.8347 || latitude < 0.8293 || latitude > 55.8271
-}
-
-function transformLatitude(x, y) {
-  let result = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x))
-  result += (20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2 / 3
-  result += (20 * Math.sin(y * Math.PI) + 40 * Math.sin(y / 3 * Math.PI)) * 2 / 3
-  result += (160 * Math.sin(y / 12 * Math.PI) + 320 * Math.sin(y * Math.PI / 30)) * 2 / 3
-  return result
-}
-
-function transformLongitude(x, y) {
-  let result = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x))
-  result += (20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2 / 3
-  result += (20 * Math.sin(x * Math.PI) + 40 * Math.sin(x / 3 * Math.PI)) * 2 / 3
-  result += (150 * Math.sin(x / 12 * Math.PI) + 300 * Math.sin(x / 30 * Math.PI)) * 2 / 3
-  return result
-}
-
-function wgs84ToGcj02(latitude, longitude) {
-  if (outsideChina(latitude, longitude)) return [latitude, longitude]
-  const radLat = latitude / 180 * Math.PI
-  let magic = Math.sin(radLat)
-  magic = 1 - 0.006693421622965943 * magic * magic
-  const sqrtMagic = Math.sqrt(magic)
-  const deltaLat = transformLatitude(longitude - 105, latitude - 35) * 180
-    / ((6378245 * (1 - 0.006693421622965943)) / (magic * sqrtMagic) * Math.PI)
-  const deltaLng = transformLongitude(longitude - 105, latitude - 35) * 180
-    / (6378245 / sqrtMagic * Math.cos(radLat) * Math.PI)
-  return [latitude + deltaLat, longitude + deltaLng]
-}
-
-function gcj02ToWgs84(latitude, longitude) {
-  if (outsideChina(latitude, longitude)) return [latitude, longitude]
-  const converted = wgs84ToGcj02(latitude, longitude)
-  return [latitude * 2 - converted[0], longitude * 2 - converted[1]]
-}
+let geocoder = null
 
 function toCoordinate(value, min, max) {
   if (value == null || value === '') return null
@@ -66,37 +29,46 @@ function toCoordinate(value, min, max) {
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null
 }
 
-function setMapPoint(latitude, longitude, zoom = 16) {
-  const [navigationLatitude, navigationLongitude] = wgs84ToGcj02(latitude, longitude)
-  selectedLatitude.value = Number(navigationLatitude.toFixed(6))
-  selectedLongitude.value = Number(navigationLongitude.toFixed(6))
+function setMapPoint(latitude, longitude, zoom) {
+  selectedLatitude.value = Number(Number(latitude).toFixed(6))
+  selectedLongitude.value = Number(Number(longitude).toFixed(6))
+  const position = [selectedLongitude.value, selectedLatitude.value]
   if (!marker) {
-    marker = L.marker([latitude, longitude], {
-      icon: L.divIcon({ className: 'map-pin-marker', html: '<span></span>', iconSize: [24, 34], iconAnchor: [12, 34] }),
-    }).addTo(map)
+    marker = new window.AMap.Marker({ position, draggable: true })
+    marker.on('dragend', (event) => {
+      const lnglat = event.lnglat
+      setMapPoint(lnglat.getLat(), lnglat.getLng())
+    })
+    map.add(marker)
   } else {
-    marker.setLatLng([latitude, longitude])
+    marker.setPosition(position)
   }
-  map.setView([latitude, longitude], zoom)
+  map.setZoomAndCenter(zoom || Math.max(map.getZoom(), 16), position)
+  reverseGeocode(selectedLongitude.value, selectedLatitude.value)
+}
+
+function reverseGeocode(lng, lat) {
+  if (!geocoder) return
+  geocoder.getAddress([lng, lat], (status, result) => {
+    if (status === 'complete' && result?.regeocode?.formattedAddress) {
+      selectedAddress.value = result.regeocode.formattedAddress
+    }
+  })
 }
 
 function locateCurrent() {
-  if (!navigator.geolocation) {
-    message.warning('当前浏览器不支持定位，请直接点击地图选点')
-    return
-  }
   locating.value = true
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
+  map.plugin('AMap.Geolocation', () => {
+    const geo = new window.AMap.Geolocation({ enableHighAccuracy: true, timeout: 10000 })
+    geo.getCurrentPosition((status, result) => {
       locating.value = false
-      setMapPoint(position.coords.latitude, position.coords.longitude)
-    },
-    () => {
-      locating.value = false
-      message.warning('无法获取当前位置，请检查浏览器定位权限或直接点击地图选点')
-    },
-    { enableHighAccuracy: true, timeout: 10000 },
-  )
+      if (status === 'complete' && result?.position) {
+        setMapPoint(result.position.lat, result.position.lng, 17)
+        return
+      }
+      message.warning('无法获取当前位置，请检查定位权限或直接点击地图选点')
+    })
+  })
 }
 
 function confirm() {
@@ -104,33 +76,44 @@ function confirm() {
     message.warning('请先在地图上选择位置')
     return
   }
-  emit('confirm', { latitude: selectedLatitude.value, longitude: selectedLongitude.value })
+  emit('confirm', {
+    latitude: selectedLatitude.value,
+    longitude: selectedLongitude.value,
+    address: selectedAddress.value,
+  })
 }
 
 onMounted(async () => {
-  const hasPoint = selectedLatitude.value != null && selectedLongitude.value != null
-  const center = hasPoint
-    ? gcj02ToWgs84(selectedLatitude.value, selectedLongitude.value)
-    : [35.8617, 104.1954]
-  map = L.map(mapEl.value, { zoomControl: true }).setView(center, hasPoint ? 16 : 4)
-  // 高德底图采用 GCJ-02，选点后转换为 GCJ-02 坐标保存，供微信地图直接导航。
-  const tileKey = props.apiKey ? `&key=${encodeURIComponent(props.apiKey)}` : ''
-  const tileUrl = props.provider === 'baidu'
-    ? 'https://maponline0{s}.bdimg.com/tile/?qt=tile&x={x}&y={y}&z={z}&styles=pl'
-    : `https://webrd0{s}.is.autonavi.com/appmaptile?style=7&x={x}&y={y}&z={z}${tileKey}`
-  L.tileLayer(tileUrl, {
-    subdomains: ['1', '2', '3', '4'],
-    maxZoom: 19,
-    attribution: '&copy; 高德地图',
-  }).addTo(map)
-  map.on('click', (event) => setMapPoint(event.latlng.lat, event.latlng.lng, Math.max(map.getZoom(), 15)))
-  if (hasPoint) setMapPoint(center[0], center[1])
-  await nextTick()
-  map.invalidateSize()
+  try {
+    const AMap = await loadAmapJs(props.apiKey || PLATFORM_AMAP_JS_KEY)
+    await nextTick()
+    const hasPoint = selectedLatitude.value != null && selectedLongitude.value != null
+    map = new AMap.Map(mapEl.value, {
+      zoom: hasPoint ? 16 : 5,
+      center: hasPoint ? [selectedLongitude.value, selectedLatitude.value] : [104.1954, 35.8617],
+    })
+    map.on('click', (event) => setMapPoint(event.lnglat.getLat(), event.lnglat.getLng()))
+    AMap.plugin(['AMap.Geocoder', 'AMap.AutoComplete', 'AMap.Geolocation'], () => {
+      geocoder = new AMap.Geocoder({ radius: 1000, extensions: 'base' })
+      if (hasPoint) setMapPoint(selectedLatitude.value, selectedLongitude.value, 16)
+      if (searchEl.value) {
+        const auto = new AMap.AutoComplete({ input: searchEl.value, city: '全国' })
+        auto.on('select', (event) => {
+          const poi = event?.poi
+          if (!poi?.location) return
+          setMapPoint(poi.location.lat, poi.location.lng, 17)
+          selectedAddress.value = [poi.district, poi.address, poi.name].filter(Boolean).join('')
+        })
+      }
+    })
+    setTimeout(() => map && map.resize(), 200)
+  } catch (error) {
+    message.error(error?.message || '高德地图加载失败')
+  }
 })
 
 onBeforeUnmount(() => {
-  if (map) map.remove()
+  if (map) map.destroy()
 })
 </script>
 
@@ -142,10 +125,17 @@ onBeforeUnmount(() => {
           <div><div class="map-picker-title">{{ title }}</div><div class="map-picker-sub">{{ description }}</div></div>
           <button class="map-picker-close" type="button" title="关闭" @click="emit('close')">×</button>
         </div>
+        <div class="map-search">
+          <input ref="searchEl" class="map-search-input" placeholder="搜索地点，例如：无锡观湖花园" />
+        </div>
         <div ref="mapEl" class="location-map" />
         <div class="map-picker-footer">
           <div class="coordinate-text">
-            {{ selectedLatitude == null ? '尚未选点' : `纬度 ${selectedLatitude} · 经度 ${selectedLongitude}` }}
+            <template v-if="selectedLatitude == null">尚未选点</template>
+            <template v-else>
+              <div>{{ selectedAddress || '已选点' }}</div>
+              <div>纬度 {{ selectedLatitude }} · 经度 {{ selectedLongitude }}</div>
+            </template>
           </div>
           <div class="map-picker-actions">
             <button class="btn" type="button" :disabled="locating" @click="locateCurrent">{{ locating ? '定位中…' : '定位到当前' }}</button>
@@ -165,12 +155,12 @@ onBeforeUnmount(() => {
 .map-picker-title { color: var(--text); font-size: 18px; font-weight: 650; }
 .map-picker-sub { margin-top: 4px; color: var(--text-muted); font-size: 12px; }
 .map-picker-close { width: 34px; height: 34px; border: 0; background: transparent; color: var(--text-muted); font-size: 25px; cursor: pointer; }
-.location-map { width: 100%; height: min(56vh, 500px); min-height: 340px; background: #eef1ee; }
+.map-search { padding: 12px 20px 0; }
+.map-search-input { box-sizing: border-box; width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; }
+.location-map { width: 100%; height: min(52vh, 460px); min-height: 320px; margin-top: 12px; background: #eef1ee; }
 .map-picker-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
-.coordinate-text { min-width: 0; color: var(--text-muted); font-size: 13px; }
+.coordinate-text { min-width: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
 .map-picker-actions { display: flex; flex-shrink: 0; gap: 8px; }
-:global(.map-pin-marker) { background: transparent; border: 0; }
-:global(.map-pin-marker span) { display: block; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50% 50% 50% 0; background: #e34948; box-shadow: 0 2px 8px rgba(0, 0, 0, .3); transform: rotate(-45deg); }
 @media (max-width: 640px) {
   .map-picker-mask { padding: 10px; }
   .map-picker-footer { align-items: stretch; flex-direction: column; }

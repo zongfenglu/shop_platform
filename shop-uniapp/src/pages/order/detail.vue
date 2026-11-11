@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { cancelOrder, confirmReceipt, getOrder, getOrderTracks, getPayChannels, prepayOrder } from '@/api'
 import { encodeRouteId } from '@/utils/routeId'
+import { openMapNav } from '@/utils/amap'
 
 /**
  * 订单详情。对应原型 docs/prototype/h5/order-detail.html。
@@ -151,7 +152,12 @@ onShareAppMessage(() => {
 function groupStatusText(group) {
   if (!group) return '拼团进行中'
   if (data.value?.order?.orderStatus === 'cancelled') return '拼团已取消'
-  if (group.status === 'success') return group.isMock ? '系统模拟成团' : '已成团'
+  if (group.status === 'success') {
+    const actual = Number(group.actualNum || 0)
+    const target = Number(group.groupNum || 0)
+    // isMock 是活动开关（人数不足时能否自动成团），不是本团是否被系统补齐。
+    return target > 0 && actual < target ? '系统模拟成团' : '已成团'
+  }
   if (group.status === 'fail') return '未成团，款项已原路退回'
   return '拼团进行中'
 }
@@ -177,13 +183,7 @@ function canConfirm() {
 }
 
 function openMap(target, name, address) {
-  const latitude = Number(target?.latitude)
-  const longitude = Number(target?.longitude)
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    uni.showToast({ title: '该地址尚未地图选点', icon: 'none' })
-    return
-  }
-  uni.openLocation({ latitude, longitude, name, address })
+  openMapNav({ latitude: target?.latitude, longitude: target?.longitude, name, address })
 }
 
 function hasBottomActions() {

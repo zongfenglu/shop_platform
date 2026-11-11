@@ -2,6 +2,10 @@
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { createAddress, getAddress, updateAddress } from '@/api'
+import { openMapNav } from '@/utils/amap'
+// #ifdef H5
+import AmapPicker from '@/components/AmapPicker.vue'
+// #endif
 // #ifdef H5
 import { pcaTextArr } from 'element-china-area-data'
 // #endif
@@ -27,6 +31,7 @@ const form = ref({
 })
 const editingId = ref('')
 const saving = ref(false)
+const showAmapPicker = ref(false)
 /** 编辑已有的默认地址时不允许在这里取消默认（后端也会忽略），改默认请去列表页设别的地址 */
 const lockDefault = ref(false)
 
@@ -111,6 +116,10 @@ function locationDetail(location) {
 }
 
 function onChooseLocation() {
+  // #ifdef H5
+  showAmapPicker.value = true
+  return
+  // #endif
   uni.chooseLocation({
     latitude: form.value.latitude == null ? undefined : Number(form.value.latitude),
     longitude: form.value.longitude == null ? undefined : Number(form.value.longitude),
@@ -134,6 +143,19 @@ function onChooseLocation() {
       uni.showToast({ title: '暂时无法打开地图，请稍后重试', icon: 'none' })
     },
   })
+}
+
+function onAmapPicked(location) {
+  showAmapPicker.value = false
+  form.value.latitude = location.latitude
+  form.value.longitude = location.longitude
+  if (location.province) form.value.province = location.province
+  if (location.city) form.value.city = location.city
+  if (location.region) form.value.region = location.region
+  if (location.address) form.value.detail = locationDetail(location)
+  // #ifdef H5
+  syncH5Region(form.value.province, form.value.city, form.value.region)
+  // #endif
 }
 
 function clearLocation() {
@@ -237,6 +259,7 @@ async function onSave() {
           </text>
           <view class="location-actions">
             <button class="location-btn" type="default" @click="onChooseLocation">地图选点</button>
+            <button v-if="form.latitude != null" class="location-btn subtle" type="default" @click="openMapNav({ latitude: form.latitude, longitude: form.longitude, name: form.detail || '收货地址', address: `${form.province || ''}${form.city || ''}${form.region || ''}${form.detail || ''}` })">导航</button>
             <button v-if="form.latitude != null" class="location-btn subtle" type="default" @click="clearLocation">清除</button>
           </view>
         </view>
@@ -252,6 +275,9 @@ async function onSave() {
     <view class="bar">
       <button class="bar-btn" :disabled="saving" @click="onSave">{{ saving ? '保存中…' : '保存' }}</button>
     </view>
+    <!-- #ifdef H5 -->
+    <AmapPicker v-if="showAmapPicker" @confirm="onAmapPicked" @close="showAmapPicker = false" />
+    <!-- #endif -->
   </view>
 </template>
 

@@ -93,6 +93,7 @@ function closeModal() {
 function onLocationConfirm(location) {
   form.latitude = location.latitude
   form.longitude = location.longitude
+  if (!form.detail && location.address) form.detail = location.address
   locationPickerOpen.value = false
 }
 

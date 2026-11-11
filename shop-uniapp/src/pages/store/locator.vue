@@ -2,6 +2,7 @@
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { listOfflineStores } from '@/api'
+import { formatDistance, haversineKm, openMapNav } from '@/utils/amap'
 
 /**
  * 门店列表。对应原型 docs/prototype/h5/store-locator.html。
@@ -12,6 +13,7 @@ const loading = ref(true)
 const stores = ref([])
 const selectedId = ref('')
 const selectMode = ref(false)
+const myLocation = ref(null)
 
 const selectedStore = computed(() =>
   stores.value.find((s) => String(s.id) === String(selectedId.value)) || null
@@ -24,6 +26,7 @@ onLoad((query) => {
     uni.setNavigationBarTitle({ title: '选择自提门店' })
   }
   load()
+  locateMe()
 })
 
 async function load() {
@@ -32,6 +35,9 @@ async function load() {
     stores.value = (await listOfflineStores()) || []
     if (selectMode.value && !selectedId.value && stores.value.length === 1) {
       selectedId.value = String(stores.value[0].id)
+    }
+    if (myLocation.value) {
+      stores.value = [...stores.value].sort((a, b) => (distanceKm(a) ?? 9999) - (distanceKm(b) ?? 9999))
     }
   } catch (e) {
     stores.value = []
@@ -66,16 +72,32 @@ function onCall(store) {
   uni.makePhoneCall({ phoneNumber: String(store.phone) })
 }
 
-function onNavigate(store) {
+function locateMe() {
+  uni.getLocation({
+    type: 'gcj02',
+    success(res) {
+      myLocation.value = { latitude: res.latitude, longitude: res.longitude }
+      stores.value = [...stores.value].sort((a, b) => (distanceKm(a) ?? 9999) - (distanceKm(b) ?? 9999))
+    },
+  })
+}
+
+function distanceKm(store) {
+  if (!myLocation.value) return null
   const lat = Number(store.latitude)
   const lng = Number(store.longitude)
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) {
-    uni.showToast({ title: '该门店暂无定位', icon: 'none' })
-    return
-  }
-  uni.openLocation({
-    latitude: lat,
-    longitude: lng,
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return haversineKm(myLocation.value.latitude, myLocation.value.longitude, lat, lng)
+}
+
+function distanceText(store) {
+  return formatDistance(distanceKm(store))
+}
+
+function onNavigate(store) {
+  openMapNav({
+    latitude: store.latitude,
+    longitude: store.longitude,
     name: store.name || '自提门店',
     address: addr(store),
   })
@@ -99,11 +121,12 @@ function onNavigate(store) {
         <view class="store-name">{{ store.name }}</view>
         <view class="store-addr">{{ addr(store) }}</view>
         <view class="store-meta">
+          <text v-if="distanceText(store)">距你 {{ distanceText(store) }}</text>
           <text v-if="store.businessHours">营业时间 {{ store.businessHours }}</text>
           <text v-if="store.phone">{{ store.phone }}</text>
         </view>
-        <view v-if="!selectMode" class="store-actions">
-          <text class="act" @click.stop="onCall(store)">拨打电话</text>
+        <view class="store-actions">
+          <text v-if="store.phone" class="act" @click.stop="onCall(store)">拨打电话</text>
           <text class="act" @click.stop="onNavigate(store)">导航</text>
         </view>
       </view>

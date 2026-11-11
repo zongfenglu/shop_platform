@@ -50,6 +50,8 @@ shop:
     base-domain: ${PLATFORM_BASE_DOMAIN:shop.com}
   store-console-url: ${STORE_CONSOLE_URL:http://localhost:5174}
   h5-public-url: ${H5_PUBLIC_URL:http://localhost:5175}
+  map:
+    amap-js-key: ${AMAP_JS_KEY:ff5b8c4b9abb6024550a3e0f9c139bca}
   domain:
     skip-cname: ${DOMAIN_SKIP_CNAME:true}
   crypto:

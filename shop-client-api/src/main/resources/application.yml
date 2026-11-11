@@ -36,6 +36,8 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 shop:
+  map:
+    amap-js-key: ${AMAP_JS_KEY:ff5b8c4b9abb6024550a3e0f9c139bca}
   jwt:
     secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION_ENV_this_is_a_dev_only_default_secret_key}
     expire-hours: 12

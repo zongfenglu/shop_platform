@@ -24,6 +24,7 @@ public class StoreOperationSettingServiceImpl extends ServiceImpl<StoreOperation
         setting.setPrintOnRefund(false);
         setting.setPrintCopies(1);
         setting.setSmsEnabled(false);
+        setting.setMapProvider("amap");
         save(setting);
         return setting;
     }

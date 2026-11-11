@@ -37,7 +37,7 @@
                 "desc" : "用于选择收货地址位置和门店导航"
             }
         },
-        "requiredPrivateInfos" : [ "chooseLocation" ],
+        "requiredPrivateInfos" : [ "chooseLocation", "getLocation", "openLocation" ],
         "usingComponents" : true
     },
     "mp-alipay" : {

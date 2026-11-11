@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { createAddress, deleteAddress, listAddresses, setDefaultAddress } from '@/api'
+import { openMapNav } from '@/utils/amap'
 
 /**
  * 收货地址列表。两种用途：
@@ -47,16 +48,10 @@ function onCreate() {
 }
 
 function onNavigate(row) {
-  const latitude = Number(row.latitude)
-  const longitude = Number(row.longitude)
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    uni.showToast({ title: '该地址尚未地图选点', icon: 'none' })
-    return
-  }
-  uni.openLocation({
-    latitude,
-    longitude,
-    name: `${row.name}的收货地址`,
+  openMapNav({
+    latitude: row.latitude,
+    longitude: row.longitude,
+    name: `${row.name || ''}的收货地址`,
     address: `${row.province || ''}${row.city || ''}${row.region || ''}${row.detail || ''}`,
   })
 }

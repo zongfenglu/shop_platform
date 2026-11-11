@@ -12,6 +12,7 @@ import com.shopplatform.domain.setting.service.ExpressCompanyService;
 import com.shopplatform.domain.setting.service.ReceiptPrinterService;
 import com.shopplatform.domain.setting.service.ReturnAddressService;
 import com.shopplatform.domain.setting.service.SmsChannelService;
+import com.shopplatform.domain.setting.service.MapKeyResolver;
 import com.shopplatform.domain.setting.service.StoreOperationSettingService;
 import com.shopplatform.framework.crypto.AesGcmEncryptor;
 import jakarta.validation.Valid;
@@ -50,6 +51,7 @@ public class StoreOperationSettingController {
     private final ReceiptPrinterService receiptPrinterService;
     private final SmsChannelService smsChannelService;
     private final StoreOperationSettingService settingService;
+    private final MapKeyResolver mapKeyResolver;
     private final AesGcmEncryptor encryptor;
 
     public StoreOperationSettingController(ExpressCompanyService expressCompanyService,
@@ -57,12 +59,14 @@ public class StoreOperationSettingController {
                                            ReceiptPrinterService receiptPrinterService,
                                            SmsChannelService smsChannelService,
                                            StoreOperationSettingService settingService,
+                                           MapKeyResolver mapKeyResolver,
                                            AesGcmEncryptor encryptor) {
         this.expressCompanyService = expressCompanyService;
         this.returnAddressService = returnAddressService;
         this.receiptPrinterService = receiptPrinterService;
         this.smsChannelService = smsChannelService;
         this.settingService = settingService;
+        this.mapKeyResolver = mapKeyResolver;
         this.encryptor = encryptor;
     }
 
@@ -364,7 +368,8 @@ public class StoreOperationSettingController {
                 item.getSmsEnabled(), item.getSmsNewOrderTemplate(), item.getSmsPaidTemplate(),
                 item.getSmsShippedTemplate(), item.getSmsRefundTemplate(), item.getSmsNotifyPhones(),
                 item.getShareTitle(), item.getShareSubtitle(), item.getShareBrand(), item.getShareImageUrl(),
-                item.getMapProvider(), item.getMapApiKey());
+                mapKeyResolver.provider(),
+                StringUtils.hasText(item.getMapApiKey()) ? item.getMapApiKey() : mapKeyResolver.jsKey());
     }
 
     private static String trimToNull(String value) {

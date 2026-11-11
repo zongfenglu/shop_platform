@@ -3,6 +3,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { closeAfterSale, getAfterSale, getOrder, returnShippedAfterSale } from '@/api'
+import { openMapNav } from '@/utils/amap'
 
 /**
  * 售后详情。对应 ConsumerAfterSaleController#detail/return-shipped/close。
@@ -72,17 +73,11 @@ function returnAddress() {
 
 function navigateReturnAddress() {
   const address = returnAddress()
-  const latitude = Number(address?.latitude)
-  const longitude = Number(address?.longitude)
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    uni.showToast({ title: '商家未配置地图位置', icon: 'none' })
-    return
-  }
-  uni.openLocation({
-    latitude,
-    longitude,
+  openMapNav({
+    latitude: address?.latitude,
+    longitude: address?.longitude,
     name: '商家退货地址',
-    address: `${address.province || ''}${address.city || ''}${address.district || ''}${address.detail || ''}`,
+    address: `${address?.province || ''}${address?.city || ''}${address?.district || ''}${address?.detail || ''}`,
   })
 }
 
