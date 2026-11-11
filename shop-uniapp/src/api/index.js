@@ -301,6 +301,16 @@ export function getBargainRecord(recordId) {
   return get(`/api/bargain/records/${recordId}`)
 }
 
+/** 当前用户进行中的砍价 */
+export function listMyBargains() {
+  return get('/api/bargain/my-records')
+}
+
+/** 当前用户在某个活动上的进行中砍价，没有则 data 为空 */
+export function getMyBargainOfActive(activeId) {
+  return get(`/api/bargain/actives/${activeId}/mine`)
+}
+
 // ---- 签到（ConsumerSignController）----
 
 /** 签到状态（连续天数/本月签到/今日是否已签/奖励规则） */

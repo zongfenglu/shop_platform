@@ -70,7 +70,7 @@ public class StoreAuthController {
             throw new BusinessException(ErrorCode.TENANT_DISABLED, "商城已停用，无法登录");
         }
 
-        StoreUser user = storeUserService.findByUsername(shop.getId(), request.username());
+        StoreUser user = resolveLoginUser(shop, request.username());
         if (user == null || user.getStatus() == null || user.getStatus() != 1) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "账号不存在或已停用");
         }
@@ -119,6 +119,18 @@ public class StoreAuthController {
                 Map.of("shopId", shop.getId(), "username", user.getUsername(), "platformImpersonation", true));
         return Result.ok(new StoreLoginResponse(
                 token, shop.getId(), shop.getCode(), user.getId(), user.getUsername(), user.getRealName(), true));
+    }
+
+    /**
+     * 建店时店主账号是 {code}_admin（见 ShopServiceImpl）。登录页常被填成 admin，
+     * 与演示店习惯一致，这里把 admin 视为该店超级店主的别名。
+     */
+    private StoreUser resolveLoginUser(Shop shop, String username) {
+        StoreUser user = storeUserService.findByUsername(shop.getId(), username);
+        if (user == null && "admin".equalsIgnoreCase(username)) {
+            user = storeUserService.findByUsername(shop.getId(), shop.getCode() + "_admin");
+        }
+        return user;
     }
 
     public record ImpersonateRequest(@NotBlank String ticket) {

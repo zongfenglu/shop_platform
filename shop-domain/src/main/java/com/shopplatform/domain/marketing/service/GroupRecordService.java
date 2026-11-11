@@ -33,4 +33,7 @@ public interface GroupRecordService extends TenantSafeService<GroupRecord> {
 
     /** 关联砍价/拼团订单：记录 leader_order_id（开团时团长订单） */
     void setLeaderOrder(Long recordId, Long orderId);
+
+    /** 按团长订单找回拼团记录。订单未写入 groupRecordId 时，详情页仍要能邀请。 */
+    GroupRecord findByLeaderOrderId(Long orderId);
 }

@@ -81,4 +81,15 @@ public class GroupRecordServiceImpl extends ServiceImpl<GroupRecordMapper, Group
         r.setLeaderOrderId(orderId);
         updateById(r);
     }
+
+    @Override
+    public GroupRecord findByLeaderOrderId(Long orderId) {
+        if (orderId == null) {
+            return null;
+        }
+        return getOne(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<GroupRecord>()
+                .eq(GroupRecord::getLeaderOrderId, orderId)
+                .orderByDesc(GroupRecord::getId)
+                .last("LIMIT 1"), false);
+    }
 }

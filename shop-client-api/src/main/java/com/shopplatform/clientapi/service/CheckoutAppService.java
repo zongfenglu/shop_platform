@@ -90,6 +90,7 @@ public class CheckoutAppService {
     }
 
     public OrderPriceResult preview(CheckoutRequest request) {
+        rejectSoldOutGroup(request);
         return priceCalculator.calculate(buildPriceContext(request));
     }
 
@@ -123,6 +124,7 @@ public class CheckoutAppService {
         // 拼团记录的写入与下单在同一事务，createOrder 失败则一并回滚，无需手工补偿。
         GroupContext groupCtx = null;
         if ("group".equals(request.activityType()) && request.activityId() != null) {
+            rejectSoldOutGroup(request);
             groupCtx = prepareGroup(request, loginUser.userId());
         }
 
@@ -167,6 +169,20 @@ public class CheckoutAppService {
                 }
             }
             throw e;
+        }
+    }
+
+    /** 拼团规格库存为 0 时直接拒绝，避免先开团再在扣库存时回滚。 */
+    private void rejectSoldOutGroup(CheckoutRequest request) {
+        if (!"group".equals(request.activityType()) || request.items() == null) {
+            return;
+        }
+        for (CartItemRequest item : request.items()) {
+            GoodsSku sku = goodsSkuService.getByIdWithTenant(item.skuId());
+            int stock = sku.getStock() == null ? 0 : sku.getStock();
+            if (stock < item.quantity()) {
+                throw new BusinessException(ErrorCode.SKU_STOCK_INSUFFICIENT, "该规格已售罄，无法拼团");
+            }
         }
     }
 

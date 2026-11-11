@@ -80,8 +80,13 @@ function isGroup(row) {
   return row.activityType === 'group' && row.groupRecordId
 }
 
+function canInviteGroup(row) {
+  return isGroup(row) && row.orderStatus === 'normal' && row.groupStatus === 'pending'
+}
+
 function groupStatusText(row) {
   if (!isGroup(row)) return ''
+  if (row.orderStatus === 'cancelled') return '订单已取消'
   if (row.groupStatus === 'success') return '已成团'
   if (row.groupStatus === 'fail') return '未成团，款项已原路退回'
   const actual = Number(row.groupActualNum || 0)
@@ -90,7 +95,7 @@ function groupStatusText(row) {
 }
 
 function inviteGroup(row) {
-  if (!isGroup(row) || row.groupStatus !== 'pending') return
+  if (!canInviteGroup(row)) return
   uni.navigateTo({
     url: `/pages/group/detail?id=${encodeRouteId(row.activityId)}&recordId=${encodeRouteId(row.groupRecordId)}`,
   })
@@ -161,7 +166,7 @@ function onComment(row) {
             <text class="group-label">拼团</text>
             <text :class="['group-status', row.groupStatus === 'fail' ? 'group-fail' : '']">{{ groupStatusText(row) }}</text>
           </view>
-          <button v-if="row.groupStatus === 'pending'" class="btn btn-primary" size="mini" @click="inviteGroup(row)">邀请好友</button>
+          <button v-if="canInviteGroup(row)" class="btn btn-primary" size="mini" @click="inviteGroup(row)">邀请好友</button>
         </view>
         <view v-if="canCancel(row) || canAfterSale(row) || row.afterSaleId || canConfirm(row) || row.orderStatus === 'finished'" class="foot" @click.stop>
           <text class="pay-hint" v-if="canCancel(row)">应付 {{ fmtPrice(row.payPrice) }}</text>

@@ -150,20 +150,23 @@ public class ConsumerOrderController {
         result.put("address", address == null ? Map.of() : address);
         result.put("packages", packages);
         result.put("afterSales", afterSaleService.listByOrderId(id));
+        GroupRecord group = null;
         if (order.getGroupRecordId() != null) {
-            GroupRecord group = groupRecordService.getByIdWithTenant(order.getGroupRecordId());
-            if (group != null) {
-                var active = groupActiveService.getByIdWithTenant(group.getActiveId());
-                Map<String, Object> groupView = new LinkedHashMap<>();
-                groupView.put("recordId", String.valueOf(group.getId()));
-                groupView.put("status", group.getStatus());
-                groupView.put("actualNum", group.getActualNum());
-                groupView.put("groupNum", active.getGroupNum());
-                groupView.put("expireTime", group.getExpireTime());
-                groupView.put("successTime", group.getSuccessTime());
-                groupView.put("isMock", Integer.valueOf(1).equals(active.getIsMock()));
-                result.put("group", groupView);
-            }
+            group = groupRecordService.getByIdWithTenant(order.getGroupRecordId());
+        } else if ("group".equals(order.getActivityType())) {
+            group = groupRecordService.findByLeaderOrderId(order.getId());
+        }
+        if (group != null) {
+            var active = groupActiveService.getByIdWithTenant(group.getActiveId());
+            Map<String, Object> groupView = new LinkedHashMap<>();
+            groupView.put("recordId", String.valueOf(group.getId()));
+            groupView.put("status", group.getStatus());
+            groupView.put("actualNum", group.getActualNum());
+            groupView.put("groupNum", active.getGroupNum());
+            groupView.put("expireTime", group.getExpireTime());
+            groupView.put("successTime", group.getSuccessTime());
+            groupView.put("isMock", Integer.valueOf(1).equals(active.getIsMock()));
+            result.put("group", groupView);
         }
         if ("pickup".equals(order.getDeliveryType()) && order.getPickupStoreId() != null) {
             result.put("pickupStore", offlineStoreService.getByIdWithTenant(order.getPickupStoreId()));

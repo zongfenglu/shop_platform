@@ -89,6 +89,12 @@ http.interceptors.response.use(
     // 经 GlobalExceptionHandler 变成 **HTTP 200 + code=10002**。
     // 所以必须按业务码判断，只看 HTTP 状态会导致 token 过期后一直停在当前页刷不出数据。
     if (body.code === ErrorCode.UNAUTHORIZED) {
+      const url = String(response.config?.url || '')
+      // 登录失败也走 10002，不能当成会话过期：否则登录页既不跳转也不弹错，看起来没反应。
+      if (url.includes('/auth/login')) {
+        message.error(body.msg || '账号或密码错误')
+        return Promise.reject(Object.assign(new Error(body.msg || '账号或密码错误'), { code: body.code, isBusiness: true }))
+      }
       clearToken()
       onUnauthorized()
       return Promise.reject(Object.assign(new Error(body.msg || '登录已过期'), { code: body.code, isAuth: true }))

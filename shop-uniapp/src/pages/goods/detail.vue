@@ -4,7 +4,7 @@ import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { addToCart, getGoodsComments, getGoodsDetail } from '@/api'
 import { getToken } from '@/utils/request'
 import { encodeRouteId } from '@/utils/routeId'
-import ShareSheet from '@/components/ShareSheet.vue'
+import ShareButton from '@/components/ShareButton.vue'
 
 /**
  * 商品详情。对应原型 docs/prototype/h5/goods-detail.html。
@@ -28,7 +28,6 @@ const specPopupVisible = ref(false)
 /** 'cart' 加购 / 'buy' 立即购买——弹层确认后走哪条路 */
 const specAction = ref('cart')
 const goodsId = ref('')
-const shareSheetVisible = ref(false)
 
 const isMultiSpec = computed(() => (goods.value?.specs?.length || 0) > 0)
 
@@ -203,6 +202,9 @@ function fmtPrice(v) {
           <text class="meta">库存 {{ displayStock ?? 0 }}</text>
           <text v-if="goods.isVirtual" class="meta">虚拟商品 · 无需物流</text>
         </view>
+        <view class="share-row">
+          <ShareButton :title="goods.name" :path="`/pages/goods/detail?id=${encodeRouteId(goods.id)}`" />
+        </view>
       </view>
 
       <view v-if="isMultiSpec" class="block tap-row" @click="openSpec('cart')">
@@ -235,15 +237,12 @@ function fmtPrice(v) {
       <view class="bottom-spacer" />
 
       <view class="action-bar">
-        <button class="share-entry bottom-share" @click="shareSheetVisible = true">分享</button>
         <view class="action-ico" @click="goCart">
           <text class="action-ico-txt">购物车</text>
         </view>
         <button class="action-btn cart" @click="openSpec('cart')">加入购物车</button>
         <button class="action-btn buy" @click="openSpec('buy')">立即购买</button>
       </view>
-
-      <ShareSheet :visible="shareSheetVisible" :goods="goods" @close="shareSheetVisible = false" />
 
       <!-- 规格选择弹层 -->
       <view v-if="specPopupVisible" class="mask" @click="specPopupVisible = false" />
@@ -380,6 +379,9 @@ function fmtPrice(v) {
   font-size: 23rpx;
   color: #8795a3;
 }
+.share-row {
+  margin-top: 18rpx;
+}
 .tap-row {
   display: flex;
   align-items: center;
@@ -459,27 +461,6 @@ function fmtPrice(v) {
 .action-ico-txt {
   font-size: 22rpx;
   color: #4a4844;
-}
-:deep(.bottom-share.share-button) {
-  flex: 0 0 auto;
-  height: 80rpx;
-  line-height: 80rpx;
-  border-radius: 40rpx;
-}
-.share-entry {
-  flex: 0 0 auto;
-  min-width: 128rpx;
-  height: 80rpx;
-  padding: 0 22rpx;
-  border: 0;
-  border-radius: 40rpx;
-  background: #e8f1ff;
-  color: #2574d1;
-  font-size: 23rpx;
-  line-height: 80rpx;
-}
-.share-entry::after {
-  border: 0;
 }
 .action-btn {
   flex: 1;

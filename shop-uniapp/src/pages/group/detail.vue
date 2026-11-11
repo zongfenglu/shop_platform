@@ -27,7 +27,9 @@ onLoad(async (query) => {
   try {
     active.value = await getGroupActive(id)
     const skus = active.value?.skus || []
-    if (skus.length) selectedSkuId.value = skus[0].skuId
+    const available = skus.find((s) => Number(s.stock ?? 0) > 0)
+    if (available) selectedSkuId.value = available.skuId
+    else if (skus.length) selectedSkuId.value = skus[0].skuId
     if (queryRecordId) {
       record.value = await getGroupRecord(queryRecordId).catch(() => null)
       startClock()
@@ -54,6 +56,15 @@ const selectedSku = computed(() => {
   return skus.find((s) => s.skuId === selectedSkuId.value) || null
 })
 
+const canBuy = computed(() => Number(selectedSku.value?.stock ?? 0) > 0)
+
+function selectSku(sku) {
+  selectedSkuId.value = sku.skuId
+  if (Number(sku?.stock ?? 0) <= 0) {
+    uni.showToast({ title: '该规格已售罄', icon: 'none' })
+  }
+}
+
 function fmtPrice(v) { return Number(v ?? 0).toFixed(2) }
 
 const expireMs = computed(() => {
@@ -77,9 +88,21 @@ const recordStatusText = computed(() => {
   return { pending: '拼团中', success: '已成团', fail: '未成团' }[st] || st || ''
 })
 
+function copyInvite() {
+  const path = `/pages/group/detail?id=${encodeRouteId(activeId.value)}&recordId=${encodeRouteId(recordId.value)}`
+  uni.setClipboardData({
+    data: path,
+    success: () => uni.showToast({ title: '参团链接已复制' }),
+  })
+}
+
 function goCheckout(join) {
   if (!selectedSku.value) {
     uni.showToast({ title: '请选择规格', icon: 'none' })
+    return
+  }
+  if (!canBuy.value) {
+    uni.showToast({ title: '库存不足，无法拼团', icon: 'none' })
     return
   }
   const a = active.value
@@ -140,8 +163,8 @@ function goCheckout(join) {
             v-for="s in active.skus"
             :key="s.skuId"
             class="sku-item"
-            :class="{ active: selectedSkuId === s.skuId }"
-            @click="selectedSkuId = s.skuId"
+            :class="{ active: selectedSkuId === s.skuId, soldout: Number(s.stock ?? 0) <= 0 }"
+            @click="selectSku(s)"
           >
             <text class="sku-price">¥{{ fmtPrice(s.groupPrice) }}</text>
             <text class="sku-origin">¥{{ fmtPrice(s.price) }}</text>
@@ -158,11 +181,17 @@ function goCheckout(join) {
           <text class="bar-label">拼团价</text>
           <text class="bar-amount">¥{{ fmtPrice(selectedSku?.groupPrice) }}</text>
         </view>
-        <button v-if="record && record.status === 'pending'" class="bar-btn join" @click="goCheckout(true)">
-          参团
+        <!-- #ifdef MP-WEIXIN -->
+        <button v-if="record && record.status === 'pending'" class="bar-btn join" open-type="share">邀请好友参团</button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <button v-if="record && record.status === 'pending'" class="bar-btn join" @click="copyInvite">邀请好友参团</button>
+        <!-- #endif -->
+        <button v-if="record && record.status === 'pending' && !record.isLeader" class="bar-btn" :disabled="!canBuy" @click="goCheckout(true)">
+          {{ canBuy ? '参团' : '库存不足' }}
         </button>
-        <button v-else class="bar-btn" @click="goCheckout(false)">
-          开团
+        <button v-else-if="!record || record.status !== 'pending'" class="bar-btn" :disabled="!canBuy" @click="goCheckout(false)">
+          {{ canBuy ? '开团' : '库存不足' }}
         </button>
       </view>
     </view>
@@ -205,6 +234,7 @@ function goCheckout(join) {
   min-width: 180rpx;
 }
 .sku-item.active { border-color: #d4380d; background: #fff5f0; }
+.sku-item.soldout { opacity: 0.45; }
 .sku-price { color: #d4380d; font-size: 28rpx; font-weight: 700; }
 .sku-origin { color: #b5b3ad; font-size: 20rpx; text-decoration: line-through; }
 .sku-stock { font-size: 20rpx; color: #898781; }
@@ -224,4 +254,6 @@ function goCheckout(join) {
   height: 76rpx; line-height: 76rpx; font-size: 28rpx; padding: 0 56rpx; margin: 0;
 }
 .bar-btn.join { background: #2a78d6; }
+.bar-btn[disabled] { background: #c8c6c1; color: #fff; }
+.bar-btn::after { border: none; }
 </style>

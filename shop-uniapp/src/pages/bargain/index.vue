@@ -38,6 +38,7 @@ function goDetail(index) {
       <view class="hero">
         <view class="hero-title">砍价专场</view>
         <view class="hero-sub">邀请好友助力，砍到最低价再下单</view>
+        <view class="hero-link" @click="uni.navigateTo({ url: '/pages/bargain/mine' })">我的砍价</view>
       </view>
 
       <view v-if="!actives.length" class="empty">暂无进行中的砍价活动</view>
@@ -68,6 +69,7 @@ function goDetail(index) {
 }
 .hero-title { font-size: 40rpx; font-weight: 800; letter-spacing: 2rpx; }
 .hero-sub { margin-top: 14rpx; font-size: 26rpx; opacity: 0.92; }
+.hero-link { display: inline-block; margin-top: 18rpx; padding: 8rpx 22rpx; border-radius: 24rpx; background: rgba(255,255,255,0.2); font-size: 24rpx; }
 
 .active {
   display: flex; align-items: center; gap: 18rpx;

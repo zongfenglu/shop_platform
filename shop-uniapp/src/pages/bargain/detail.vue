@@ -1,7 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
-import { getBargainActive, startBargain, helpBargain, getBargainRecord } from '@/api/index'
+import { getBargainActive, startBargain, helpBargain, getBargainRecord, getMyBargainOfActive } from '@/api/index'
+import { getToken } from '@/utils/request'
 import { decodeRouteId, encodeRouteId } from '@/utils/routeId'
 import ShareButton from '@/components/ShareButton.vue'
 
@@ -29,10 +30,15 @@ onLoad(async (query) => {
   try {
     active.value = await getBargainActive(id)
     const skus = active.value?.skus || []
-    if (skus.length) selectedSkuId.value = skus[0].skuId
+    const available = skus.find((s) => Number(s.stock ?? 0) > 0)
+    if (available) selectedSkuId.value = available.skuId
+    else if (skus.length) selectedSkuId.value = skus[0].skuId
     if (recordId) {
       record.value = await getBargainRecord(recordId).catch(() => null)
-      startClock()
+      if (record.value) startClock()
+    } else if (getToken()) {
+      record.value = await getMyBargainOfActive(id).catch(() => null)
+      if (record.value) startClock()
     }
   } finally {
     loading.value = false
@@ -55,6 +61,20 @@ const selectedSku = computed(() => {
   const skus = active.value?.skus || []
   return skus.find((s) => s.skuId === selectedSkuId.value) || null
 })
+
+function skuStock(sku) {
+  return Number(sku?.stock ?? 0)
+}
+
+const canStart = computed(() => skuStock(selectedSku.value) > 0)
+
+function selectSku(sku) {
+  if (skuStock(sku) <= 0) {
+    uni.showToast({ title: '该规格已售罄', icon: 'none' })
+    return
+  }
+  selectedSkuId.value = sku.skuId
+}
 
 function fmtPrice(v) { return Number(v ?? 0).toFixed(2) }
 
@@ -99,6 +119,10 @@ const recordStatusText = computed(() => {
 async function onStart() {
   if (!selectedSku.value) {
     uni.showToast({ title: '请选择规格', icon: 'none' })
+    return
+  }
+  if (!canStart.value) {
+    uni.showToast({ title: '库存不足，无法发起砍价', icon: 'none' })
     return
   }
   starting.value = true
@@ -173,8 +197,8 @@ function goCheckout() {
             v-for="s in active.skus"
             :key="s.skuId"
             class="sku-item"
-            :class="{ active: selectedSkuId === s.skuId }"
-            @click="selectedSkuId = s.skuId"
+            :class="{ active: selectedSkuId === s.skuId, soldout: Number(s.stock ?? 0) <= 0 }"
+            @click="selectSku(s)"
           >
             <text class="sku-price">¥{{ fmtPrice(s.price) }}</text>
             <text class="sku-stock">库存 {{ s.stock ?? 0 }}</text>
@@ -213,8 +237,8 @@ function goCheckout() {
       <!-- 操作栏 -->
       <view class="bar">
         <template v-if="!record">
-          <button class="bar-btn" :disabled="starting" @click="onStart">
-            {{ starting ? '发起中…' : '发起砍价' }}
+          <button class="bar-btn" :disabled="starting || !canStart" @click="onStart">
+            {{ starting ? '发起中…' : (canStart ? '发起砍价' : '库存不足') }}
           </button>
         </template>
         <template v-else>
@@ -270,6 +294,7 @@ function goCheckout() {
   min-width: 180rpx;
 }
 .sku-item.active { border-color: #722ed1; background: #f4ecff; }
+.sku-item.soldout { opacity: 0.45; }
 .sku-price { color: #d4380d; font-size: 28rpx; font-weight: 700; }
 .sku-stock { font-size: 20rpx; color: #898781; }
 

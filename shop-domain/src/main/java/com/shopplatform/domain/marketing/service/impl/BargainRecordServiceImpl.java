@@ -55,6 +55,15 @@ public class BargainRecordServiceImpl extends ServiceImpl<BargainRecordMapper, B
     }
 
     @Override
+    public List<BargainRecord> listInProgress(Long userId) {
+        return list(new LambdaQueryWrapper<BargainRecord>()
+                .eq(BargainRecord::getUserId, userId)
+                .in(BargainRecord::getStatus, List.of("ongoing", "done"))
+                .gt(BargainRecord::getExpireTime, LocalDateTime.now())
+                .orderByDesc(BargainRecord::getCreateTime));
+    }
+
+    @Override
     public List<BargainRecord> listExpired(LocalDateTime now) {
         return list(new LambdaQueryWrapper<BargainRecord>()
                 .in(BargainRecord::getStatus, List.of("ongoing", "done"))

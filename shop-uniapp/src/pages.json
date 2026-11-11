@@ -172,6 +172,12 @@
       }
     },
     {
+      "path": "pages/bargain/mine",
+      "style": {
+        "navigationBarTitleText": "我的砍价"
+      }
+    },
+    {
       "path": "pages/my/sign-in",
       "style": {
         "navigationBarTitleText": "每日签到"

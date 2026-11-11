@@ -61,6 +61,30 @@ public class ConsumerBargainController {
         return Result.ok(out);
     }
 
+    @GetMapping("/my-records")
+    public Result<List<Map<String, Object>>> myRecords() {
+        Long userId = requireLoginUserId();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (BargainRecord rec : bargainRecordService.listInProgress(userId)) {
+            BargainActive a = bargainActiveService.getByIdWithTenant(rec.getActiveId());
+            Map<String, Object> view = recordView(rec, a);
+            fillGoods(view, a.getGoodsId());
+            out.add(view);
+        }
+        return Result.ok(out);
+    }
+
+    @GetMapping("/actives/{id}/mine")
+    public Result<Map<String, Object>> mineOfActive(@PathVariable Long id) {
+        Long userId = requireLoginUserId();
+        BargainActive a = requireOnSaleActive(id);
+        BargainRecord rec = bargainRecordService.findByActiveAndUser(a.getId(), userId);
+        if (rec == null || !isInProgress(rec)) {
+            return Result.ok(null);
+        }
+        return Result.ok(recordView(rec, a));
+    }
+
     @GetMapping("/actives/{id}")
     public Result<Map<String, Object>> active(@PathVariable Long id) {
         BargainActive a = requireOnSaleActive(id);
@@ -99,6 +123,9 @@ public class ConsumerBargainController {
         GoodsSku sku = goodsSkuService.getByIdWithTenant(req.skuId());
         if (sku == null || !sku.getGoodsId().equals(a.getGoodsId())) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "SKU 不属于该砍价商品");
+        }
+        if (sku.getStock() == null || sku.getStock() <= 0) {
+            throw new BusinessException(ErrorCode.SKU_STOCK_INSUFFICIENT, "该规格已售罄，无法发起砍价");
         }
         BargainRecord rec = bargainRecordService.startBargain(a.getId(), userId, sku.getPrice(),
                 a.getValidHours() == null ? 24 : a.getValidHours());
@@ -228,6 +255,23 @@ public class ConsumerBargainController {
             return images.isEmpty() ? "" : images.get(0);
         } catch (Exception e) {
             return "";
+        }
+    }
+
+    private boolean isInProgress(BargainRecord rec) {
+        if (!"ongoing".equals(rec.getStatus()) && !"done".equals(rec.getStatus())) {
+            return false;
+        }
+        return rec.getExpireTime() == null || LocalDateTime.now().isBefore(rec.getExpireTime());
+    }
+
+    private void fillGoods(Map<String, Object> view, Long goodsId) {
+        try {
+            Goods goods = goodsService.getByIdWithTenant(goodsId);
+            view.put("goodsName", goods.getName());
+            view.put("goodsImage", firstImage(goods.getImages()));
+        } catch (Exception ignored) {
+            // 商品已删除时列表仍展示价格进度
         }
     }
 

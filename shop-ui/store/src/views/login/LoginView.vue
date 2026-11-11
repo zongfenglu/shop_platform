@@ -81,10 +81,11 @@ async function onSubmit() {
             v-model="form.username"
             class="form-input"
             autocomplete="username"
-            placeholder="请输入账号"
+            placeholder="店主可填 admin"
             @input="errors.username = ''"
           />
           <div v-if="errors.username" class="field-error">{{ errors.username }}</div>
+          <div v-else class="form-hint" style="margin-top: 4px">开店时店主账号为「商城标识_admin」，也可直接填 admin</div>
         </div>
 
         <div class="form-item">

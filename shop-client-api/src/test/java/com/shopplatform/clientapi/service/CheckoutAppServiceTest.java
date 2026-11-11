@@ -102,6 +102,7 @@ class CheckoutAppServiceTest {
         sku.setPrice(new BigDecimal("100.00"));
         sku.setLinePrice(new BigDecimal("120.00"));
         sku.setSpecValueIds("");
+        sku.setStock(10);
         when(goodsSkuService.getByIdWithTenant(11L)).thenReturn(sku);
         Goods goods = new Goods();
         goods.setId(21L);
@@ -259,6 +260,23 @@ class CheckoutAppServiceTest {
         service.submit(request);
 
         verify(orderService).releaseGroupOrders(88L);
+    }
+
+    @Test
+    void submit_group_stockZero_throwsBeforeOpeningGroup() {
+        GoodsSku soldOut = new GoodsSku();
+        soldOut.setId(11L);
+        soldOut.setGoodsId(21L);
+        soldOut.setStock(0);
+        when(goodsSkuService.getByIdWithTenant(11L)).thenReturn(soldOut);
+        CheckoutRequest request = new CheckoutRequest(List.of(new CartItemRequest(11L, 1)),
+                "express", null, null, null, null, "group", 12L,
+                null, null, null, List.of());
+
+        assertThrows(BusinessException.class, () -> service.submit(request));
+
+        verify(groupRecordService, never()).openGroup(any(), any(), any(), anyInt());
+        verify(orderService, never()).createOrder(any());
     }
 
     @Test

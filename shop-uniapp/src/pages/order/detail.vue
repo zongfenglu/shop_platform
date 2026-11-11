@@ -1,5 +1,5 @@
 <script setup>
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { cancelOrder, confirmReceipt, getOrder, getOrderTracks, getPayChannels, prepayOrder } from '@/api'
@@ -108,8 +108,31 @@ function activityText(type) {
   return ({ seckill: '秒杀活动', group: '拼团活动', bargain: '砍价活动' })[type] || '营销活动'
 }
 
+function canInviteGroup() {
+  const order = data.value?.order
+  const group = data.value?.group
+  if (!order || order.activityType !== 'group' || order.orderStatus !== 'normal') return false
+  if (group && group.status !== 'pending') return false
+  return !!(group?.recordId || order.groupRecordId)
+}
+
+function groupSharePath() {
+  const order = data.value?.order
+  const group = data.value?.group
+  const activeId = order?.activityId
+  const recordId = group?.recordId || order?.groupRecordId
+  if (!activeId || !recordId) return '/pages/group/index'
+  return `/pages/group/detail?id=${encodeRouteId(activeId)}&recordId=${encodeRouteId(recordId)}`
+}
+
+onShareAppMessage(() => ({
+  title: '邀请你一起拼团',
+  path: groupSharePath(),
+}))
+
 function groupStatusText(group) {
   if (!group) return ''
+  if (data.value?.order?.orderStatus === 'cancelled') return '拼团已取消'
   if (group.status === 'success') return group.isMock ? '系统模拟成团' : '已成团'
   if (group.status === 'fail') return '未成团，款项已原路退回'
   return '拼团进行中'
@@ -118,7 +141,7 @@ function groupStatusText(group) {
 function inviteGroup() {
   const order = data.value?.order
   const group = data.value?.group
-  if (!order?.activityId || !group?.recordId || group.status !== 'pending') return
+  if (!canInviteGroup() || !order?.activityId || !group?.recordId) return
   uni.navigateTo({
     url: `/pages/group/detail?id=${encodeRouteId(order.activityId)}&recordId=${encodeRouteId(group.recordId)}`,
   })
@@ -140,7 +163,7 @@ function openMap(target, name, address) {
 }
 
 function hasBottomActions() {
-  return canCancel() || canAfterSale() || canConfirm() || data.value?.order?.orderStatus === 'finished'
+  return canInviteGroup() || canCancel() || canAfterSale() || canConfirm() || data.value?.order?.orderStatus === 'finished'
 }
 
 function goOrderList() {
@@ -282,15 +305,20 @@ function packageGoodsText(pkg) {
       <view class="hero-title">{{ statusText() }}</view>
     </view>
 
-    <view v-if="data?.group" class="card group-card">
+    <view v-if="data?.order?.activityType === 'group' && (data.group || data.order.orderStatus === 'normal')" class="card group-card">
       <view class="group-head">
         <view>
-          <view class="group-title">{{ groupStatusText(data.group) }}</view>
-          <view class="group-count">已参团 {{ data.group.actualNum }}/{{ data.group.groupNum }} 人</view>
+          <view class="group-title">{{ data.group ? groupStatusText(data.group) : '拼团进行中' }}</view>
+          <view v-if="data.group" class="group-count">已参团 {{ data.group.actualNum }}/{{ data.group.groupNum }} 人</view>
         </view>
-        <button v-if="data.group.status === 'pending'" class="group-invite" @click="inviteGroup">邀请好友参团</button>
+        <!-- #ifdef MP-WEIXIN -->
+        <button v-if="canInviteGroup()" class="group-invite" open-type="share">邀请好友参团</button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <button v-if="canInviteGroup()" class="group-invite" @click="inviteGroup">邀请好友参团</button>
+        <!-- #endif -->
       </view>
-      <view v-if="data.group.status === 'pending'" class="group-hint">截止 {{ fmtDateTime(data.group.expireTime) }}，邀请好友一起拼更容易成团</view>
+      <view v-if="canInviteGroup() && data.group?.expireTime" class="group-hint">截止 {{ fmtDateTime(data.group.expireTime) }}，邀请好友一起拼更容易成团</view>
       <view v-else-if="data.group.status === 'success'" class="group-hint">拼团成功后，商家将按正常订单为你发货</view>
     </view>
 
@@ -373,6 +401,12 @@ function packageGoodsText(pkg) {
     </view>
 
     <view v-if="data && hasBottomActions()" class="bottom-bar">
+      <!-- #ifdef MP-WEIXIN -->
+      <button v-if="canInviteGroup()" class="m-btn m-btn-warm" open-type="share">邀请好友参团</button>
+      <!-- #endif -->
+      <!-- #ifndef MP-WEIXIN -->
+      <button v-if="canInviteGroup()" class="m-btn m-btn-warm" @click="inviteGroup">邀请好友参团</button>
+      <!-- #endif -->
       <button v-if="canCancel()" class="m-btn" @click="onCancel">取消订单</button>
       <button
         v-if="canCancel()"
@@ -540,6 +574,7 @@ function packageGoodsText(pkg) {
   background: #fff;
   border: 2rpx solid rgba(11, 11, 11, 0.16);
 }
+.m-btn::after { border: none; }
 .m-btn-warm {
   background: #e34948;
   color: #fff;
