@@ -136,8 +136,9 @@ public class ConsumerOrderController {
             boolean canApplyAfterSale = deliveryAllowsAfterSale
                     && goods.stream().anyMatch(g -> "none".equals(g.getRefundStatus()));
             AfterSale latestAfterSale = latestAfterSaleByOrder.get(order.getId());
-            GroupRecord group = groupRecords.get(order.getGroupRecordId());
-            BargainRecord bargain = bargainRecords.get(order.getActivityId());
+            // Map.of() 不允许 get(null)，普通订单的 groupRecordId/activityId 经常是空的。
+            GroupRecord group = order.getGroupRecordId() == null ? null : groupRecords.get(order.getGroupRecordId());
+            BargainRecord bargain = order.getActivityId() == null ? null : bargainRecords.get(order.getActivityId());
             BargainActive bargainActive = bargain == null ? null : bargainActives.get(bargain.getActiveId());
             return new OrderListItem(
                     order.getId().toString(), order.getOrderNo(), order.getPayPrice(), order.getPayStatus(),
