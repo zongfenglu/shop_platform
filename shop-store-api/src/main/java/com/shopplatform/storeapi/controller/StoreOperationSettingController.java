@@ -369,7 +369,8 @@ public class StoreOperationSettingController {
                 item.getSmsShippedTemplate(), item.getSmsRefundTemplate(), item.getSmsNotifyPhones(),
                 item.getShareTitle(), item.getShareSubtitle(), item.getShareBrand(), item.getShareImageUrl(),
                 mapKeyResolver.provider(),
-                StringUtils.hasText(item.getMapApiKey()) ? item.getMapApiKey() : mapKeyResolver.jsKey());
+                mapKeyResolver.jsKey(),
+                mapKeyResolver.securityJsCode());
     }
 
     private static String trimToNull(String value) {
@@ -513,5 +514,6 @@ public class StoreOperationSettingController {
                                        String smsPaidTemplate, String smsShippedTemplate,
                                        String smsRefundTemplate, String smsNotifyPhones,
                                        String shareTitle, String shareSubtitle, String shareBrand,
-                                       String shareImageUrl, String mapProvider, String mapApiKey) {}
+                                       String shareImageUrl, String mapProvider, String mapApiKey,
+                                       String mapSecurityJsCode) {}
 }

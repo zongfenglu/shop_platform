@@ -276,6 +276,7 @@ function dateText(value) {
     :longitude="form.longitude"
     :provider="mapSetting.mapProvider || 'amap'"
     :api-key="mapSetting.mapApiKey || ''"
+    :security-js-code="mapSetting.mapSecurityJsCode || ''"
     @confirm="onLocationConfirm"
     @close="locationPickerOpen = false"
   />

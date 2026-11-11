@@ -83,7 +83,7 @@ onMounted(async () => {
       emit('close')
       return
     }
-    const AMap = await loadAmapJs(cfg.apiKey)
+    const AMap = await loadAmapJs(cfg.apiKey, cfg.securityJsCode)
     await nextTick()
     const container = nativeNode(mapEl.value)
     const searchInput = nativeNode(searchEl.value, 'input')

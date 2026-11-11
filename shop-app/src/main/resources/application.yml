@@ -51,7 +51,9 @@ shop:
   store-console-url: ${STORE_CONSOLE_URL:http://localhost:5174}
   h5-public-url: ${H5_PUBLIC_URL:http://localhost:5175}
   map:
-    amap-js-key: ${AMAP_JS_KEY:ff5b8c4b9abb6024550a3e0f9c139bca}
+    amap-js-key: ${AMAP_JS_KEY:65eeae53a1f353c31e329e44c774ca7e}
+    amap-js-secret: ${AMAP_JS_SECRET:e773074f110402b905245336232c9ffb}
+    amap-mp-key: ${AMAP_MP_KEY:ff5b8c4b9abb6024550a3e0f9c139bca}
   domain:
     skip-cname: ${DOMAIN_SKIP_CNAME:true}
   crypto:

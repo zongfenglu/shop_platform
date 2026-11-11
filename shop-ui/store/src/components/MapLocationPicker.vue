@@ -1,7 +1,7 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { loadAmapJs, PLATFORM_AMAP_JS_KEY } from '@/utils/amap'
+import { loadAmapJs, PLATFORM_AMAP_JS_KEY, PLATFORM_AMAP_JS_SECRET } from '@/utils/amap'
 
 const props = defineProps({
   latitude: { type: [Number, String], default: null },
@@ -10,6 +10,7 @@ const props = defineProps({
   description: { type: String, default: '搜索或点击地图放置定位点，保存后可直接发起导航' },
   provider: { type: String, default: 'amap' },
   apiKey: { type: String, default: '' },
+  securityJsCode: { type: String, default: '' },
 })
 const emit = defineEmits(['confirm', 'close'])
 
@@ -85,7 +86,7 @@ function confirm() {
 
 onMounted(async () => {
   try {
-    const AMap = await loadAmapJs(props.apiKey || PLATFORM_AMAP_JS_KEY)
+    const AMap = await loadAmapJs(props.apiKey || PLATFORM_AMAP_JS_KEY, props.securityJsCode || PLATFORM_AMAP_JS_SECRET)
     await nextTick()
     const hasPoint = selectedLatitude.value != null && selectedLongitude.value != null
     map = new AMap.Map(mapEl.value, {
