@@ -150,9 +150,9 @@ function goCheckout(join) {
         </view>
         <view class="prog-meta">
           已参团 {{ record.actualNum }}/{{ record.groupNum }} 人
-          <text v-if="record.status === 'pending'">· 还差 {{ Math.max(0, record.groupNum - record.actualNum) }} 人成团</text>
-          <text v-if="record.status === 'pending' && record.isMock">· 截止后系统可模拟成团</text>
+          <text v-if="record.status === 'pending'">，还差 {{ Math.max(0, record.groupNum - record.actualNum) }} 人</text>
         </view>
+        <view v-if="record.status === 'pending' && record.isMock" class="prog-sub">人未满时，截止后系统可自动成团</view>
       </view>
 
       <!-- SKU 选择 -->
@@ -175,23 +175,41 @@ function goCheckout(join) {
 
       <view class="bottom-spacer" />
 
-      <!-- 操作栏 -->
+      <!-- 操作栏：团长只邀请，好友只参团，避免窄屏上两个按钮把字裁掉 -->
       <view class="bar">
         <view class="bar-price">
           <text class="bar-label">拼团价</text>
           <text class="bar-amount">¥{{ fmtPrice(selectedSku?.groupPrice) }}</text>
         </view>
         <!-- #ifdef MP-WEIXIN -->
-        <button v-if="record && record.status === 'pending'" class="bar-btn join" open-type="share">邀请好友参团</button>
+        <button
+          v-if="record && record.status === 'pending' && record.isLeader"
+          class="bar-btn join"
+          open-type="share"
+        >邀请好友</button>
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <button v-if="record && record.status === 'pending'" class="bar-btn join" @click="copyInvite">邀请好友参团</button>
+        <button
+          v-if="record && record.status === 'pending' && record.isLeader"
+          class="bar-btn join"
+          @click="copyInvite"
+        >邀请好友</button>
         <!-- #endif -->
-        <button v-if="record && record.status === 'pending' && !record.isLeader" class="bar-btn" :disabled="!canBuy" @click="goCheckout(true)">
-          {{ canBuy ? '参团' : '库存不足' }}
+        <button
+          v-if="record && record.status === 'pending' && !record.isLeader"
+          class="bar-btn"
+          :disabled="!canBuy"
+          @click="goCheckout(true)"
+        >
+          {{ canBuy ? '参加拼团' : '库存不足' }}
         </button>
-        <button v-else-if="!record || record.status !== 'pending'" class="bar-btn" :disabled="!canBuy" @click="goCheckout(false)">
-          {{ canBuy ? '开团' : '库存不足' }}
+        <button
+          v-else-if="!record || record.status !== 'pending'"
+          class="bar-btn"
+          :disabled="!canBuy"
+          @click="goCheckout(false)"
+        >
+          {{ canBuy ? '发起拼团' : '库存不足' }}
         </button>
       </view>
     </view>
@@ -225,7 +243,8 @@ function goCheckout(join) {
 .prog-cd { font-size: 26rpx; color: #d4380d; font-variant-numeric: tabular-nums; }
 .prog-bar { height: 18rpx; border-radius: 9rpx; background: #f0efec; overflow: hidden; }
 .prog-fill { height: 100%; background: linear-gradient(90deg, #ff8a3d, #d4380d); }
-.prog-meta { font-size: 24rpx; color: #4a4844; margin-top: 12rpx; }
+.prog-meta { font-size: 24rpx; color: #4a4844; margin-top: 12rpx; line-height: 1.5; }
+.prog-sub { font-size: 22rpx; color: #898781; margin-top: 8rpx; }
 
 .sku-list { display: flex; flex-wrap: wrap; gap: 16rpx; }
 .sku-item {
@@ -242,16 +261,34 @@ function goCheckout(join) {
 .bottom-spacer { height: 40rpx; }
 .bar {
   position: fixed; left: 0; right: 0; bottom: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  background: #fff; border-top: 2rpx solid rgba(11,11,11,0.08);
+  display: flex; align-items: center; gap: 16rpx;
+  background: #fff; border-top: 1rpx solid #eceeeb;
   padding: 16rpx 24rpx; padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
 }
-.bar-price { display: flex; align-items: baseline; gap: 10rpx; }
-.bar-label { font-size: 24rpx; color: #898781; }
-.bar-amount { color: #d4380d; font-size: 38rpx; font-weight: 800; }
+.bar-price {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 140rpx;
+}
+.bar-label { font-size: 20rpx; color: #898781; line-height: 1.2; }
+.bar-amount { color: #d4380d; font-size: 34rpx; font-weight: 800; line-height: 1.2; }
 .bar-btn {
-  background: #d4380d; color: #fff; border-radius: 38rpx;
-  height: 76rpx; line-height: 76rpx; font-size: 28rpx; padding: 0 56rpx; margin: 0;
+  flex: 1;
+  min-width: 0;
+  height: 76rpx;
+  line-height: 76rpx;
+  margin: 0;
+  padding: 0 16rpx;
+  border: 0;
+  border-radius: 38rpx;
+  background: #d4380d;
+  color: #fff;
+  font-size: 28rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bar-btn.join { background: #2a78d6; }
 .bar-btn[disabled] { background: #c8c6c1; color: #fff; }
