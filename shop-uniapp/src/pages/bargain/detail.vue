@@ -149,6 +149,15 @@ async function onHelp() {
   }
 }
 
+function copyInvite() {
+  const path = `/pages/bargain/detail?id=${encodeRouteId(activeId.value)}&recordId=${encodeRouteId(record.value?.recordId)}`
+  const data = typeof window !== 'undefined' ? window.location.href : path
+  uni.setClipboardData({
+    data,
+    success: () => uni.showToast({ title: '砍价链接已复制' }),
+  })
+}
+
 function goCheckout() {
   if (!record.value) return
   if (record.value.status === 'expired') {
@@ -242,13 +251,20 @@ function goCheckout() {
           </button>
         </template>
         <template v-else>
-          <ShareButton
+          <!-- #ifdef MP-WEIXIN -->
+          <button
             v-if="record.status === 'ongoing' && !reachedFloor && record.isOwner"
-            class="bar-btn help share-action"
-            label="请好友砍一刀"
-            :title="`帮我砍一刀：${active.goodsName || '好友砍价'}`"
-            :path="`/pages/bargain/detail?id=${encodeRouteId(activeId)}&recordId=${encodeRouteId(record.recordId)}`"
-          />
+            class="bar-btn help"
+            open-type="share"
+          >邀请好友砍价</button>
+          <!-- #endif -->
+          <!-- #ifndef MP-WEIXIN -->
+          <button
+            v-if="record.status === 'ongoing' && !reachedFloor && record.isOwner"
+            class="bar-btn help"
+            @click="copyInvite"
+          >邀请好友砍价</button>
+          <!-- #endif -->
           <button
             v-else-if="record.status === 'ongoing' && !reachedFloor"
             class="bar-btn help"
@@ -257,9 +273,7 @@ function goCheckout() {
           >
             {{ helping ? '砍价中…' : '帮TA砍一刀' }}
           </button>
-          <button class="bar-btn" @click="goCheckout">
-            用当前价下单
-          </button>
+          <button class="bar-btn" @click="goCheckout">用当前价下单</button>
         </template>
       </view>
     </view>
@@ -315,20 +329,26 @@ function goCheckout() {
 .bottom-spacer { height: 40rpx; }
 .bar {
   position: fixed; left: 0; right: 0; bottom: 0;
-  display: flex; align-items: center; justify-content: center; gap: 18rpx;
-  background: #fff; border-top: 2rpx solid rgba(11,11,11,0.08);
+  display: flex; align-items: center; gap: 16rpx;
+  background: #fff; border-top: 1rpx solid #eceeeb;
   padding: 16rpx 24rpx; padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
 }
 .bar-btn {
-  background: #722ed1; color: #fff; border-radius: 38rpx;
-  height: 76rpx; line-height: 76rpx; font-size: 28rpx; padding: 0 56rpx; margin: 0;
-  flex: 1; max-width: 460rpx;
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  margin: 0;
+  padding: 0 12rpx;
+  border: 0;
+  border-radius: 38rpx;
+  background: #722ed1;
+  color: #fff;
+  font-size: 28rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.bar-btn::after { border: none; }
 .bar-btn.help { background: #ff8a3d; }
 .bar-btn[disabled] { opacity: 0.6; }
-.bar :deep(.share-action) {
-  flex: 1; max-width: 460rpx; height: 76rpx; line-height: 76rpx;
-  padding: 0 56rpx; border-radius: 38rpx; background: #ff8a3d;
-  color: #fff; font-size: 28rpx;
-}
 </style>
