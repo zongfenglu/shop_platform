@@ -2,18 +2,25 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { getGoodsDetail, getShareConfig } from '@/api'
-import AppIcon from '@/components/AppIcon.vue'
 import { decodeRouteId, encodeRouteId } from '@/utils/routeId'
 
 const goods = ref(null)
 const goodsId = ref('')
 const config = ref({ title: '发现一家好店', subtitle: '把好物分享给朋友', brand: '商城精选', imageUrl: '' })
 
+function textOr(value, fallback) {
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback
+}
+
 const isShopPoster = computed(() => !goodsId.value)
-const image = computed(() => goods.value?.images?.[0] || config.value.imageUrl || '')
+const brandName = computed(() => textOr(config.value.brand, '商城精选'))
+const image = computed(() => textOr(goods.value?.images?.[0], textOr(config.value.imageUrl, '')))
 const price = computed(() => Number(goods.value?.minPrice || goods.value?.skus?.[0]?.price || 0).toFixed(2))
-const posterTitle = computed(() => goods.value?.name || config.value.title || '精选好物')
-const posterSub = computed(() => goods.value ? '真实好物 · 发给好友即可购买' : (config.value.subtitle || '打开小程序逛整店'))
+const posterTitle = computed(() => textOr(goods.value?.name, textOr(config.value.title, '精选好物')))
+const posterSub = computed(() => (goods.value
+  ? '真实好物 · 发给好友即可购买'
+  : textOr(config.value.subtitle, '打开小程序逛整店')))
+const stateTitle = computed(() => (isShopPoster.value ? '店铺海报已备好' : '商品海报已备好'))
 const sharePath = computed(() => goodsId.value
   ? `/pages/goods/detail?id=${encodeRouteId(goodsId.value)}`
   : '/pages/index/index')
@@ -22,7 +29,14 @@ onLoad(async (q) => {
   goodsId.value = decodeRouteId(q?.id || '')
   try {
     const data = await getShareConfig()
-    if (data) config.value = { ...config.value, ...data }
+    if (data && typeof data === 'object') {
+      config.value = {
+        title: textOr(data.title, config.value.title),
+        subtitle: textOr(data.subtitle, config.value.subtitle),
+        brand: textOr(data.brand, config.value.brand),
+        imageUrl: textOr(data.imageUrl, ''),
+      }
+    }
   } catch (e) { /* 默认文案 */ }
   if (goodsId.value) {
     try { goods.value = await getGoodsDetail(goodsId.value) } catch (e) { goods.value = null }
@@ -61,7 +75,7 @@ onShareAppMessage(() => ({
 <template>
   <view class="page">
     <view class="poster">
-      <view class="brand">{{ config.brand || '商城精选' }}</view>
+      <view class="brand">{{ brandName }}</view>
       <view class="title">{{ posterTitle }}</view>
       <view class="sub">{{ posterSub }}</view>
       <image v-if="image" class="poster-cover" :src="image" mode="aspectFill" />
@@ -69,19 +83,24 @@ onShareAppMessage(() => ({
         <view class="poster-default-orb poster-default-orb-a" />
         <view class="poster-default-orb poster-default-orb-b" />
         <view class="poster-default-badge">精选好店</view>
-        <view class="poster-default-icon"><AppIcon name="store-blue" :size="48" /></view>
-        <view class="poster-default-name">{{ config.brand || '商城精选' }}</view>
+        <view class="poster-default-icon">
+          <image class="poster-default-shop" src="/static/icons/store-blue.png" mode="aspectFit" />
+        </view>
+        <view class="poster-default-name">{{ brandName }}</view>
         <view class="poster-default-tag">进店选购 · 正品保障</view>
       </view>
       <view class="price-row">
-        <text v-if="!isShopPoster" class="price">¥{{ price }}</text>
-        <text v-else class="price-tip">进店选购</text>
-        <view class="qr-hint"><AppIcon name="qr-code-coral" :size="16" /><text>发给好友即可打开</text></view>
+        <text v-if="isShopPoster" class="price-tip">进店选购</text>
+        <text v-else class="price">¥{{ price }}</text>
+        <view class="qr-hint">
+          <image class="qr-hint-icon" src="/static/icons/qr-code-coral.png" mode="aspectFit" />
+          <text>发给好友即可打开</text>
+        </view>
       </view>
     </view>
 
     <view class="state-card">
-      <view class="state-title">{{ isShopPoster ? '店铺海报已备好' : '商品海报已备好' }}</view>
+      <view class="state-title">{{ stateTitle }}</view>
       <view class="state-sub">微信里直接转发给好友或群，好友点开就能买</view>
     </view>
 
@@ -144,6 +163,7 @@ onShareAppMessage(() => ({
   align-items: center;
   justify-content: center;
 }
+.poster-default-shop { width: 56rpx; height: 56rpx; }
 .poster-default-name {
   position: relative;
   margin-top: 18rpx;
@@ -161,6 +181,7 @@ onShareAppMessage(() => ({
 .price { color: #e34948; font-size: 44rpx; font-weight: 800; }
 .price-tip { color: #c94d45; font-size: 28rpx; font-weight: 700; }
 .qr-hint { display: flex; align-items: center; gap: 8rpx; padding: 10rpx 16rpx; border-radius: 28rpx; background: #fff0ed; color: #c94d45; font-size: 20rpx; }
+.qr-hint-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
 .state-card { margin-top: 28rpx; padding: 28rpx; text-align: center; border-radius: 18rpx; background: #fff; }
 .state-title { font-size: 28rpx; font-weight: 700; }
 .state-sub { margin-top: 10rpx; color: #8a9aaf; font-size: 22rpx; }
